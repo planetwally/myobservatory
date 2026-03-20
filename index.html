@@ -832,44 +832,41 @@
     <p class="section-desc">Every photon in these images crossed the void of space to land on a sensor in a suburban New Jersey backyard. Click any image to explore.</p>
   </div>
   <!--
-  ╔══════════════════════════════════════════════════════════════════╗
-  ║  GALLERY EDITING GUIDE                                          ║
-  ╠══════════════════════════════════════════════════════════════════╣
-  ║                                                                  ║
-  ║  TO REORDER: Cut and paste entire gallery-item blocks.           ║
-  ║  The first item in the HTML = first on the page.                 ║
-  ║                                                                  ║
-  ║  TO MAKE AN IMAGE THE BIG FEATURED ONE:                          ║
-  ║  Add class="gallery-item featured" (instead of just              ║
-  ║  class="gallery-item"). Only use "featured" on 1-2 images.      ║
-  ║                                                                  ║
-  ║  TO ADD A NEW IMAGE:                                             ║
-  ║  1. Drop the .jpg into the images/ folder                        ║
-  ║  2. Copy the template below and paste it where you want it       ║
-  ║  3. Replace the 5 ALL-CAPS placeholders                          ║
-  ║  4. git add . && git commit -m "Added X" && git push             ║
-  ║                                                                  ║
-  ║  TEMPLATE (copy everything between the ~~~~ lines):              ║
-  ║                                                                  ║
-  ║  ~~~~                                                            ║
-  ║  <div class="gallery-item" onclick="openLightbox(this)">         ║
-  ║    <img src="images/FILENAME.jpg" alt="SHORT_ALT_TEXT">          ║
-  ║    <div class="gallery-overlay">                                 ║
-  ║      <div class="gallery-name">DISPLAY_NAME</div>               ║
-  ║      <div class="gallery-meta">Local · Mon YYYY</div>           ║
-  ║      <div class="gallery-tag">TYPE</div>                        ║
-  ║    </div>                                                        ║
-  ║    <div class="lb-data" data-title="DISPLAY_NAME"                ║
-  ║         data-desc="DESCRIPTION_FOR_LIGHTBOX"></div>              ║
-  ║  </div>                                                          ║
-  ║  ~~~~                                                            ║
-  ║                                                                  ║
-  ║  TAG examples: Emission, Globular, Open Cluster, Galaxies,       ║
-  ║  Planetary, Dark Nebula, Reflection, Lunar, Solar, Star          ║
-  ║                                                                  ║
-  ║  TO REMOVE AN IMAGE: Delete the entire gallery-item block.       ║
-  ║                                                                  ║
-  ╚══════════════════════════════════════════════════════════════════╝
+  ========================================================================
+  GALLERY EDITING GUIDE
+  ========================================================================
+
+  TO REORDER: Cut and paste entire gallery-item blocks.
+  The first item in the HTML = first on the page.
+
+  TO MAKE AN IMAGE THE BIG FEATURED ONE:
+  Change class="gallery-item" to class="gallery-item featured"
+  Only use "featured" on 1 or 2 images max.
+
+  TO ADD A NEW IMAGE:
+  1. Drop the .jpg into the images/ folder
+  2. Copy the template below and paste it where you want it
+  3. Replace the ALL CAPS placeholders
+  4. git add, commit, push
+
+  TEMPLATE:
+
+  <div class="gallery-item" onclick="openLightbox(this)">
+    <img src="images/FILENAME.jpg" alt="SHORT_ALT_TEXT">
+    <div class="gallery-overlay">
+      <div class="gallery-name">DISPLAY_NAME</div>
+      <div class="gallery-meta">Local . Mon YYYY</div>
+      <div class="gallery-tag">TYPE</div>
+    </div>
+    <div class="lb-data" data-title="DISPLAY_NAME"
+         data-desc="DESCRIPTION_FOR_LIGHTBOX"></div>
+  </div>
+
+  TAG examples: Emission, Globular, Open Cluster, Galaxies,
+  Planetary, Dark Nebula, Reflection, Lunar, Solar, Star
+
+  TO REMOVE AN IMAGE: Delete the entire gallery-item block.
+  ========================================================================
   -->
   <div class="gallery-grid">
 
