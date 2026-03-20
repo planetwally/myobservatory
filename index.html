@@ -1277,7 +1277,7 @@
   <div class="footer-brand">Washington Valley Observatory</div>
   <p class="footer-tagline">A nonprofit amateur astronomy collective exploring the cosmos through astrophotography and education from suburban New Jersey.</p>
   <div class="footer-links">
-    <a href="/cdn-cgi/l/email-protection#b3daddc2c6dac1dad6c0f3decadcd1c0d6c1c5d2c7dcc1ca9ddcc1d4">Email</a>
+    <a href="mailto:inquiries@myobservatory.org">Email</a>
     <a href="https://www.instagram.com/" target="_blank">Instagram</a>
     <a href="#gallery">Gallery</a>
     <a href="#rigs">Rigs</a>
@@ -1295,7 +1295,7 @@
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
   // Stars
   const starsContainer = document.getElementById('stars');
   for (let i = 0; i < 120; i++) {
@@ -1338,4 +1338,12 @@
 
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('active');
-    docum
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+</script>
+</body>
+</html>
