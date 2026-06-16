@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field of View Viewer — Washington Valley Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a;          /* zenith */
+    --panel:#101725;       /* panel */
+    --panel-2:#0d1320;
+    --line:#223047;
+    --text:#e8ecf4;        /* starlight */
+    --muted:#8a96ab;
+    --amber:#f2b33d;       /* sodium lamp */
+    --amber-dim:#c98f23;
+    --danger:#f87171;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font:15px/1.5 "Inter",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{ /* faint static grain so the chrome isn't dead-flat */
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;
+    background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:3px 3px;
+  }
+  header{
+    display:flex;align-items:center;gap:16px;
+    padding:18px 26px;border-bottom:1px solid var(--line);
+  }
+  .wordmark h1{
+    font:700 22px/1.1 "Bricolage Grotesque",sans-serif;
+    letter-spacing:.2px;
+  }
+  .wordmark p{
+    color:var(--muted);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px;
+  }
+  .home-link{
+    font:13px/1 "Inter",system-ui,sans-serif;color:var(--muted);text-decoration:none;
+    letter-spacing:.03em;white-space:nowrap;transition:color .15s;
+  }
+  .home-link:hover{color:var(--amber)}
+  .spacer{flex:1}
+  button{
+    font:inherit;color:var(--text);cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:7px 13px;transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:var(--amber-dim)}
+  button:focus-visible, select:focus-visible, input:focus-visible{
+    outline:2px solid var(--amber);outline-offset:1px;
+  }
+  button.primary{background:var(--amber);border-color:var(--amber);color:#1a1304;font-weight:600}
+  button.primary:hover{background:#ffc44f}
+  main{
+    display:grid;grid-template-columns:370px minmax(0,1fr);
+    gap:22px;padding:22px 26px 30px;max-width:1500px;margin:0 auto;
+  }
+  /* ---------- controls rail ---------- */
+  aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 14px 15px;
+  }
+  .card h2{
+    font:600 11.5px/1 "Inter",sans-serif;color:var(--muted);
+    letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px;
+  }
+  label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  select,input[type=number],input[type=text]{
+    width:100%;margin-top:4px;
+    background:var(--panel-2);color:var(--text);
+    border:1px solid var(--line);border-radius:7px;
+    padding:7px 9px;font:inherit;font-size:14px;
+  }
+  select:hover,input:hover{border-color:#33486b}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .hidden{display:none !important}
+  .mono{font-family:"IBM Plex Mono",monospace}
+
+  /* ---------- rig cards ---------- */
+  .rig{
+    background:var(--panel);border:1px solid var(--line);border-left:4px solid #fff;
+    border-radius:var(--radius);padding:12px 13px;display:flex;flex-direction:column;gap:9px;
+  }
+  .rig.dim{opacity:.45}
+  .rig-top{display:flex;align-items:center;gap:8px}
+  .rig-title{font:600 13.5px "Inter",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .icon{padding:3px 8px;font-size:13px;line-height:1.2;border-radius:6px}
+  .icon.del:hover{border-color:var(--danger);color:var(--danger)}
+  .rig label{margin:0}
+  .rig .mini{
+    font:12px "IBM Plex Mono",monospace;color:var(--muted);
+    border-top:1px dashed var(--line);padding-top:8px;
+  }
+  #addRig{width:100%}
+  .side-actions{display:flex;gap:8px}
+  .side-actions button{flex:1}
+
+  /* ---------- viewport ---------- */
+  .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .sky{
+    position:relative;width:min(100%, 82vh);aspect-ratio:1/1;margin-inline:auto;
+    background:#05080f;border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;cursor:grab;touch-action:none;user-select:none;
+  }
+  .sky.busy{cursor:grabbing}
+  .sky img{
+    position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;
+    pointer-events:none;user-select:none;-webkit-user-drag:none;will-change:transform;
+  }
+  .sky svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  /* viewfinder corner ticks — the instrument frame */
+  .sky::after{
+    content:"";position:absolute;inset:10px;pointer-events:none;border-radius:4px;
+    background:
+      linear-gradient(var(--amber),var(--amber)) top left/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) top left/1.5px 18px,
+      linear-gradient(var(--amber),var(--amber)) top right/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) top right/1.5px 18px,
+      linear-gradient(var(--amber),var(--amber)) bottom left/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) bottom left/1.5px 18px,
+      linear-gradient(var(--amber),var(--amber)) bottom right/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) bottom right/1.5px 18px;
+    background-repeat:no-repeat;opacity:.85;
+  }
+  /* map-style controls, lower right */
+  .skyctl{position:absolute;right:14px;bottom:14px;z-index:4;display:flex;flex-direction:column;gap:6px}
+  .skyctl button{
+    width:38px;height:38px;padding:0;font-size:19px;line-height:1;
+    background:rgba(13,19,32,.78);border:1px solid var(--line);color:var(--text);
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  }
+  .skyctl button:hover{border-color:var(--amber-dim)}
+  .veil{
+    position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;
+    align-items:center;justify-content:center;background:rgba(5,8,15,.82);
+    font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--muted);
+    text-align:center;padding:20px;z-index:5;
+  }
+  .veil .spin{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--line);border-top-color:var(--amber);
+    animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){ .veil .spin{animation:none} }
+
+  .readout{
+    display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
+    font:13px "IBM Plex Mono",monospace;color:var(--muted);padding:0 4px;
+  }
+  .readout b{color:var(--text);font-weight:500}
+  .gesture{font-size:12px;color:var(--muted);padding:0 4px;letter-spacing:.01em}
+
+  /* ---------- stats ---------- */
+  table{width:100%;border-collapse:collapse;font:13px "IBM Plex Mono",monospace}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:500;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
+  td .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;vertical-align:1px}
+  .statscard{overflow-x:auto}
+  .credit{font-size:12px;color:var(--muted);padding:0 4px}
+  .credit a{color:var(--muted)}
+
+  /* ---------- night vision mode ---------- */
+  html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
+
+  @media (max-width:1020px){
+    main{grid-template-columns:1fr}
+    .sky{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home-link" href="index.html" title="Back to Washington Valley Observatory">&larr; Observatory</a>
+  <div class="wordmark">
+    <h1>Field of View Viewer</h1>
+    <p>Washington Valley Observatory</p>
+  </div>
+  <div class="spacer"></div>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+</header>
+
+<main>
+  <aside>
+    <div class="card">
+      <h2>Sky</h2>
+      <label>Target
+        <select id="targetSel"></select>
+      </label>
+      <div id="customTarget" class="hidden">
+        <div class="row">
+          <label>RA <input type="text" id="raIn" class="mono" placeholder="83.82 or 5h35m17s"></label>
+          <label>Dec <input type="text" id="decIn" class="mono" placeholder="-5.39 or -5 23 28"></label>
+        </div>
+        <button id="goCustom" style="width:100%">Go to coordinates</button>
+      </div>
+      <label>Survey imagery
+        <select id="surveySel"></select>
+      </label>
+      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°.</p>
+    </div>
+
+    <div class="card" style="padding-bottom:12px">
+      <h2>Rigs</h2>
+      <div id="rigList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button id="addRig" class="primary" style="margin-top:10px">+ Add rig</button>
+      <label style="margin-top:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="labelsChk" checked style="width:auto;margin:0"> Show frame labels
+      </label>
+    </div>
+
+    <div class="side-actions">
+      <button id="shareBtn">Copy share link</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+  </aside>
+
+  <section class="viewwrap">
+    <div class="sky" id="sky">
+      <img id="skyImg" draggable="false" alt="Sky survey imagery of the selected target">
+      <svg id="overlay" viewBox="0 0 1100 1100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+      <div class="skyctl" id="skyctl">
+        <button id="zoomIn"  title="Zoom in"  aria-label="Zoom in">+</button>
+        <button id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
+        <button id="fitBtn"  title="Recenter on target & fit frames" aria-label="Recenter and fit">⤢</button>
+      </div>
+      <div class="veil hidden" id="loadingBox">
+        <div class="spin"></div>
+        <div>Fetching survey imagery…</div>
+      </div>
+      <div class="veil hidden" id="errBox">
+        <div>Imagery could not be loaded.<br>Check your connection to alasky.cds.unistra.fr, then retry.</div>
+        <button id="retryBtn">Retry</button>
+      </div>
+    </div>
+
+    <p class="gesture">Drag to pan · right-drag (or two fingers) to rotate framing · scroll or +/− to zoom · ⤢ recenters.</p>
+
+    <div class="readout">
+      <span>CENTER <b id="coordOut">—</b></span>
+      <span>VIEW <b id="fovOut">—</b></span>
+      <span>ORIENTATION <b>N up · E left</b></span>
+    </div>
+
+    <div class="card statscard">
+      <h2>Rig data</h2>
+      <table>
+        <thead>
+          <tr><th>Rig</th><th>Eff. FL</th><th>f/ratio</th><th>Field of view</th><th>Image scale</th><th>Resolution</th></tr>
+        </thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+
+    <p class="credit">
+      Sky imagery rendered on demand by the
+      <a href="https://alasky.cds.unistra.fr/hips-image-services/hips2fits" target="_blank" rel="noopener">hips2fits</a>
+      service, CDS / Université de Strasbourg — DSS2, Mellinger and Finkbeiner Hα surveys.
+      Equipment data is defined at the top of this file and easy to edit.
+    </p>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+/* ================= EQUIPMENT & TARGET DATA — edit freely ================= */
+
+const SCOPES = [
+  {name:'Askar FMA135',            short:'FMA135',     ap:30,  fl:135},
+  {name:'Askar FMA180 Pro',        short:'FMA180',     ap:40,  fl:180},
+  {name:'Askar ACL200 f/4',        short:'ACL200',     ap:50,  fl:200},
+  {name:'Askar FMA230',            short:'FMA230',     ap:51,  fl:230},
+  {name:'Askar SQA55',             short:'SQA55',      ap:55,  fl:264},
+  {name:'Askar FRA300 Pro',        short:'FRA300',     ap:60,  fl:300},
+  {name:'Askar FRA400',            short:'FRA400',     ap:72,  fl:400},
+  {name:'Askar SQA85',             short:'SQA85',      ap:85,  fl:408},
+  {name:'WO RedCat 51',            short:'RedCat 51',  ap:51,  fl:250},
+  {name:'WO RedCat 71',            short:'RedCat 71',  ap:71,  fl:350},
+  {name:'WO ZenithStar 61',        short:'ZS61',       ap:61,  fl:360},
+  {name:'WO ZenithStar 73',        short:'ZS73',       ap:73,  fl:430},
+  {name:'Apertura 60EDR',          short:'60EDR',      ap:60,  fl:360},
+  {name:'Astro-Tech AT60ED',       short:'AT60ED',     ap:60,  fl:360},
+  {name:'Astro-Tech AT60EDP',      short:'AT60EDP',    ap:60,  fl:300},
+  {name:'Astro-Tech AT72ED2',      short:'AT72ED2',    ap:72,  fl:430},
+  {name:'Astro-Tech AT102ED',      short:'AT102ED',    ap:102, fl:714},
+  {name:'Astro-Tech AT130EDT',     short:'AT130EDT',   ap:130, fl:910},
+  {name:'Takahashi FC-50',         short:'FC-50',      ap:50,  fl:400},
+  {name:'Takahashi FS-60CB',       short:'FS-60CB',    ap:60,  fl:355},
+  {name:'Takahashi FC-76DCU',      short:'FC-76DCU',   ap:76,  fl:570},
+  {name:'Takahashi FSQ-85EDP',     short:'FSQ-85',     ap:85,  fl:450},
+  {name:'Takahashi FSQ-106EDX4',   short:'FSQ-106',    ap:106, fl:530},
+  {name:'Sharpstar 61EDPH II',     short:'61EDPH',     ap:61,  fl:335},
+  {name:'Radian Raptor 61',        short:'Raptor 61',  ap:61,  fl:275},
+  {name:'Sky-Watcher Evolux 62ED', short:'Evolux 62',  ap:62,  fl:400},
+  {name:'Sky-Watcher Esprit 100',  short:'Esprit 100', ap:100, fl:550},
+  {name:'SVBONY SV503 70ED',       short:'SV503 70',   ap:70,  fl:420},
+  {name:'Samyang 135mm f/2',       short:'Samyang 135',ap:67,  fl:135},
+  {name:'Celestron RASA 8',        short:'RASA 8',     ap:203, fl:400},
+  {name:'Celestron C8 / EdgeHD 8', short:'C8',         ap:203, fl:2032},
+];
+
+/* w/h = sensor size in mm, pw/ph = pixel count, px = pixel pitch in µm */
+const SENSORS = [
+  {short:'IMX585',  name:'IMX585 — 1/1.2″ (ASI585, Uranus-C)',     w:11.13, h:6.26,  pw:3840, ph:2160, px:2.9},
+  {short:'IMX533',  name:'IMX533 — 1″ square (ASI533)',            w:11.31, h:11.31, pw:3008, ph:3008, px:3.76},
+  {short:'IMX183',  name:'IMX183 — 1″ (ASI183)',                   w:13.19, h:8.81,  pw:5496, ph:3672, px:2.4},
+  {short:'IMX294',  name:'IMX294 — 4/3″ (ASI294)',                 w:19.19, h:13.07, pw:4144, ph:2822, px:4.63},
+  {short:'IMX571',  name:'IMX571 — APS-C (ASI2600, 26C)',          w:23.49, h:15.70, pw:6248, ph:4176, px:3.76},
+  {short:'IMX455',  name:'IMX455 — full frame (ASI6200)',          w:36.0,  h:24.0,  pw:9576, ph:6388, px:3.76},
+  {short:'IMX410',  name:'IMX410 — full frame (ASI2400)',          w:36.07, h:24.01, pw:6072, ph:4042, px:5.94},
+  {short:'IMX678',  name:'IMX678 — 1/1.8″ (ASI678)',               w:7.68,  h:4.32,  pw:3840, ph:2160, px:2.0},
+  {short:'IMX662',  name:'IMX662 / IMX462 — 1/2.8″ (ASI662)',      w:5.57,  h:3.13,  pw:1920, ph:1080, px:2.9},
+  {short:'IMX174',  name:'IMX174 — 1/1.2″ (ASI174)',               w:11.34, h:7.13,  pw:1936, ph:1216, px:5.86},
+  {short:'A7R II',  name:'Sony A7R II — full frame, 42 MP',        w:35.9,  h:24.0,  pw:7952, ph:5304, px:4.51},
+  {short:'APS-C',   name:'Canon APS-C DSLR — 22.3 × 14.9 mm',      w:22.3,  h:14.9,  pw:6000, ph:4000, px:3.72},
+];
+
+const REDUCERS = [
+  {v:2.0,  l:'2.0× extender'},
+  {v:1.6,  l:'1.6× extender'},
+  {v:1.4,  l:'1.4× extender'},
+  {v:1.0,  l:'1.0× (native)'},
+  {v:0.95, l:'0.95× reducer'},
+  {v:0.9,  l:'0.90× reducer'},
+  {v:0.85, l:'0.85× reducer'},
+  {v:0.8,  l:'0.80× reducer'},
+  {v:0.75, l:'0.75× reducer'},
+  {v:0.72, l:'0.72× reducer'},
+  {v:0.7,  l:'0.70× reducer'},
+  {v:0.65, l:'0.65× reducer'},
+  {v:0.63, l:'0.63× reducer'},
+  {v:0.6,  l:'0.60× reducer'},
+];
+
+/* ra/dec in decimal degrees (J2000) */
+const TARGETS = [
+  {grp:'Nebulae', id:'m42',        name:'M42 — Orion Nebula',                ra:83.82,  dec:-5.39},
+  {grp:'Nebulae', id:'horsehead',  name:'Horsehead & Flame',                 ra:85.2,   dec:-2.3},
+  {grp:'Nebulae', id:'rosette',    name:'Rosette Nebula',                    ra:97.97,  dec:4.94},
+  {grp:'Nebulae', id:'nan',        name:'North America & Pelican',           ra:313.7,  dec:44.3},
+  {grp:'Nebulae', id:'veil',       name:'Veil Nebula complex',               ra:312.8,  dec:31.2},
+  {grp:'Nebulae', id:'heartsoul',  name:'Heart & Soul',                      ra:40.5,   dec:61.0},
+  {grp:'Nebulae', id:'heart',      name:'Heart Nebula (IC 1805)',            ra:38.2,   dec:61.45},
+  {grp:'Nebulae', id:'california', name:'California Nebula',                 ra:60.2,   dec:36.6},
+  {grp:'Nebulae', id:'elephant',   name:"Elephant's Trunk (IC 1396)",        ra:324.75, dec:57.5},
+  {grp:'Nebulae', id:'pacman',     name:'Pacman Nebula (NGC 281)',           ra:13.2,   dec:56.62},
+  {grp:'Nebulae', id:'crescent',   name:'Crescent Nebula (NGC 6888)',        ra:303.0,  dec:38.35},
+  {grp:'Nebulae', id:'sadr',       name:'Sadr region (IC 1318)',             ra:305.56, dec:40.26},
+  {grp:'Nebulae', id:'eagleswan',  name:'Eagle & Swan (M16 / M17)',          ra:274.95, dec:-15.0},
+  {grp:'Nebulae', id:'lagoon',     name:'Lagoon & Trifid (M8 / M20)',        ra:270.8,  dec:-23.7},
+  {grp:'Nebulae', id:'iris',       name:'Iris Nebula (NGC 7023)',            ra:315.4,  dec:68.16},
+  {grp:'Nebulae', id:'bubble',     name:'Bubble Nebula & M52',               ra:350.7,  dec:61.4},
+  {grp:'Nebulae', id:'wizard',     name:'Wizard Nebula (NGC 7380)',          ra:341.8,  dec:58.13},
+  {grp:'Nebulae', id:'cone',       name:'Cone & Christmas Tree (NGC 2264)',  ra:100.25, dec:9.88},
+  {grp:'Nebulae', id:'monkey',     name:'Monkey Head (NGC 2175)',            ra:92.4,   dec:20.5},
+  {grp:'Nebulae', id:'jellyfish',  name:'Jellyfish Nebula (IC 443)',         ra:94.4,   dec:22.5},
+  {grp:'Galaxies', id:'m31',       name:'M31 — Andromeda Galaxy',            ra:10.68,  dec:41.27},
+  {grp:'Galaxies', id:'m33',       name:'M33 — Triangulum Galaxy',           ra:23.46,  dec:30.66},
+  {grp:'Galaxies', id:'m81',       name:'M81 & M82',                         ra:148.93, dec:69.37},
+  {grp:'Galaxies', id:'m51',       name:'M51 — Whirlpool Galaxy',            ra:202.47, dec:47.20},
+  {grp:'Galaxies', id:'m101',      name:'M101 — Pinwheel Galaxy',            ra:210.80, dec:54.35},
+  {grp:'Galaxies', id:'markarian', name:"Markarian's Chain",                 ra:187.2,  dec:13.6},
+  {grp:'Star clusters', id:'m45',  name:'M45 — Pleiades',                    ra:56.75,  dec:24.12},
+  {grp:'Star clusters', id:'m13',  name:'M13 — Hercules Cluster',            ra:250.42, dec:36.46},
+  {grp:'Star clusters', id:'dbl',  name:'Double Cluster',                    ra:35.6,   dec:57.14},
+  {grp:'Wide field', id:'orionw',  name:"Orion & Barnard's Loop (wide)",     ra:84.5,   dec:-2.5},
+  {grp:'Wide field', id:'rhooph',  name:'Rho Ophiuchi cloud complex',        ra:246.5,  dec:-24.3},
+];
+
+const SURVEYS = [
+  {id:'CDS/P/DSS2/color',     name:'DSS2 color'},
+  {id:'CDS/P/DSS2/red',      name:'DSS2 red (mono)'},
+  {id:'CDS/P/Mellinger/color',name:'Mellinger color (wide-field)'},
+  {id:'CDS/P/Finkbeiner',    name:'Hα composite (Finkbeiner)'},
+];
+
+const COLORS = ['#fbbf24','#22d3ee','#f472b6','#a3e635','#fb923c','#c084fc','#34d399','#f87171'];
+const HOSTS = ['alasky.cds.unistra.fr','alasky.u-strasbg.fr'];
+const S = 1100;                 /* SVG viewBox + fetched image size */
+const NS = 'http://www.w3.org/2000/svg';
+const ZOOM_STEP = 1.2;          /* per click / wheel notch */
+const FIT_MARGIN = 1.10;        /* view = largest frame +10% */
+const FOV_MIN = 0.08, FOV_MAX = 60;
+
+/* ================= STATE ================= */
+
+const state = {
+  targetId:'m42', ra:83.82, dec:-5.39, fov:4,
+  survey:'CDS/P/DSS2/color',
+  showLabels:true,
+  rigs:[], nextId:1,
+};
+
+const $ = id => document.getElementById(id);
+const rad = d => d*Math.PI/180;
+const fovOfDeg = (mm,fl) => 2*Math.atan(mm/(2*fl))*180/Math.PI;
+const clampFov = f => Math.min(FOV_MAX, Math.max(FOV_MIN, f));
+const clampDec = d => Math.min(89.9, Math.max(-89.9, d));
+const normRA  = r => ((r % 360) + 360) % 360;
+const norm360 = a => ((a % 360) + 360) % 360;
+
+function scopeIdx(short){ return SCOPES.findIndex(s=>s.short===short); }
+function sensorIdx(short){ return SENSORS.findIndex(s=>s.short===short); }
+
+/* one neutral default rig for first-time visitors */
+function defaultRigs(){
+  return [{scope:scopeIdx('RedCat 51'), cam:sensorIdx('IMX571'), red:1.0}];
+}
+
+function newRig(init={}){
+  const r = Object.assign({
+    id:state.nextId++,
+    scope:scopeIdx('RedCat 51'), cfl:400, cap:72,
+    red:1.0,
+    cam:sensorIdx('IMX571'), cw:23.5, ch:15.7, cpx:3.76,
+    rot:0, vis:true,
+  }, init);
+  r.color = COLORS[(r.id-1) % COLORS.length];
+  return r;
+}
+
+/* Resolve a rig into numbers; returns null when incomplete */
+function rigData(r){
+  const custS = r.scope==='custom';
+  const fl0 = custS ? +r.cfl : (SCOPES[r.scope]||{}).fl;
+  const ap  = custS ? (+r.cap || null) : (SCOPES[r.scope]||{}).ap;
+  if(!fl0 || fl0<=0) return null;
+  const fl = fl0 * r.red;
+
+  const custC = r.cam==='custom';
+  const sen = custC ? null : SENSORS[r.cam];
+  const sw = custC ? +r.cw : sen && sen.w;
+  const sh = custC ? +r.ch : sen && sen.h;
+  const px = custC ? (+r.cpx || null) : sen && sen.px;
+  const mp = !custC && sen ? (sen.pw*sen.ph/1e6) : null;
+  if(!sw || !sh) return null;
+
+  const scopeShort = custS ? `Custom ${Math.round(fl0)}mm` : SCOPES[r.scope].short;
+  const camShort   = custC ? `${sw}×${sh}mm` : sen.short;
+
+  return {
+    fl, fr: ap ? fl/ap : null,
+    fovW: fovOfDeg(sw,fl), fovH: fovOfDeg(sh,fl),
+    scale: px ? 206.265*px/fl : null,
+    mp,
+    label: `${scopeShort}${r.red!==1 ? ' ×'+r.red : ''} · ${camShort}`,
+  };
+}
+
+/* ================= FORMATTING ================= */
+
+function fmtAngle(d){
+  if(d >= 1) return d.toFixed(2)+'°';
+  return (d*60).toFixed(1)+'′';
+}
+function fmtFovPair(d){ return `${fmtAngle(d.fovW)} × ${fmtAngle(d.fovH)}`; }
+function fmtRA(ra){ return ra.toFixed(3)+'°'; }
+function fmtDec(dec){ return (dec>=0?'+':'')+dec.toFixed(3)+'°'; }
+
+/* ================= BUILD STATIC SELECTS ================= */
+
+function buildStatic(){
+  const ts = $('targetSel');
+  let grp = null, og = null;
+  TARGETS.forEach(t=>{
+    if(t.grp!==grp){ grp=t.grp; og=document.createElement('optgroup'); og.label=grp; ts.appendChild(og); }
+    const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; og.appendChild(o);
+  });
+  const ogc=document.createElement('optgroup'); ogc.label='Anywhere';
+  const oc=document.createElement('option'); oc.value='custom'; oc.textContent='Custom RA / Dec…';
+  ogc.appendChild(oc); ts.appendChild(ogc);
+
+  SURVEYS.forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; $('surveySel').appendChild(o);
+  });
+}
+
+/* ================= RIG CARDS ================= */
+
+function fillScopeSelect(sel, val){
+  SCOPES.forEach((s,i)=>{
+    const o=document.createElement('option'); o.value=i;
+    o.textContent=`${s.name} — ${s.fl}mm f/${(s.fl/s.ap).toFixed(1).replace(/\.0$/,'')}`;
+    sel.appendChild(o);
+  });
+  const o=document.createElement('option'); o.value='custom'; o.textContent='Custom focal length…';
+  sel.appendChild(o);
+  sel.value = String(val);
+}
+function fillCamSelect(sel, val){
+  SENSORS.forEach((s,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent=s.name; sel.appendChild(o);
+  });
+  const o=document.createElement('option'); o.value='custom'; o.textContent='Custom sensor…';
+  sel.appendChild(o);
+  sel.value = String(val);
+}
+function fillRedSelect(sel, val){
+  REDUCERS.forEach(rd=>{
+    const o=document.createElement('option'); o.value=rd.v; o.textContent=rd.l; sel.appendChild(o);
+  });
+  sel.value = String(val);
+}
+
+function buildRigCard(r){
+  const card=document.createElement('div');
+  card.className='rig'; card.dataset.id=r.id;
+  card.style.borderLeftColor=r.color;
+  if(!r.vis) card.classList.add('dim');
+  card.innerHTML = `
+    <div class="rig-top">
+      <span class="rig-title"></span>
+      <span class="spacer"></span>
+      <button class="icon vis" title="Show or hide this frame">👁</button>
+      <button class="icon del" title="Remove rig">✕</button>
+    </div>
+    <label>Telescope <select class="scope"></select></label>
+    <div class="row custom-scope hidden">
+      <label>Focal length (mm) <input type="number" class="cfl" min="10" step="1"></label>
+      <label>Aperture (mm) <input type="number" class="cap" min="10" step="1"></label>
+    </div>
+    <div class="row">
+      <label>Reducer / extender <select class="red"></select></label>
+      <label>Camera (sensor) <select class="cam"></select></label>
+    </div>
+    <div class="row3 custom-cam hidden">
+      <label>Width (mm) <input type="number" class="cw" min="1" step="0.1"></label>
+      <label>Height (mm) <input type="number" class="ch" min="1" step="0.1"></label>
+      <label>Pixel (µm) <input type="number" class="cpx" min="0.5" step="0.01"></label>
+    </div>
+    <label style="max-width:150px">Camera rotation (°) <input type="number" class="rot" min="0" max="359" step="5"></label>
+    <div class="mini"></div>`;
+
+  const q = c => card.querySelector(c);
+  fillScopeSelect(q('.scope'), r.scope);
+  fillCamSelect(q('.cam'), r.cam);
+  fillRedSelect(q('.red'), r.red);
+  q('.cfl').value=r.cfl; q('.cap').value=r.cap;
+  q('.cw').value=r.cw; q('.ch').value=r.ch; q('.cpx').value=r.cpx;
+  q('.rot').value=r.rot;
+
+  const refreshCustomBlocks = () => {
+    q('.custom-scope').classList.toggle('hidden', r.scope!=='custom');
+    q('.custom-cam').classList.toggle('hidden', r.cam!=='custom');
+  };
+  const refreshMeta = () => {
+    const d=rigData(r);
+    q('.rig-title').textContent = d ? d.label : 'Incomplete rig';
+    q('.rig-title').style.color = r.color;
+    q('.mini').textContent = d
+      ? `${Math.round(d.fl)}mm${d.fr?` f/${d.fr.toFixed(1)}`:''} · ${fmtFovPair(d)}${d.scale?` · ${d.scale.toFixed(2)}″/px`:''}`
+      : 'Enter focal length and sensor size';
+  };
+
+  q('.scope').addEventListener('change', e=>{
+    r.scope = e.target.value==='custom' ? 'custom' : +e.target.value;
+    refreshCustomBlocks(); applyFit(false, true);
+  });
+  q('.cam').addEventListener('change', e=>{
+    r.cam = e.target.value==='custom' ? 'custom' : +e.target.value;
+    refreshCustomBlocks(); applyFit(false, true);
+  });
+  q('.red').addEventListener('change', e=>{ r.red=+e.target.value; applyFit(false, true); });
+  [['cfl','cfl'],['cap','cap'],['cw','cw'],['ch','ch'],['cpx','cpx']].forEach(([cls,key])=>{
+    q('.'+cls).addEventListener('input', e=>{ r[key]=e.target.value; applyFit(false, false); });
+  });
+  q('.rot').addEventListener('input', e=>{
+    r.rot = norm360(+e.target.value||0);
+    drawOverlay(); syncHash();
+  });
+  q('.vis').addEventListener('click', ()=>{
+    r.vis=!r.vis; card.classList.toggle('dim', !r.vis); applyFit(false, true);
+  });
+  q('.del').addEventListener('click', ()=>{
+    state.rigs = state.rigs.filter(x=>x.id!==r.id);
+    card.remove(); applyFit(false, true);
+  });
+
+  refreshCustomBlocks(); refreshMeta();
+  card._refreshMeta = refreshMeta;
+  $('rigList').appendChild(card);
+}
+
+function refreshAllCardMeta(){
+  document.querySelectorAll('.rig').forEach(c=>c._refreshMeta && c._refreshMeta());
+}
+
+/* ================= OVERLAY ================= */
+
+function halfPx(deg){
+  return Math.tan(rad(deg)/2) / Math.tan(rad(state.fov)/2) * (S/2);
+}
+function svgEl(tag, attrs){
+  const e=document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function drawOverlay(){
+  const svg=$('overlay');
+  svg.innerHTML='';
+
+  /* center crosshair */
+  const ch=18;
+  [[S/2-ch,S/2,S/2+ch,S/2],[S/2,S/2-ch,S/2,S/2+ch]].forEach(([x1,y1,x2,y2])=>{
+    svg.appendChild(svgEl('line',{x1,y1,x2,y2,stroke:'#ffffff',['stroke-opacity']:.35,['stroke-width']:1.2}));
+  });
+
+  /* compass */
+  const comp=svgEl('text',{x:S-26,y:42,fill:'#e8ecf4',['fill-opacity']:.8,
+    ['font-size']:24,['text-anchor']:'end',['font-family']:'IBM Plex Mono, monospace'});
+  comp.textContent='N ↑  E ←';
+  svg.appendChild(comp);
+
+  /* scale bar — picks a round number that fits the current view */
+  let barDeg, barLabel;
+  if(state.fov >= 8){ barDeg=2; barLabel='2°'; }
+  else if(state.fov >= 3){ barDeg=1; barLabel='1°'; }
+  else if(state.fov >= 1.2){ barDeg=0.5; barLabel='30′'; }
+  else if(state.fov >= 0.4){ barDeg=1/6; barLabel='10′'; }
+  else{ barDeg=1/60; barLabel='1′'; }
+  const barPx = 2*halfPx(barDeg);
+  const bx=36, by=S-44;
+  svg.appendChild(svgEl('line',{x1:bx,y1:by,x2:bx+barPx,y2:by,stroke:'#e8ecf4',['stroke-width']:2}));
+  [[bx],[bx+barPx]].forEach(([x])=>{
+    svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8ecf4',['stroke-width']:2}));
+  });
+  const bt=svgEl('text',{x:bx,y:by-14,fill:'#e8ecf4',['font-size']:22,['font-family']:'IBM Plex Mono, monospace'});
+  bt.textContent=barLabel;
+  svg.appendChild(bt);
+
+  /* rig frames */
+  state.rigs.filter(r=>r.vis).forEach(r=>{
+    const d=rigData(r); if(!d) return;
+    const w=2*halfPx(d.fovW), h=2*halfPx(d.fovH);
+    const g=svgEl('g',{transform:`rotate(${-r.rot} ${S/2} ${S/2})`});
+    g.appendChild(svgEl('rect',{
+      x:S/2-w/2, y:S/2-h/2, width:w, height:h,
+      fill:r.color, ['fill-opacity']:0.045,
+      stroke:r.color, ['stroke-width']:2.5,
+    }));
+    if(state.showLabels){
+      const t=svgEl('text',{x:S/2-w/2+10, y:S/2-h/2+28, fill:r.color,
+        ['font-size']:22, ['font-family']:'IBM Plex Mono, monospace'});
+      t.textContent=d.label;
+      g.appendChild(t);
+    }
+    svg.appendChild(g);
+  });
+}
+
+/* ================= STATS TABLE ================= */
+
+function renderStats(){
+  const tb=$('statsBody');
+  tb.innerHTML='';
+  if(!state.rigs.length){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td colspan="6" style="color:var(--muted)">Add a rig to compare fields of view.</td>';
+    tb.appendChild(tr);
+    return;
+  }
+  state.rigs.forEach(r=>{
+    const d=rigData(r);
+    const tr=document.createElement('tr');
+    if(!d){
+      tr.innerHTML=`<td><span class="dot" style="background:${r.color}"></span>Incomplete rig</td><td colspan="5" style="color:var(--muted)">missing data</td>`;
+    }else{
+      tr.innerHTML=`
+        <td><span class="dot" style="background:${r.color}"></span>${d.label}${r.vis?'':' <span style="color:var(--muted)">(hidden)</span>'}</td>
+        <td>${Math.round(d.fl)} mm</td>
+        <td>${d.fr ? 'f/'+d.fr.toFixed(1) : '—'}</td>
+        <td>${fmtFovPair(d)}</td>
+        <td>${d.scale ? d.scale.toFixed(2)+'″/px' : '—'}</td>
+        <td>${d.mp ? d.mp.toFixed(1)+' MP' : '—'}</td>`;
+    }
+    tb.appendChild(tr);
+  });
+}
+
+/* ================= SKY IMAGE ================= */
+
+let loadToken=0, fetchTimer=null;
+let fetchedFov=state.fov, fetchedRA=state.ra, fetchedDec=state.dec;
+
+function skyURL(host, p){
+  return `https://${host}/hips-image-services/hips2fits`
+    + `?hips=${encodeURIComponent(p.survey)}`
+    + `&width=${S}&height=${S}&fov=${p.fov}`
+    + `&projection=TAN&coordsys=icrs`
+    + `&ra=${p.ra}&dec=${p.dec}&format=jpg`;
+}
+function loadSky(){
+  clearTimeout(fetchTimer);
+  const t=++loadToken;
+  const p={ra:state.ra, dec:state.dec, fov:state.fov, survey:state.survey};
+  let hi=0;
+  $('loadingBox').classList.remove('hidden');
+  $('errBox').classList.add('hidden');
+  const img=$('skyImg');
+  const attempt=()=>{
+    img.onload=()=>{
+      if(t!==loadToken) return;
+      $('loadingBox').classList.add('hidden');
+      img.style.transform='';            /* the fetched image is correctly framed */
+      panX=0; panY=0;
+      fetchedFov=p.fov; fetchedRA=p.ra; fetchedDec=p.dec;
+    };
+    img.onerror=()=>{
+      if(t!==loadToken) return;
+      hi++;
+      if(hi<HOSTS.length) attempt();
+      else{ $('loadingBox').classList.add('hidden'); $('errBox').classList.remove('hidden'); }
+    };
+    img.src=skyURL(HOSTS[hi], p);
+  };
+  attempt();
+}
+function debounceFetch(){ clearTimeout(fetchTimer); fetchTimer=setTimeout(loadSky, 280); }
+
+/* live CSS transform during pan / zoom (rotation never touches the sky image) */
+function setImgTransform(){
+  const s = fetchedFov ? fetchedFov/state.fov : 1;
+  $('skyImg').style.transform = `translate(${panX}px,${panY}px) scale(${s})`;
+}
+
+/* ================= COORD PARSING ================= */
+
+function parseAngle(str, isRA){
+  if(!str) return null;
+  str=String(str).trim();
+  const neg = str.startsWith('-');
+  if(/^[-+]?\d+(\.\d+)?$/.test(str)) return parseFloat(str); /* decimal degrees */
+  const parts = str.replace(/^[-+]/,'').split(/[hdms°′″'":\s]+/i).filter(Boolean).map(Number);
+  if(!parts.length || parts.some(isNaN)) return null;
+  const [a,b=0,c=0]=parts;
+  let val = a + b/60 + c/3600;
+  if(isRA) val *= 15;            /* sexagesimal RA is in hours */
+  return neg ? -val : val;
+}
+
+/* ================= VIEW: FIT + ZOOM ================= */
+
+/* width of the smallest square view that holds every visible frame, +10% */
+function fitFov(){
+  let m=0;
+  state.rigs.filter(r=>r.vis).forEach(r=>{
+    const d=rigData(r); if(!d) return;
+    const th=rad(r.rot);                       /* rotated bounding box */
+    const bw=Math.abs(d.fovW*Math.cos(th))+Math.abs(d.fovH*Math.sin(th));
+    const bh=Math.abs(d.fovW*Math.sin(th))+Math.abs(d.fovH*Math.cos(th));
+    m=Math.max(m, bw, bh);
+  });
+  return m ? clampFov(m*FIT_MARGIN) : null;
+}
+/* the workhorse: refit zoom (and optionally recenter on the catalog target) */
+function applyFit(recenter, immediate=true){
+  if(recenter){
+    const t=TARGETS.find(t=>t.id===state.targetId);
+    if(t){ state.ra=t.ra; state.dec=t.dec; }
+  }
+  const f=fitFov();
+  if(f!=null) state.fov=f;
+  refreshAllCardMeta(); renderStats(); drawOverlay(); updateReadout();
+  immediate ? loadSky() : debounceFetch();
+  syncHash();
+}
+
+function liveZoom(targetFov){
+  state.fov=clampFov(targetFov);
+  drawOverlay(); updateReadout();
+  setImgTransform();
+  debounceFetch();
+  syncHash();
+}
+
+function updateReadout(){
+  $('coordOut').textContent = `RA ${fmtRA(state.ra)} · Dec ${fmtDec(state.dec)}`;
+  $('fovOut').textContent = `${fmtAngle(state.fov)} wide`;
+}
+
+/* ================= POINTER INTERACTION (pan / rotate / pinch) ================= */
+
+const pointers=new Map();
+let mode=null;                 /* 'pan' | 'rotate' | 'pinch' */
+let panStart=null, rotStart=null, pinchStart=null;
+let panX=0, panY=0;
+
+function skyBox(){ return $('skyImg').getBoundingClientRect(); }
+function pointerAngle(x,y){
+  const b=skyBox();
+  return Math.atan2(y-(b.top+b.height/2), x-(b.left+b.width/2))*180/Math.PI;
+}
+function pinchDist(){
+  const p=[...pointers.values()];
+  return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y);
+}
+/* sky coords currently under the centre crosshair, given a live pixel drag */
+function centerFromPan(dx,dy){
+  const W=$('skyImg').clientWidth || S;
+  const scale=state.fov/W;                       /* deg per CSS px */
+  return {
+    dec: clampDec(state.dec + dy*scale),
+    ra:  normRA(state.ra + (dx*scale)/Math.cos(rad(state.dec))),
+  };
+}
+
+function veilUp(){
+  return !$('errBox').classList.contains('hidden') || !$('loadingBox').classList.contains('hidden');
+}
+
+function onDown(e){
+  if(e.target.closest('.skyctl')) return;        /* let the buttons work */
+  if(veilUp()) return;
+  $('sky').setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+  if(pointers.size===2){ startPinch(); return; }
+  if(pointers.size>2) return;
+
+  if(e.button===2){ startRotate(e.clientX,e.clientY); }
+  else { startPan(e.clientX,e.clientY); }
+  $('sky').classList.add('busy');
+}
+function startPan(x,y){
+  mode='pan';
+  panStart={x,y};
+}
+function startRotate(x,y){
+  mode='rotate';
+  rotStart={ angle:pointerAngle(x,y),
+    rots:new Map(state.rigs.filter(r=>r.vis).map(r=>[r.id, r.rot])) };
+}
+function startPinch(){
+  mode='pinch';
+  pinchStart={ dist:pinchDist(), fov:state.fov };
+}
+
+function onMove(e){
+  if(!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+  if(mode==='pinch'){
+    const d=pinchDist();
+    if(d>0){ state.fov=clampFov(pinchStart.fov*pinchStart.dist/d); drawOverlay(); updateReadout(); setImgTransform(); }
+  }else if(mode==='pan'){
+    panX=e.clientX-panStart.x; panY=e.clientY-panStart.y;
+    setImgTransform();
+    const c=centerFromPan(panX,panY);
+    $('coordOut').textContent=`RA ${fmtRA(c.ra)} · Dec ${fmtDec(c.dec)}`;
+  }else if(mode==='rotate'){
+    /* frame follows the pointer: clockwise sweep rotates frames clockwise */
+    const delta=pointerAngle(e.clientX,e.clientY)-rotStart.angle;
+    rotStart.rots.forEach((startRot,id)=>{
+      const rig=state.rigs.find(x=>x.id===id);
+      if(!rig) return;
+      rig.rot=norm360(startRot-delta);
+      const card=document.querySelector(`.rig[data-id="${id}"]`);
+      if(card) card.querySelector('.rot').value=Math.round(rig.rot);
+    });
+    drawOverlay();
+  }
+}
+
+function onUp(e){
+  if(!pointers.has(e.pointerId)) return;
+  pointers.delete(e.pointerId);
+  try{ $('sky').releasePointerCapture(e.pointerId); }catch(_){}
+
+  if(mode==='pan'){
+    const c=centerFromPan(panX,panY);
+    state.ra=c.ra; state.dec=c.dec;
+    if(panX||panY) loadSky();                    /* image reset happens on load */
+    mode=null; updateReadout(); syncHash();
+  }else if(mode==='rotate'){
+    mode=null; syncHash();
+  }else if(mode==='pinch'){
+    if(pointers.size<2){ loadSky(); mode=null; pinchStart=null; }
+  }
+  if(pointers.size===0) $('sky').classList.remove('busy');
+}
+
+/* ================= SHARE / PERSIST (URL hash) ================= */
+
+let hashTimer=null;
+function syncHash(){
+  clearTimeout(hashTimer);
+  hashTimer=setTimeout(()=>{
+    const cfg={
+      t:state.targetId, ra:+state.ra.toFixed(4), dec:+state.dec.toFixed(4),
+      f:+state.fov.toFixed(4), s:state.survey, L:state.showLabels?1:0,
+      r:state.rigs.map(r=>({
+        s:r.scope, cfl:r.cfl, cap:r.cap, x:r.red,
+        c:r.cam, cw:r.cw, ch:r.ch, cp:r.cpx,
+        a:Math.round(r.rot), v:r.vis?1:0,
+      })),
+    };
+    history.replaceState(null,'','#cfg='+encodeURIComponent(JSON.stringify(cfg)));
+  },250);
+}
+function loadHash(){
+  if(!location.hash.startsWith('#cfg=')) return false;
+  try{
+    const cfg=JSON.parse(decodeURIComponent(location.hash.slice(5)));
+    const ra=+cfg.ra, dec=+cfg.dec;
+    if(!Number.isFinite(ra) || !Number.isFinite(dec)) return false;
+    if(!Array.isArray(cfg.r) || !cfg.r.length) return false;
+    state.targetId=cfg.t||'custom';
+    state.ra=ra; state.dec=dec;
+    state.fov=clampFov(+cfg.f||4); state.survey=cfg.s||state.survey;
+    state.showLabels=!!cfg.L;
+    cfg.r.forEach(x=>{
+      state.rigs.push(newRig({
+        scope:x.s, cfl:x.cfl, cap:x.cap, red:+x.x||1,
+        cam:x.c, cw:x.cw, ch:x.ch, cpx:x.cp,
+        rot:+x.a||0, vis:x.v!==0,
+      }));
+    });
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ================= WIRING ================= */
+
+function init(){
+  buildStatic();
+
+  const fromHash = loadHash();
+  if(!fromHash){
+    state.rigs=[];
+    defaultRigs().forEach(d=>state.rigs.push(newRig(d)));
+  }
+  fetchedFov=state.fov; fetchedRA=state.ra; fetchedDec=state.dec;
+
+  $('targetSel').value = TARGETS.some(t=>t.id===state.targetId) ? state.targetId : 'custom';
+  $('customTarget').classList.toggle('hidden', $('targetSel').value!=='custom');
+  if($('targetSel').value==='custom'){ $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3); }
+  $('surveySel').value=state.survey;
+  $('labelsChk').checked=state.showLabels;
+
+  state.rigs.forEach(buildRigCard);
+
+  /* --- sky controls --- */
+  $('targetSel').addEventListener('change', e=>{
+    const v=e.target.value;
+    if(v==='custom'){
+      $('customTarget').classList.remove('hidden');
+      $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3);
+      state.targetId='custom'; syncHash();
+      return;
+    }
+    $('customTarget').classList.add('hidden');
+    const t=TARGETS.find(t=>t.id===v);
+    state.targetId=t.id;
+    applyFit(true, true);                /* recenter on target + fit zoom */
+  });
+  $('goCustom').addEventListener('click', ()=>{
+    const ra=parseAngle($('raIn').value, true);
+    const dec=parseAngle($('decIn').value, false);
+    if(ra===null || dec===null || ra<0 || ra>=360 || dec<-90 || dec>90){
+      alert('Could not read those coordinates. RA accepts decimal degrees (83.82) or hours (5h35m17s); Dec accepts decimal degrees or D M S.');
+      return;
+    }
+    state.targetId='custom'; state.ra=ra; state.dec=dec;
+    applyFit(false, true);
+  });
+  $('surveySel').addEventListener('change', e=>{ state.survey=e.target.value; loadSky(); syncHash(); });
+
+  /* --- zoom / fit --- */
+  $('zoomIn').addEventListener('click',  ()=>liveZoom(state.fov/ZOOM_STEP));
+  $('zoomOut').addEventListener('click', ()=>liveZoom(state.fov*ZOOM_STEP));
+  $('fitBtn').addEventListener('click',  ()=>applyFit(true, true));
+
+  /* --- rigs --- */
+  $('addRig').addEventListener('click', ()=>{
+    const r=newRig(); state.rigs.push(r); buildRigCard(r); applyFit(false, true);
+  });
+  $('labelsChk').addEventListener('change', e=>{ state.showLabels=e.target.checked; drawOverlay(); syncHash(); });
+
+  /* --- misc --- */
+  $('retryBtn').addEventListener('click', loadSky);
+  $('nightBtn').addEventListener('click', ()=>document.documentElement.classList.toggle('night'));
+  $('shareBtn').addEventListener('click', e=>{
+    syncHash();
+    const btn=e.currentTarget;
+    setTimeout(async ()=>{
+      try{ await navigator.clipboard.writeText(location.href); btn.textContent='Link copied'; }
+      catch(err){ window.prompt('Copy this link:', location.href); }
+      setTimeout(()=>btn.textContent='Copy share link', 1600);
+    }, 300);
+  });
+  $('resetBtn').addEventListener('click', ()=>{
+    history.replaceState(null,'',location.pathname);
+    location.reload();
+  });
+
+  /* --- pointer + wheel on the sky --- */
+  const sky=$('sky');
+  sky.addEventListener('contextmenu', e=>e.preventDefault());
+  sky.addEventListener('pointerdown', onDown);
+  sky.addEventListener('pointermove', onMove);
+  sky.addEventListener('pointerup', onUp);
+  sky.addEventListener('pointercancel', onUp);
+  sky.addEventListener('wheel', e=>{
+    if(veilUp()) return;
+    e.preventDefault();
+    liveZoom(e.deltaY<0 ? state.fov/ZOOM_STEP : state.fov*ZOOM_STEP);
+  }, {passive:false});
+
+  /* --- first paint --- */
+  refreshAllCardMeta();
+  renderStats();
+  if(!fromHash) applyFit(false, true);   /* size view to the default rig */
+  else { drawOverlay(); updateReadout(); loadSky(); }
+}
+
+init();
+</script>
+</body>
+</html>

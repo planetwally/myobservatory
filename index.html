@@ -107,6 +107,23 @@
   .footer-copy { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.1em; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s, transform 0.8s; }
+  /* ── FOV Viewer release banner ── */
+  .release { padding-top: 2rem; padding-bottom: 2rem; }
+  .release-card { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; gap: 2.5rem; align-items: center; background: linear-gradient(135deg, rgba(201,168,76,0.055), rgba(74,124,173,0.05)); border: 1px solid var(--border-glow); border-radius: 14px; padding: 2.2rem 2.6rem; }
+  .release-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 55% 130% at 88% 50%, rgba(74,124,173,0.10), transparent 70%); }
+  .release-body { position: relative; z-index: 1; }
+  .release-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; font-weight: 400; letter-spacing: 0.26em; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.6rem; }
+  .release-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-gold); box-shadow: 0 0 8px var(--accent-gold); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .release-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.15; }
+  .release-title em { font-style: italic; color: var(--accent-blue); }
+  .release-desc { font-size: 0.92rem; font-weight: 300; color: var(--text-nebula); max-width: 56ch; margin-top: 0.9rem; line-height: 1.75; }
+  .cta-button { display: inline-flex; align-items: center; gap: 0.55rem; margin-top: 1.6rem; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-void); background: var(--accent-gold); text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 6px; border: 1px solid var(--accent-gold); transition: background 0.3s, transform 0.3s, box-shadow 0.3s; }
+  .cta-button:hover { background: #dab84f; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(201,168,76,0.18); }
+  .cta-button .arrow { transition: transform 0.3s; }
+  .cta-button:hover .arrow { transform: translateX(4px); }
+  .release-art { position: relative; z-index: 1; flex-shrink: 0; }
+  @media (max-width: 768px) { .release-card { grid-template-columns: 1fr; padding: 1.8rem 1.6rem; gap: 1.4rem; } .release-art { display: none; } }
   .fade-in.visible { opacity: 1; transform: translateY(0); }
   @media (max-width: 1024px) { .rigs-grid { grid-template-columns: repeat(2, 1fr); } .equip-summary { grid-template-columns: repeat(2, 1fr); } .gallery-grid { grid-template-columns: repeat(2, 1fr); } .gallery-item.featured { grid-column: span 2; aspect-ratio: 16/9; } }
   @media (max-width: 768px) { nav { padding: 1rem 1.5rem; } .nav-links { display: none; } .about-grid { grid-template-columns: 1fr; } .rigs-grid { grid-template-columns: 1fr; } .equip-summary { grid-template-columns: 1fr 1fr; } .gallery-grid { grid-template-columns: 1fr; } .gallery-item.featured { grid-column: span 1; aspect-ratio: 16/9; } section { padding: 4rem 1.5rem; } }
@@ -129,6 +146,7 @@
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
     <li><a href="#gallery">Gallery</a></li>
+    <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="#rigs">Imaging Rigs</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
@@ -159,6 +177,34 @@
       </div>
     </div>
     <div class="about-image"><img src="images/m45-2.jpg" alt="M45: The Pleiades (Alternate View)"></div>
+  </div>
+</section>
+<section id="fov" class="fade-in release">
+  <div class="release-card">
+    <div class="release-body">
+      <div class="release-tag">New &middot; Observatory Tools</div>
+      <h2 class="release-title">Introducing the <em>Field of View Viewer</em></h2>
+      <p class="release-desc">Plan your framing before you ever uncap the scope. Stack any telescope, reducer and camera combination and watch each sensor's frame fall over real survey imagery of the night sky &mdash; drag to pan, scroll to zoom, right-drag to rotate, and share a link to any setup. Built for our imaging community.</p>
+      <a href="fov.html" class="cta-button">Launch the FOV Viewer <span class="arrow">&rarr;</span></a>
+    </div>
+    <svg class="release-art" width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="1" width="218" height="148" rx="9" fill="#0a0c12" stroke="rgba(255,255,255,0.06)"/>
+      <circle cx="38" cy="32" r="1.3" fill="#e8e4df" opacity="0.75"/>
+      <circle cx="180" cy="44" r="1" fill="#e8e4df" opacity="0.55"/>
+      <circle cx="150" cy="118" r="1.4" fill="#e8e4df" opacity="0.8"/>
+      <circle cx="62" cy="112" r="0.9" fill="#e8e4df" opacity="0.5"/>
+      <circle cx="196" cy="100" r="1.1" fill="#e8e4df" opacity="0.6"/>
+      <circle cx="92" cy="40" r="0.8" fill="#9a958d" opacity="0.5"/>
+      <circle cx="118" cy="96" r="2.2" fill="#4a7cad" opacity="0.35"/>
+      <rect x="52" y="38" width="116" height="74" rx="2" fill="none" stroke="#c9a84c" stroke-width="1.5" opacity="0.9"/>
+      <text x="56" y="50" fill="#c9a84c" font-family="'JetBrains Mono',monospace" font-size="7" opacity="0.85">RedCat 51</text>
+      <g transform="rotate(-13 110 75)">
+        <rect x="70" y="54" width="80" height="44" rx="2" fill="none" stroke="#4a7cad" stroke-width="1.5"/>
+        <text x="73" y="64" fill="#4a7cad" font-family="'JetBrains Mono',monospace" font-size="7">ASI2600</text>
+      </g>
+      <line x1="103" y1="75" x2="117" y2="75" stroke="#e8e4df" stroke-width="1" opacity="0.5"/>
+      <line x1="110" y1="68" x2="110" y2="82" stroke="#e8e4df" stroke-width="1" opacity="0.5"/>
+    </svg>
   </div>
 </section>
 <section id="gallery" class="fade-in">
@@ -416,6 +462,7 @@
     <a href="mailto:inquiries@myobservatory.org">Email</a>
     <a href="https://www.instagram.com/" target="_blank">Instagram</a>
     <a href="#gallery">Gallery</a>
+    <a href="fov.html">FOV Viewer</a>
     <a href="#rigs">Rigs</a>
   </div>
   <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
