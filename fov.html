@@ -312,6 +312,32 @@ const SCOPES = [
   {name:'Samyang 135mm f/2',       short:'Samyang 135',ap:67,  fl:135},
   {name:'Celestron RASA 8',        short:'RASA 8',     ap:203, fl:400},
   {name:'Celestron C8 / EdgeHD 8', short:'C8',         ap:203, fl:2032},
+  /* 2026 expansion — appended at the end so existing share links keep working */
+  {name:'Askar 65PHQ',             short:'65PHQ',      ap:65,  fl:416},
+  {name:'Askar 71F',               short:'71F',        ap:71,  fl:490},
+  {name:'Askar 80PHQ',             short:'80PHQ',      ap:80,  fl:600},
+  {name:'Askar 107PHQ',            short:'107PHQ',     ap:107, fl:749},
+  {name:'Askar FRA500',            short:'FRA500',     ap:90,  fl:500},
+  {name:'Askar FRA600',            short:'FRA600',     ap:108, fl:600},
+  {name:'Askar SQA106',            short:'SQA106',     ap:106, fl:700},
+  {name:'WO GT71',                 short:'GT71',       ap:71,  fl:420},
+  {name:'WO GT81 IV',              short:'GT81',       ap:81,  fl:478},
+  {name:'WO FLT91',                short:'FLT91',      ap:91,  fl:540},
+  {name:'Sky-Watcher Esprit 80',   short:'Esprit 80',  ap:80,  fl:400},
+  {name:'Sky-Watcher Esprit 120',  short:'Esprit 120', ap:120, fl:840},
+  {name:'Sky-Watcher Evostar 72ED',short:'Evostar 72', ap:72,  fl:420},
+  {name:'Sky-Watcher ED80',        short:'ED80',       ap:80,  fl:600},
+  {name:'Sky-Watcher 130PDS',      short:'130PDS',     ap:130, fl:650},
+  {name:'Sky-Watcher Quattro 8',   short:'Quattro 8',  ap:200, fl:800},
+  {name:'Takahashi Epsilon-130D',  short:'E-130D',     ap:130, fl:430},
+  {name:'Takahashi FC-100DF',      short:'FC-100DF',   ap:100, fl:740},
+  {name:'Apertura 75Q',            short:'75Q',        ap:75,  fl:405},
+  {name:'SVBONY SV550 80',         short:'SV550 80',   ap:80,  fl:480},
+  {name:'Celestron C6',            short:'C6',         ap:150, fl:1500},
+  {name:'Celestron C9.25',         short:'C9.25',      ap:235, fl:2350},
+  {name:'Celestron C11',           short:'C11',        ap:280, fl:2800},
+  {name:'Celestron RASA 11',       short:'RASA 11',    ap:279, fl:620},
+  {name:'Meade LX85 6" ACF',       short:'LX85 ACF',   ap:152, fl:1524},
 ];
 
 /* w/h = sensor size in mm, pw/ph = pixel count, px = pixel pitch in µm */
@@ -493,11 +519,14 @@ function buildStatic(){
 /* ================= RIG CARDS ================= */
 
 function fillScopeSelect(sel, val){
-  SCOPES.forEach((s,i)=>{
-    const o=document.createElement('option'); o.value=i;
-    o.textContent=`${s.name} — ${s.fl}mm f/${(s.fl/s.ap).toFixed(1).replace(/\.0$/,'')}`;
-    sel.appendChild(o);
-  });
+  /* display sorted by name; option values stay as array indices so share links survive DB growth */
+  SCOPES.map((s,i)=>({s,i}))
+    .sort((a,b)=>a.s.name.localeCompare(b.s.name))
+    .forEach(({s,i})=>{
+      const o=document.createElement('option'); o.value=i;
+      o.textContent=`${s.name} — ${s.fl}mm f/${(s.fl/s.ap).toFixed(1).replace(/\.0$/,'')}`;
+      sel.appendChild(o);
+    });
   const o=document.createElement('option'); o.value='custom'; o.textContent='Custom focal length…';
   sel.appendChild(o);
   sel.value = String(val);
