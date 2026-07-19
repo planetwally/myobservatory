@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sky Conditions Planner — Washington Valley Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{
+    --bg:#0a0f1a;          /* zenith */
+    --panel:#101725;       /* panel */
+    --panel-2:#0d1320;
+    --line:#223047;
+    --text:#e8ecf4;        /* starlight */
+    --muted:#8a96ab;
+    --amber:#f2b33d;       /* sodium lamp */
+    --amber-dim:#c98f23;
+    --danger:#f87171;
+    --good:#3a8a7a;
+    --fair:#c9a84c;
+    --poor:#b35a3a;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font:15px/1.5 "Inter",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;z-index:1;
+    background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:3px 3px;
+  }
+  header{
+    display:flex;align-items:center;gap:16px;
+    padding:18px 26px;border-bottom:1px solid var(--line);position:relative;z-index:2;
+  }
+  .home-link{
+    font:13px/1 "Inter",system-ui,sans-serif;color:var(--muted);text-decoration:none;
+    letter-spacing:.03em;white-space:nowrap;transition:color .15s;
+  }
+  .home-link:hover{color:var(--amber)}
+  .wordmark h1{font:700 22px/1.1 "Bricolage Grotesque",sans-serif;letter-spacing:.2px}
+  .wordmark p{color:var(--muted);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+  .spacer{flex:1}
+  button{
+    font:inherit;color:var(--text);cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:7px 13px;transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:var(--amber-dim)}
+  button:disabled{opacity:.45;cursor:default}
+  button:focus-visible, select:focus-visible, input:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+  button.primary{background:var(--amber);border-color:var(--amber);color:#1a1304;font-weight:600}
+  button.primary:hover{background:#ffc44f}
+  main{
+    display:grid;grid-template-columns:370px minmax(0,1fr);
+    gap:22px;padding:22px 26px 30px;max-width:1500px;margin:0 auto;position:relative;z-index:2;
+  }
+  aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 15px}
+  .card h2{
+    font:600 11.5px/1 "Inter",sans-serif;color:var(--muted);
+    letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px;
+  }
+  label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  select,input[type=number],input[type=text]{
+    width:100%;margin-top:4px;
+    background:var(--panel-2);color:var(--text);
+    border:1px solid var(--line);border-radius:7px;
+    padding:7px 9px;font:inherit;font-size:14px;
+  }
+  select:hover,input:hover{border-color:#33486b}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  .searchrow{display:flex;gap:8px;margin-top:4px}
+  .searchrow input{flex:1;margin-top:0}
+  .searchrow button{padding:7px 14px;flex-shrink:0}
+  #locStatus{margin-top:7px;font-size:12.5px;line-height:1.45;display:none}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .chips button{font-size:12.5px;padding:5px 10px;border-radius:99px}
+  .tonight{font:13px/1.9 "IBM Plex Mono",monospace;color:var(--muted)}
+  .tonight b{color:var(--text);font-weight:500}
+  .tonight .lbl{display:inline-block;min-width:86px;color:var(--muted)}
+
+  /* ---------- map viewport ---------- */
+  .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .mapbox{
+    position:relative;border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;background:#05080f;
+  }
+  #map{height:480px;background:#05080f}
+  .leaflet-container{background:#05080f;font:12px "Inter",sans-serif}
+  .leaflet-control-attribution{
+    background:rgba(13,19,32,.8) !important;color:var(--muted) !important;
+    font:10.5px "Inter",sans-serif !important;
+  }
+  .leaflet-control-attribution a{color:var(--muted) !important}
+  .leaflet-control-zoom a{
+    background:rgba(13,19,32,.85) !important;color:var(--text) !important;
+    border-color:var(--line) !important;
+  }
+  .mapbox::after{ /* viewfinder corner ticks */
+    content:"";position:absolute;inset:10px;pointer-events:none;border-radius:4px;z-index:500;
+    background:
+      linear-gradient(var(--amber),var(--amber)) top left/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) top left/1.5px 18px,
+      linear-gradient(var(--amber),var(--amber)) top right/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) top right/1.5px 18px,
+      linear-gradient(var(--amber),var(--amber)) bottom left/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) bottom left/1.5px 18px,
+      linear-gradient(var(--amber),var(--amber)) bottom right/18px 1.5px,
+      linear-gradient(var(--amber),var(--amber)) bottom right/1.5px 18px;
+    background-repeat:no-repeat;opacity:.85;
+  }
+  .timebar{
+    display:flex;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 14px;
+  }
+  .timebar button{width:38px;height:34px;padding:0;font-size:16px;line-height:1;flex-shrink:0}
+  .timebar input[type=range]{flex:1;accent-color:var(--amber);min-width:0}
+  #frameLabel{font:13px "IBM Plex Mono",monospace;color:var(--text);white-space:nowrap;min-width:190px;text-align:right}
+  #frameLabel small{color:var(--muted)}
+  .readout{
+    display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
+    font:13px "IBM Plex Mono",monospace;color:var(--muted);padding:0 4px;
+  }
+  .readout b{color:var(--text);font-weight:500}
+
+  /* ---------- six hour strip ---------- */
+  .sixgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .hourcard{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    padding:10px 10px 11px;font-family:"IBM Plex Mono",monospace;
+  }
+  .hourcard .hr{font-size:12px;color:var(--muted);letter-spacing:.05em}
+  .hourcard .cl{font-size:24px;font-weight:500;margin:4px 0 2px}
+  .hourcard .cl small{font-size:12px;color:var(--muted)}
+  .lmh{display:flex;flex-direction:column;gap:3px;margin:7px 0}
+  .lmh .bar{height:4px;border-radius:2px;background:var(--line);position:relative;overflow:hidden}
+  .lmh .bar i{position:absolute;inset:0;right:auto;border-radius:2px}
+  .lmh .lo i{background:var(--good)}
+  .lmh .mi i{background:#4a7cad}
+  .lmh .hi i{background:#8a7cbf}
+  .hourcard .sc{font-size:11.5px;color:var(--muted);line-height:1.7}
+  .hourcard .sc b{color:var(--text);font-weight:500}
+  .dot-on{color:var(--amber)}
+  .dot-off{color:#3a465e}
+
+  /* ---------- chart ---------- */
+  .chartwrap{overflow-x:auto}
+  #chart{display:block;width:100%;min-width:720px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font:11.5px "IBM Plex Mono",monospace;color:var(--muted);margin-top:8px;padding:0 4px}
+  .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:2px;margin-right:5px}
+
+  .veil{
+    display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;
+    font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--muted);
+    text-align:center;padding:26px;
+  }
+  .veil .spin{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--line);border-top-color:var(--amber);
+    animation:spin .9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){ .veil .spin{animation:none} }
+  .credit{font-size:12px;color:var(--muted);padding:0 4px}
+  .credit a{color:var(--muted)}
+
+  html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
+
+  @media (max-width:1020px){
+    main{grid-template-columns:1fr}
+    #map{height:380px}
+    .sixgrid{grid-template-columns:repeat(3,1fr)}
+    #frameLabel{min-width:0}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home-link" href="index.html" title="Back to Washington Valley Observatory">&larr; Observatory</a>
+  <div class="wordmark">
+    <h1>Sky Conditions Planner</h1>
+    <p>Washington Valley Observatory</p>
+  </div>
+  <div class="spacer"></div>
+  <a class="home-link" href="fov.html" title="Frame your target in the FOV Viewer">FOV Viewer &rarr;</a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+</header>
+
+<main>
+  <aside>
+    <div class="card">
+      <h2>Location</h2>
+      <label>Find a place
+        <div class="searchrow">
+          <input type="text" id="locIn" placeholder="town, address, site name" autocomplete="off" spellcheck="false">
+          <button id="locBtn">Go</button>
+        </div>
+      </label>
+      <p class="mono" id="locStatus"></p>
+      <div class="chips">
+        <button data-lat="40.797" data-lon="-74.482" data-name="WVO — Morristown NJ">WVO home</button>
+        <button data-lat="41.191" data-lon="-74.823" data-name="Stokes State Forest">Stokes dark site</button>
+        <button id="geoBtn">Use my location</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label>Latitude (°N) <input type="number" id="latIn" class="mono" step="0.001" min="-90" max="90"></label>
+        <label>Longitude (°E) <input type="number" id="lonIn" class="mono" step="0.001" min="-180" max="180"></label>
+      </div>
+      <p class="hint">Click anywhere on the map to move the site marker. Forecasts follow the marker.</p>
+      <button id="shareBtn" style="width:100%;margin-top:10px">Copy share link</button>
+    </div>
+
+    <div class="card">
+      <h2>Cloud layer</h2>
+      <label>Overlay
+        <select id="layerSel">
+          <option value="auto" selected>Cloud forecast — auto model</option>
+          <option value="hrdps">Cloud forecast — HRDPS 2.5 km (N. America · hourly)</option>
+          <option value="gdps">Cloud forecast — GDPS 15 km (global · 3-hourly)</option>
+          <option value="sat">Satellite infrared — recent (past 2 h)</option>
+          <option value="radar">Radar + short nowcast</option>
+        </select>
+      </label>
+      <label>Overlay opacity
+        <input type="range" id="opacityIn" min="20" max="100" value="70" style="width:100%;accent-color:var(--amber)">
+      </label>
+      <p class="hint" id="layerHint">White shading = forecast cloud cover. Slide the time bar under the map to scrub the model into the future.</p>
+    </div>
+
+    <div class="card">
+      <h2>Tonight at this site</h2>
+      <div class="tonight" id="tonightBox">Computing…</div>
+    </div>
+  </aside>
+
+  <section class="viewwrap">
+    <div class="mapbox"><div id="map"></div></div>
+
+    <div class="timebar">
+      <button id="playBtn" title="Animate through frames">&#9654;</button>
+      <button id="stepBack" title="Previous frame">&#8722;</button>
+      <input type="range" id="timeSlider" min="0" max="0" value="0" step="1">
+      <button id="stepFwd" title="Next frame">+</button>
+      <span id="frameLabel">—</span>
+    </div>
+
+    <div class="readout">
+      <span>SITE <b id="siteOut">—</b></span>
+      <span>LAYER <b id="layerOut">—</b></span>
+      <span>FRAME <b id="frameOut">—</b></span>
+    </div>
+
+    <div class="card">
+      <h2>Next 6 hours</h2>
+      <div id="sixBox"><div class="veil"><div class="spin"></div><div>Fetching point forecast…</div></div></div>
+    </div>
+
+    <div class="card chartwrap">
+      <h2>48-hour outlook — clouds, darkness &amp; moon</h2>
+      <div id="chartBox"><div class="veil"><div class="spin"></div><div>Building chart…</div></div></div>
+      <div class="legend">
+        <span><i style="background:rgba(232,236,244,.7)"></i>total cloud</span>
+        <span><i style="background:var(--good)"></i>low</span>
+        <span><i style="background:#4a7cad"></i>mid</span>
+        <span><i style="background:#8a7cbf"></i>high</span>
+        <span><i style="background:rgba(16,24,48,.9)"></i>astro darkness</span>
+        <span><i style="background:var(--amber);opacity:.6"></i>moon above horizon</span>
+        <span><i style="background:var(--good)"></i><i style="background:var(--fair)"></i><i style="background:var(--poor)"></i>hourly imaging score</span>
+      </div>
+    </div>
+
+    <p class="credit">
+      Point forecasts &amp; geocoding by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0).
+      Cloud-forecast map layers from the <a href="https://eccc-msc.github.io/open-data/" target="_blank" rel="noopener">MSC GeoMet</a> service, Environment and Climate Change Canada.
+      Satellite &amp; radar frames by <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>.
+      Basemap &copy; OpenStreetMap contributors &copy; CARTO.
+      Seeing and transparency are heuristic estimates from jet-stream winds, humidity and aerosol depth — treat them as guidance, not gospel.
+    </p>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+'use strict';
+
+/* ================= CONFIG — edit freely ================= */
+
+const PRESET_DEFAULT = {lat:40.797, lon:-74.482, name:'WVO — Morristown NJ'};
+const GEOMET = 'https://geo.weather.gc.ca/geomet';
+const WMS_LAYERS = { hrdps:'HRDPS.CONTINENTAL_NT', gdps:'GDPS.ETA_NT' };
+/* HRDPS coverage box (rough): pick it automatically inside North America */
+const HRDPS_BOX = {latMin:18, latMax:86, lonMin:-172, lonMax:-48};
+const RAINVIEWER_INDEX = 'https://api.rainviewer.com/public/weather-maps.json';
+const OM_FORECAST = 'https://api.open-meteo.com/v1/forecast';
+const OM_AIR = 'https://air-quality-api.open-meteo.com/v1/air-quality';
+const OM_GEO = 'https://geocoding-api.open-meteo.com/v1/search';
+const PLAY_MS = 650;
+
+/* ================= STATE ================= */
+
+const state = {
+  lat:PRESET_DEFAULT.lat, lon:PRESET_DEFAULT.lon, name:PRESET_DEFAULT.name,
+  zoom:7, layer:'auto', opacity:0.7,
+};
+let map, marker, overlay=null;
+let frames=[], frameIdx=0, playTimer=null;
+let HOURS=[];                       /* merged hourly point data */
+
+const $ = id => document.getElementById(id);
+const rad = d => d*Math.PI/180;
+const norm360 = a => ((a % 360) + 360) % 360;
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const cToF = c => c*9/5+32;
+const kmhToMph = k => k*0.621371;
+
+/* ================= SUN & MOON (compact ephemeris, suncalc-style) ================= */
+
+const OBLIQ = rad(23.4397);
+function toDays(date){ return date.getTime()/86400000 - 10957.5; }   /* days since J2000.0 */
+function eclToEq(lon, lat){
+  return {
+    ra: Math.atan2(Math.sin(lon)*Math.cos(OBLIQ) - Math.tan(lat)*Math.sin(OBLIQ), Math.cos(lon)),
+    dec: Math.asin(Math.sin(lat)*Math.cos(OBLIQ) + Math.cos(lat)*Math.sin(OBLIQ)*Math.sin(lon)),
+  };
+}
+function sunCoords(d){
+  const M = rad(357.5291 + 0.98560028*d);
+  const C = rad(1.9148*Math.sin(M) + 0.02*Math.sin(2*M) + 0.0003*Math.sin(3*M));
+  const L = M + C + rad(282.9372);                    /* ecliptic longitude */
+  const eq = eclToEq(L, 0);
+  eq.dist = 149598000;
+  return eq;
+}
+function moonCoords(d){
+  const L = rad(218.316 + 13.176396*d);               /* mean longitude */
+  const M = rad(134.963 + 13.064993*d);               /* mean anomaly */
+  const F = rad(93.272 + 13.229350*d);                /* mean distance */
+  const lon = L + rad(6.289*Math.sin(M));
+  const lat = rad(5.128*Math.sin(F));
+  const eq = eclToEq(lon, lat);
+  eq.dist = 385001 - 20905*Math.cos(M);
+  return eq;
+}
+function siderealRad(d, lonDeg){ return rad(280.16 + 360.9856235*d) + rad(lonDeg); }
+function bodyAlt(eq, date, latDeg, lonDeg){
+  const d = toDays(date);
+  const H = siderealRad(d, lonDeg) - eq.ra;
+  const la = rad(latDeg);
+  return Math.asin(Math.sin(la)*Math.sin(eq.dec) + Math.cos(la)*Math.cos(eq.dec)*Math.cos(H))*180/Math.PI;
+}
+function sunAlt(date, la, lo){ return bodyAlt(sunCoords(toDays(date)), date, la, lo); }
+function moonAlt(date, la, lo){ return bodyAlt(moonCoords(toDays(date)), date, la, lo); }
+function moonIllum(date){
+  const d = toDays(date), s = sunCoords(d), m = moonCoords(d);
+  const phi = Math.acos(clamp(Math.sin(s.dec)*Math.sin(m.dec)
+            + Math.cos(s.dec)*Math.cos(m.dec)*Math.cos(s.ra-m.ra), -1, 1));
+  const inc = Math.atan2(s.dist*Math.sin(phi), m.dist - s.dist*Math.cos(phi));
+  const waxing = Math.sin(s.ra-m.ra) < 0 ? 1 : -1;    /* rough waxing/waning flag */
+  return {frac:(1+Math.cos(inc))/2, waxing:waxing>0};
+}
+/* find times when fn(date) crosses `level`; scans [t0,t1] in `stepMin` steps */
+function findCrossings(fn, t0, t1, level, stepMin){
+  const out=[];
+  let prev=fn(new Date(t0));
+  for(let t=t0+stepMin*60000; t<=t1; t+=stepMin*60000){
+    const cur=fn(new Date(t));
+    if((prev<level)!==(cur<level)){
+      /* refine by bisection to ~30 s */
+      let a=t-stepMin*60000, b=t;
+      for(let i=0;i<8;i++){
+        const mid=(a+b)/2;
+        ((fn(new Date(mid))<level)===(prev<level)) ? a=mid : b=mid;
+      }
+      out.push({t:new Date((a+b)/2), rising:cur>prev});
+    }
+    prev=cur;
+  }
+  return out;
+}
+
+/* ================= SCORES (documented heuristics) ================= */
+
+function seeingScore(h){                      /* 1–5, wind-shear proxy (km/h inputs) */
+  let s=5;
+  if(h.w200!=null){ if(h.w200>=180) s-=2.5; else if(h.w200>=130) s-=1.5; else if(h.w200>=90) s-=0.5; }
+  if(h.w500!=null){ if(h.w500>=70) s-=1; else if(h.w500>=45) s-=0.5; }
+  if(h.gust!=null){ if(h.gust>=45) s-=1; else if(h.gust>=30) s-=0.5; }
+  return clamp(Math.round(s),1,5);
+}
+function transScore(h){                       /* 1–5, aerosol + moisture proxy */
+  let s=5;
+  if(h.aod!=null){ if(h.aod>=0.5) s-=2.5; else if(h.aod>=0.25) s-=1.5; else if(h.aod>=0.12) s-=0.5; }
+  if(h.rh!=null){ if(h.rh>=95) s-=2; else if(h.rh>=85) s-=1; }
+  if(h.temp!=null && h.dew!=null){ const sp=h.temp-h.dew; if(sp<=1.5) s-=1; else if(sp<=3) s-=0.5; }
+  return clamp(Math.round(s),1,5);
+}
+function hourClass(h){                        /* good / fair / poor chip */
+  if(h.pprob!=null && h.pprob>=40) return 'poor';
+  if(h.cloud<=25 && seeingScore(h)>=3 && transScore(h)>=3) return 'good';
+  if(h.cloud<=60) return 'fair';
+  return 'poor';
+}
+
+/* ================= WMS TIME DIMENSION ================= */
+
+/* "2026-07-15T00:00:00Z/2026-07-17T06:00:00Z/PT1H" -> array of ISO strings */
+function parseTimeInterval(dim){
+  const best = dim.split(',').map(s=>s.trim()).filter(Boolean).pop();
+  const parts = best.split('/');
+  if(parts.length<3) return null;
+  const start=Date.parse(parts[0]), end=Date.parse(parts[1]);
+  const pm = parts[2].match(/^PT(?:(\d+)H)?(?:(\d+)M)?$/i);
+  if(!Number.isFinite(start)||!Number.isFinite(end)||!pm) return null;
+  const stepMs = ((+pm[1]||0)*60 + (+pm[2]||0)) * 60000;
+  if(stepMs<=0) return null;
+  const out=[];
+  for(let t=start; t<=end && out.length<400; t+=stepMs) out.push(new Date(t).toISOString().replace('.000',''));
+  return out;
+}
+/* fallback when capabilities can't be read: assume runs cover -6 h … +N h */
+function fallbackModelTimes(stepH, aheadH){
+  const out=[], now=Date.now();
+  let t=Math.floor(now/(stepH*3600000))*(stepH*3600000) - 6*3600000;
+  for(; t<=now+aheadH*3600000; t+=stepH*3600000) out.push(new Date(t).toISOString().replace('.000',''));
+  return out;
+}
+async function fetchModelTimes(wmsLayer, stepH, aheadH){
+  try{
+    const url=`${GEOMET}?service=WMS&version=1.3.0&request=GetCapabilities&LAYERS=${wmsLayer}&t=${Date.now()}`;
+    const res=await fetch(url);
+    if(!res.ok) throw 0;
+    const xml=await res.text();
+    const m=xml.match(/<Dimension[^>]*name="time"[^>]*>([^<]+)<\/Dimension>/i);
+    const all=m && parseTimeInterval(m[1]);
+    if(!all || !all.length) throw 0;
+    const now=Date.now();
+    const win=all.filter(iso=>{ const t=Date.parse(iso); return t>=now-6.5*3600000 && t<=now+aheadH*3600000+1; });
+    return win.length ? win : all;
+  }catch(e){
+    return fallbackModelTimes(stepH, aheadH);
+  }
+}
+
+/* ================= MAP + LAYERS ================= */
+
+function initMap(){
+  map=L.map('map',{zoomControl:true, attributionControl:true}).setView([state.lat,state.lon], state.zoom);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains:'abcd', maxZoom:12, minZoom:3,
+  }).addTo(map);
+  marker=L.circleMarker([state.lat,state.lon],{
+    radius:7, color:'#f2b33d', weight:2, fillColor:'#f2b33d', fillOpacity:.35,
+  }).addTo(map);
+  map.on('click', e=>setLocation(e.latlng.lat, e.latlng.lng, 'Map point', {recenter:false}));
+  map.on('moveend', ()=>{ state.zoom=map.getZoom(); syncHash(); });
+}
+function effectiveModel(){
+  if(state.layer==='hrdps') return 'hrdps';
+  if(state.layer==='gdps') return 'gdps';
+  const inNA = state.lat>=HRDPS_BOX.latMin && state.lat<=HRDPS_BOX.latMax
+            && state.lon>=HRDPS_BOX.lonMin && state.lon<=HRDPS_BOX.lonMax;
+  return inNA ? 'hrdps' : 'gdps';
+}
+function removeOverlay(){ if(overlay){ map.removeLayer(overlay); overlay=null; } }
+async function setLayerMode(){
+  stopPlay();
+  removeOverlay();
+  frames=[]; frameIdx=0;
+  const mode=state.layer;
+  if(mode==='sat' || mode==='radar'){
+    $('layerHint').textContent = mode==='sat'
+      ? 'Infrared brightness = cloud tops over the past two hours (10-minute frames).'
+      : 'Colored echoes = precipitation. The last few frames beyond “now” are a short nowcast.';
+    try{
+      const res=await fetch(RAINVIEWER_INDEX);
+      const j=await res.json();
+      const host=j.host||'https://tilecache.rainviewer.com';
+      if(mode==='sat'){
+        frames=(j.satellite&&j.satellite.infrared||[]).map(f=>({
+          t:new Date(f.time*1000),
+          url:`${host}${f.path}/256/{z}/{x}/{y}/0/0_0.png`,
+        }));
+      }else{
+        const past=(j.radar&&j.radar.past||[]), cast=(j.radar&&j.radar.nowcast||[]);
+        frames=past.concat(cast).map(f=>({
+          t:new Date(f.time*1000),
+          url:`${host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`,
+        }));
+      }
+    }catch(e){ frames=[]; }
+    if(!frames.length){
+      $('frameLabel').textContent='frames unavailable';
+      $('layerOut').textContent = mode==='sat'?'satellite IR':'radar';
+      configureSlider(); return;
+    }
+    overlay=L.tileLayer(frames[0].url,{opacity:state.opacity, maxZoom:12}).addTo(map);
+    frameIdx=frames.length-1;
+    $('layerOut').textContent = mode==='sat'?'satellite IR (RainViewer)':'radar (RainViewer)';
+  }else{
+    const model=effectiveModel();
+    const stepH = model==='hrdps'?1:3, aheadH = model==='hrdps'?48:84;
+    $('layerHint').textContent='White shading = forecast cloud cover. Slide the time bar under the map to scrub the model into the future.';
+    const iso=await fetchModelTimes(WMS_LAYERS[model], stepH, aheadH);
+    frames=iso.map(s=>({t:new Date(s), iso:s}));
+    overlay=L.tileLayer.wms(GEOMET,{
+      layers:WMS_LAYERS[model], format:'image/png', transparent:true,
+      version:'1.3.0', opacity:state.opacity,
+    }).addTo(map);
+    /* start at the frame closest to now */
+    const now=Date.now();
+    frameIdx=0;
+    frames.forEach((f,i)=>{ if(Math.abs(f.t-now)<Math.abs(frames[frameIdx].t-now)) frameIdx=i; });
+    $('layerOut').textContent = model==='hrdps' ? 'HRDPS 2.5 km cloud' : 'GDPS 15 km cloud';
+  }
+  configureSlider();
+  applyFrame();
+}
+function configureSlider(){
+  const s=$('timeSlider');
+  s.max=Math.max(0, frames.length-1);
+  s.value=frameIdx;
+  s.disabled=!frames.length;
+  $('playBtn').disabled=$('stepBack').disabled=$('stepFwd').disabled=!frames.length;
+}
+function relTime(t){
+  const dm=Math.round((t-Date.now())/60000);
+  if(Math.abs(dm)<3) return 'now';
+  const sign=dm>0?'+':'\u2212';
+  const a=Math.abs(dm);
+  return sign + (a>=60 ? Math.round(a/60)+'h' : a+'m');
+}
+function applyFrame(){
+  if(!frames.length || !overlay) return;
+  const f=frames[frameIdx];
+  if(f.iso) overlay.setParams({TIME:f.iso});
+  else overlay.setUrl(f.url);
+  const opts={weekday:'short', hour:'numeric', minute:'2-digit'};
+  $('frameLabel').innerHTML = f.t.toLocaleString([],opts)+' <small>('+relTime(f.t)+')</small>';
+  $('frameOut').textContent = f.t.toLocaleString([],opts)+' \u00b7 '+relTime(f.t);
+  $('timeSlider').value=frameIdx;
+}
+function stopPlay(){ if(playTimer){ clearInterval(playTimer); playTimer=null; $('playBtn').innerHTML='&#9654;'; } }
+function togglePlay(){
+  if(playTimer){ stopPlay(); return; }
+  if(!frames.length) return;
+  $('playBtn').innerHTML='&#10073;&#10073;';
+  playTimer=setInterval(()=>{ frameIdx=(frameIdx+1)%frames.length; applyFrame(); }, PLAY_MS);
+}
+
+/* ================= POINT FORECAST ================= */
+
+let pointToken=0;
+async function loadPoint(){
+  const t=++pointToken;
+  $('sixBox').innerHTML='<div class="veil"><div class="spin"></div><div>Fetching point forecast\u2026</div></div>';
+  $('chartBox').innerHTML='<div class="veil"><div class="spin"></div><div>Building chart\u2026</div></div>';
+  try{
+    const common=`latitude=${state.lat.toFixed(4)}&longitude=${state.lon.toFixed(4)}&timeformat=unixtime&timezone=auto&past_days=1&forecast_days=3`;
+    const wxURL=`${OM_FORECAST}?${common}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_speed_850hPa,wind_speed_500hPa,wind_speed_200hPa`;
+    const aqURL=`${OM_AIR}?${common}&hourly=aerosol_optical_depth`;
+    const [wxRes, aqRes]=await Promise.allSettled([fetch(wxURL), fetch(aqURL)]);
+    if(t!==pointToken) return;
+    if(wxRes.status!=='fulfilled' || !wxRes.value.ok) throw new Error('forecast fetch failed');
+    const wx=await wxRes.value.json();
+    let aodMap=new Map();
+    if(aqRes.status==='fulfilled' && aqRes.value.ok){
+      try{
+        const aq=await aqRes.value.json();
+        (aq.hourly.time||[]).forEach((tt,i)=>aodMap.set(tt, aq.hourly.aerosol_optical_depth[i]));
+      }catch(e){}
+    }
+    const h=wx.hourly;
+    HOURS=h.time.map((tt,i)=>({
+      tt, cloud:h.cloud_cover[i], lo:h.cloud_cover_low[i], mi:h.cloud_cover_mid[i], hi:h.cloud_cover_high[i],
+      temp:h.temperature_2m[i], rh:h.relative_humidity_2m[i], dew:h.dew_point_2m[i],
+      pprob:h.precipitation_probability?h.precipitation_probability[i]:null,
+      wind:h.wind_speed_10m[i], gust:h.wind_gusts_10m[i],
+      w850:h.wind_speed_850hPa?h.wind_speed_850hPa[i]:null,
+      w500:h.wind_speed_500hPa?h.wind_speed_500hPa[i]:null,
+      w200:h.wind_speed_200hPa?h.wind_speed_200hPa[i]:null,
+      aod:aodMap.has(tt)?aodMap.get(tt):null,
+    }));
+    renderSix();
+    renderChart();
+  }catch(e){
+    if(t!==pointToken) return;
+    $('sixBox').innerHTML='<div class="veil"><div>Point forecast unavailable \u2014 check your connection, then move the marker to retry.</div></div>';
+    $('chartBox').innerHTML='<div class="veil"><div>Chart unavailable without forecast data.</div></div>';
+  }
+}
+function dots(n){
+  let s='';
+  for(let i=1;i<=5;i++) s+='<span class="'+(i<=n?'dot-on':'dot-off')+'">\u25cf</span>';
+  return s;
+}
+function renderSix(){
+  const now=Date.now()/1000;
+  const start=HOURS.findIndex(h=>h.tt>=now);
+  if(start<0){ $('sixBox').innerHTML='<div class="veil"><div>No forecast hours available.</div></div>'; return; }
+  const cards=HOURS.slice(start, start+6).map(h=>{
+    const d=new Date(h.tt*1000);
+    return `<div class="hourcard" style="border-top:3px solid var(--${hourClass(h)})">
+      <div class="hr">${d.toLocaleTimeString([], {hour:'numeric'})}</div>
+      <div class="cl">${Math.round(h.cloud)}<small>% cloud</small></div>
+      <div class="lmh">
+        <div class="bar lo"><i style="width:${clamp(h.lo,0,100)}%"></i></div>
+        <div class="bar mi"><i style="width:${clamp(h.mi,0,100)}%"></i></div>
+        <div class="bar hi"><i style="width:${clamp(h.hi,0,100)}%"></i></div>
+      </div>
+      <div class="sc">SEE ${dots(seeingScore(h))}<br>TRA ${dots(transScore(h))}<br>
+        <b>${Math.round(cToF(h.temp))}\u00b0F</b> dew ${Math.round(cToF(h.dew))}\u00b0F<br>
+        wind ${Math.round(kmhToMph(h.wind))}<b>\u2192${Math.round(kmhToMph(h.gust))}</b> mph</div>
+    </div>`;
+  }).join('');
+  $('sixBox').innerHTML='<div class="sixgrid">'+cards+'</div>';
+}
+
+/* ================= 48-HOUR CHART ================= */
+
+function renderChart(){
+  const nowS=Date.now()/1000;
+  const t0=nowS-6*3600, t1=nowS+48*3600;
+  const pts=HOURS.filter(h=>h.tt>=t0-1800 && h.tt<=t1+1800);
+  if(pts.length<4){ $('chartBox').innerHTML='<div class="veil"><div>Not enough hours to chart.</div></div>'; return; }
+  const W=960, H=250, padL=42, padR=10, padT=8, padB=52;
+  const X=t=>padL+(t-t0)/(t1-t0)*(W-padL-padR);
+  const Y=v=>padT+(100-v)/100*(H-padT-padB);
+  let svg='';
+
+  /* darkness + twilight bands (hourly sun altitude, merged runs) */
+  const bands=[];
+  for(let t=t0; t<=t1; t+=1800){
+    const a=sunAlt(new Date(t*1000), state.lat, state.lon);
+    bands.push({t, k: a<-18 ? 'dark' : a<-6 ? 'twi' : 'day'});
+  }
+  let run=null;
+  const flushRun=(end)=>{ if(run && run.k!=='day'){
+    const fill=run.k==='dark' ? 'rgba(16,24,48,0.9)' : 'rgba(26,38,70,0.45)';
+    svg+=`<rect x="${X(run.t).toFixed(1)}" y="${padT}" width="${(X(end)-X(run.t)).toFixed(1)}" height="${H-padT-padB}" fill="${fill}"/>`;
+  } run=null; };
+  bands.forEach(b=>{
+    if(!run){ run=b; return; }
+    if(b.k!==run.k){ flushRun(b.t); run=b; }
+  });
+  flushRun(t1);
+
+  /* moon-above-horizon strip (only while sun is down) */
+  let mrun=null;
+  const moonY=H-padB+8;
+  const flushMoon=(end)=>{ if(mrun){
+    svg+=`<rect x="${X(mrun).toFixed(1)}" y="${moonY}" width="${(X(end)-X(mrun)).toFixed(1)}" height="5" rx="2" fill="var(--amber)" opacity="0.55"/>`;
+  } mrun=null; };
+  for(let t=t0; t<=t1; t+=1800){
+    const up = moonAlt(new Date(t*1000), state.lat, state.lon)>0 && sunAlt(new Date(t*1000), state.lat, state.lon)<0;
+    if(up && mrun==null) mrun=t;
+    if(!up && mrun!=null) flushMoon(t);
+  }
+  if(mrun!=null) flushMoon(t1);
+
+  /* gridlines + labels */
+  [0,25,50,75,100].forEach(v=>{
+    svg+=`<line x1="${padL}" y1="${Y(v)}" x2="${W-padR}" y2="${Y(v)}" stroke="#223047" stroke-width="1" stroke-dasharray="${v?'3 4':'none'}"/>`;
+    svg+=`<text x="${padL-6}" y="${Y(v)+4}" text-anchor="end" fill="#8a96ab" font-size="11" font-family="IBM Plex Mono, monospace">${v}</text>`;
+  });
+  const firstTick=Math.ceil(t0/(6*3600))*6*3600;
+  for(let t=firstTick; t<=t1; t+=6*3600){
+    const d=new Date(t*1000);
+    svg+=`<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${H-padB}" stroke="#223047" stroke-width="1" opacity="0.6"/>`;
+    svg+=`<text x="${X(t)}" y="${H-padB+34}" text-anchor="middle" fill="#8a96ab" font-size="11" font-family="IBM Plex Mono, monospace">${d.toLocaleString([],{weekday:'short', hour:'numeric'})}</text>`;
+  }
+
+  /* cloud area + component lines */
+  const line=(key)=>pts.map((h,i)=>(i?'L':'M')+X(h.tt).toFixed(1)+' '+Y(h[key]).toFixed(1)).join(' ');
+  svg+=`<path d="${line('cloud')} L ${X(pts[pts.length-1].tt).toFixed(1)} ${Y(0)} L ${X(pts[0].tt).toFixed(1)} ${Y(0)} Z" fill="rgba(232,236,244,0.16)"/>`;
+  svg+=`<path d="${line('cloud')}" fill="none" stroke="rgba(232,236,244,0.85)" stroke-width="2"/>`;
+  svg+=`<path d="${line('lo')}" fill="none" stroke="var(--good)" stroke-width="1.3" opacity="0.9"/>`;
+  svg+=`<path d="${line('mi')}" fill="none" stroke="#4a7cad" stroke-width="1.3" opacity="0.9"/>`;
+  svg+=`<path d="${line('hi')}" fill="none" stroke="#8a7cbf" stroke-width="1.3" opacity="0.9"/>`;
+
+  /* hourly imaging-score strip + hover titles */
+  pts.forEach(h=>{
+    const w=(W-padL-padR)/((t1-t0)/3600);
+    const x=X(h.tt)-w/2;
+    const cls=hourClass(h);
+    const col=cls==='good'?'var(--good)':cls==='fair'?'var(--fair)':'var(--poor)';
+    svg+=`<rect x="${Math.max(padL,x).toFixed(1)}" y="${H-padB+16}" width="${w.toFixed(1)}" height="7" fill="${col}" opacity="0.85"/>`;
+    const d=new Date(h.tt*1000);
+    svg+=`<rect x="${Math.max(padL,x).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${H-padT-padB}" fill="transparent">`+
+      `<title>${d.toLocaleString([],{weekday:'short',hour:'numeric'})} \u2014 cloud ${Math.round(h.cloud)}% (L${Math.round(h.lo)} M${Math.round(h.mi)} H${Math.round(h.hi)}) \u00b7 seeing ${seeingScore(h)}/5 \u00b7 transparency ${transScore(h)}/5 \u00b7 ${Math.round(cToF(h.temp))}\u00b0F wind ${Math.round(kmhToMph(h.wind))} mph</title></rect>`;
+  });
+
+  /* now line */
+  svg+=`<line x1="${X(nowS)}" y1="${padT}" x2="${X(nowS)}" y2="${H-padB}" stroke="var(--amber)" stroke-width="1.5"/>`;
+  svg+=`<text x="${X(nowS)+4}" y="${padT+12}" fill="var(--amber)" font-size="11" font-family="IBM Plex Mono, monospace">now</text>`;
+
+  $('chartBox').innerHTML=`<svg id="chart" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="48 hour cloud and darkness chart">${svg}</svg>`;
+}
+
+/* ================= TONIGHT CARD ================= */
+
+function fmtT(d){ return d ? d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '\u2014'; }
+function renderTonight(){
+  const la=state.lat, lo=state.lon;
+  const now=Date.now();
+  const sunA=d=>sunAlt(d, la, lo);
+  const moonA=d=>moonAlt(d, la, lo);
+  const t0=now-6*3600000, t1=now+30*3600000;
+  const sunset   =findCrossings(sunA, t0, t1, -0.833, 4).filter(c=>!c.rising)[0];
+  const sunrise  =findCrossings(sunA, (sunset?sunset.t.getTime():now), t1, -0.833, 4).filter(c=>c.rising)[0];
+  const darkStart=findCrossings(sunA, t0, t1, -18, 4).filter(c=>!c.rising)[0];
+  const darkEnd  =findCrossings(sunA, (darkStart?darkStart.t.getTime():now), t1, -18, 4).filter(c=>c.rising)[0];
+  const moonEv   =findCrossings(moonA, now-12*3600000, t1, 0.125, 4);
+  const nextRise =moonEv.filter(c=>c.rising && c.t.getTime()>now)[0];
+  const nextSet  =moonEv.filter(c=>!c.rising && c.t.getTime()>now)[0];
+  const mi=moonIllum(new Date());
+  const moonUpNow=moonA(new Date(now))>0;
+  let moonLine=Math.round(mi.frac*100)+'% '+(mi.waxing?'waxing':'waning');
+  moonLine+= moonUpNow
+    ? ' \u00b7 up now'+(nextSet?', sets '+fmtT(nextSet.t):'')
+    : (nextRise?' \u00b7 rises '+fmtT(nextRise.t):' \u00b7 down');
+  $('tonightBox').innerHTML=
+    '<div><span class="lbl">Sunset</span><b>'+fmtT(sunset&&sunset.t)+'</b></div>'+
+    '<div><span class="lbl">Astro dark</span><b>'+fmtT(darkStart&&darkStart.t)+' \u2013 '+fmtT(darkEnd&&darkEnd.t)+'</b></div>'+
+    '<div><span class="lbl">Sunrise</span><b>'+fmtT(sunrise&&sunrise.t)+'</b></div>'+
+    '<div><span class="lbl">Moon</span><b>'+moonLine+'</b></div>';
+}
+
+/* ================= LOCATION ================= */
+
+let pointDebounce=null;
+function setLocation(lat, lon, name, opts={}){
+  state.lat=clamp(+lat,-89.9,89.9);
+  state.lon=clamp(+lon,-180,180);
+  state.name=name||'Custom site';
+  marker.setLatLng([state.lat,state.lon]);
+  if(opts.recenter!==false) map.setView([state.lat,state.lon], Math.max(map.getZoom(), 6));
+  $('latIn').value=state.lat.toFixed(3);
+  $('lonIn').value=state.lon.toFixed(3);
+  $('siteOut').textContent=state.name+' \u00b7 '+state.lat.toFixed(3)+'\u00b0, '+state.lon.toFixed(3)+'\u00b0';
+  renderTonight();
+  clearTimeout(pointDebounce);
+  pointDebounce=setTimeout(loadPoint, 350);
+  if(state.layer==='auto'){
+    /* model may flip between HRDPS and GDPS when the marker crosses coverage */
+    const want=effectiveModel();
+    if(overlay && overlay.wmsParams && overlay.wmsParams.layers!==WMS_LAYERS[want]) setLayerMode();
+  }
+  syncHash();
+}
+async function doLocSearch(){
+  const q=$('locIn').value.trim();
+  if(!q) return;
+  const st=$('locStatus');
+  st.style.display='block'; st.style.color='var(--muted)';
+  st.textContent='Searching \u201c'+q+'\u201d\u2026';
+  try{
+    const res=await fetch(`${OM_GEO}?name=${encodeURIComponent(q)}&count=1&language=en&format=json`);
+    const j=await res.json();
+    const r=j.results && j.results[0];
+    if(!r){ st.style.color='var(--danger)'; st.textContent='No match \u2014 try a nearby town name.'; return; }
+    const label=[r.name, r.admin1, r.country_code].filter(Boolean).join(', ');
+    st.style.color='var(--amber)';
+    st.textContent='\u2713 '+label;
+    setLocation(r.latitude, r.longitude, label);
+  }catch(e){
+    st.style.color='var(--danger)';
+    st.textContent='Search unavailable \u2014 check your connection.';
+  }
+}
+
+/* ================= SHARE HASH ================= */
+
+let hashTimer=null;
+function syncHash(){
+  clearTimeout(hashTimer);
+  hashTimer=setTimeout(()=>{
+    const cfg={la:+state.lat.toFixed(4), lo:+state.lon.toFixed(4), z:state.zoom, ly:state.layer, n:state.name};
+    history.replaceState(null,'','#cfg='+encodeURIComponent(JSON.stringify(cfg)));
+  },250);
+}
+function loadHash(){
+  if(!location.hash.startsWith('#cfg=')) return false;
+  try{
+    const c=JSON.parse(decodeURIComponent(location.hash.slice(5)));
+    if(!Number.isFinite(+c.la)||!Number.isFinite(+c.lo)) return false;
+    state.lat=clamp(+c.la,-89.9,89.9); state.lon=clamp(+c.lo,-180,180);
+    if(Number.isFinite(+c.z)) state.zoom=clamp(+c.z,3,12);
+    if(typeof c.ly==='string' && ['auto','hrdps','gdps','sat','radar'].includes(c.ly)) state.layer=c.ly;
+    if(typeof c.n==='string' && c.n.length<=120) state.name=c.n;
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ================= WIRING ================= */
+
+function init(){
+  loadHash();
+  initMap();
+  $('layerSel').value=state.layer;
+  $('latIn').value=state.lat.toFixed(3);
+  $('lonIn').value=state.lon.toFixed(3);
+  $('siteOut').textContent=state.name+' \u00b7 '+state.lat.toFixed(3)+'\u00b0, '+state.lon.toFixed(3)+'\u00b0';
+
+  $('locBtn').addEventListener('click', doLocSearch);
+  $('locIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doLocSearch(); } });
+  document.querySelectorAll('.chips button[data-lat]').forEach(b=>{
+    b.addEventListener('click', ()=>setLocation(+b.dataset.lat, +b.dataset.lon, b.dataset.name));
+  });
+  $('geoBtn').addEventListener('click', ()=>{
+    if(!navigator.geolocation){ alert('Geolocation is not available in this browser.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      p=>setLocation(p.coords.latitude, p.coords.longitude, 'My location'),
+      ()=>alert('Could not read your location \u2014 you can search or click the map instead.'),
+      {timeout:10000});
+  });
+  $('latIn').addEventListener('change', e=>{
+    const v=parseFloat(e.target.value);
+    if(Number.isFinite(v)) setLocation(v, state.lon, 'Custom site');
+  });
+  $('lonIn').addEventListener('change', e=>{
+    const v=parseFloat(e.target.value);
+    if(Number.isFinite(v)) setLocation(state.lat, v, 'Custom site');
+  });
+  $('layerSel').addEventListener('change', e=>{ state.layer=e.target.value; setLayerMode(); syncHash(); });
+  $('opacityIn').addEventListener('input', e=>{
+    state.opacity=+e.target.value/100;
+    if(overlay) overlay.setOpacity(state.opacity);
+  });
+  $('timeSlider').addEventListener('input', e=>{ stopPlay(); frameIdx=+e.target.value; applyFrame(); });
+  $('stepBack').addEventListener('click', ()=>{ stopPlay(); if(frames.length){ frameIdx=(frameIdx-1+frames.length)%frames.length; applyFrame(); } });
+  $('stepFwd').addEventListener('click', ()=>{ stopPlay(); if(frames.length){ frameIdx=(frameIdx+1)%frames.length; applyFrame(); } });
+  $('playBtn').addEventListener('click', togglePlay);
+  $('nightBtn').addEventListener('click', ()=>document.documentElement.classList.toggle('night'));
+  $('shareBtn').addEventListener('click', e=>{
+    syncHash();
+    const btn=e.currentTarget;
+    setTimeout(async ()=>{
+      try{ await navigator.clipboard.writeText(location.href); btn.textContent='Link copied'; }
+      catch(err){ window.prompt('Copy this link:', location.href); }
+      setTimeout(()=>btn.textContent='Copy share link', 1600);
+    }, 300);
+  });
+
+  setLayerMode();
+  renderTonight();
+  loadPoint();
+  setInterval(renderTonight, 60000);
+}
+
+init();
+</script>
+</body>
+</html>
