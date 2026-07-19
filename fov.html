@@ -86,6 +86,10 @@
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .searchrow{display:flex;gap:8px;margin-top:4px}
+  .searchrow input{flex:1;margin-top:0}
+  .searchrow button{padding:7px 14px;flex-shrink:0}
+  #searchStatus{margin-top:7px;font-size:12.5px;line-height:1.45;display:none}
   .hidden{display:none !important}
   .mono{font-family:"IBM Plex Mono",monospace}
 
@@ -105,8 +109,8 @@
     border-top:1px dashed var(--line);padding-top:8px;
   }
   #addRig{width:100%}
-  .side-actions{display:flex;gap:8px}
-  .side-actions button{flex:1}
+  .side-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .side-actions button{width:100%}
 
   /* ---------- viewport ---------- */
   .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -198,7 +202,14 @@
   <aside>
     <div class="card">
       <h2>Sky</h2>
-      <label>Target
+      <label>Find any object
+        <div class="searchrow">
+          <input type="text" id="searchIn" class="mono" placeholder="e.g. NGC 891, Sh2-155, M101" autocomplete="off" spellcheck="false">
+          <button id="searchBtn" title="Resolve the name via the CDS Sesame service">Go</button>
+        </div>
+      </label>
+      <p class="mono" id="searchStatus"></p>
+      <label>Or browse common targets
         <select id="targetSel"></select>
       </label>
       <div id="customTarget" class="hidden">
@@ -211,7 +222,11 @@
       <label>Survey imagery
         <select id="surveySel"></select>
       </label>
-      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°.</p>
+      <div class="row">
+        <label>Observer lat (°N) <input type="number" id="latIn" class="mono" step="0.01" min="-90" max="90"></label>
+        <label>Observer lon (°E) <input type="number" id="lonIn" class="mono" step="0.01" min="-180" max="180"></label>
+      </div>
+      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°. Observer location drives the visibility readout — west longitudes are negative.</p>
     </div>
 
     <div class="card" style="padding-bottom:12px">
@@ -221,17 +236,22 @@
       <label style="margin-top:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
         <input type="checkbox" id="labelsChk" checked style="width:auto;margin:0"> Show frame labels
       </label>
+      <label style="margin-top:8px;display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="gridChk" style="width:auto;margin:0"> Show coordinate grid
+      </label>
     </div>
 
     <div class="side-actions">
+      <button id="framingBtn" title="Copy center coordinates, view width and rig rotations as text for ASIAir / NINA">Copy framing</button>
       <button id="shareBtn">Copy share link</button>
+      <button id="pngBtn" title="Save the current view, frames and overlays as a PNG image">Export PNG</button>
       <button id="resetBtn">Reset</button>
     </div>
   </aside>
 
   <section class="viewwrap">
     <div class="sky" id="sky">
-      <img id="skyImg" draggable="false" alt="Sky survey imagery of the selected target">
+      <img id="skyImg" crossorigin="anonymous" draggable="false" alt="Sky survey imagery of the selected target">
       <svg id="overlay" viewBox="0 0 1100 1100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
       <div class="skyctl" id="skyctl">
         <button id="zoomIn"  title="Zoom in"  aria-label="Zoom in">+</button>
@@ -254,6 +274,10 @@
       <span>CENTER <b id="coordOut">—</b></span>
       <span>VIEW <b id="fovOut">—</b></span>
       <span>ORIENTATION <b>N up · E left</b></span>
+    </div>
+
+    <div class="readout">
+      <span>VISIBILITY <b id="visOut">—</b></span>
     </div>
 
     <div class="card statscard">
@@ -413,6 +437,10 @@ const SURVEYS = [
   {id:'CDS/P/DSS2/red',      name:'DSS2 red (mono)'},
   {id:'CDS/P/Mellinger/color',name:'Mellinger color (wide-field)'},
   {id:'CDS/P/Finkbeiner',    name:'Hα composite (Finkbeiner)'},
+  {id:'CDS/P/DSS2/blue',     name:'DSS2 blue (mono)'},
+  {id:'CDS/P/SDSS9/color',   name:'SDSS9 color (deep · partial sky)'},
+  {id:'CDS/P/2MASS/color',   name:'2MASS near-infrared'},
+  {id:'CDS/P/unWISE/color-W2-W1W2-W1', name:'unWISE mid-infrared'},
 ];
 
 const COLORS = ['#fbbf24','#22d3ee','#f472b6','#a3e635','#fb923c','#c084fc','#34d399','#f87171'];
@@ -428,7 +456,9 @@ const FOV_MIN = 0.08, FOV_MAX = 60;
 const state = {
   targetId:'m42', ra:83.82, dec:-5.39, fov:4,
   survey:'CDS/P/DSS2/color',
-  showLabels:true,
+  showLabels:true, customName:null,
+  showGrid:false,
+  lat:40.797, lon:-74.482,          /* Morristown, NJ — WVO home turf */
   rigs:[], nextId:1,
 };
 
@@ -640,9 +670,83 @@ function svgEl(tag, attrs){
   return e;
 }
 
+/* --- RA/Dec graticule (gnomonic/TAN, matches hips2fits projection) --- */
+const GRID_RA_STEPS=[1/60,1/30,1/12,1/6,0.25,0.5,1,2,5,10,15,30,60,90];
+function gridDecStep(f){
+  if(f>=40) return 10; if(f>=20) return 5; if(f>=8) return 2; if(f>=3) return 1;
+  if(f>=1.2) return 0.5; if(f>=0.5) return 1/6; if(f>=0.15) return 1/12; return 1/60;
+}
+function projPx(raD, decD){
+  const de0=rad(state.dec), d=rad(decD), dA=rad(raD-state.ra);
+  const cosc=Math.sin(de0)*Math.sin(d)+Math.cos(de0)*Math.cos(d)*Math.cos(dA);
+  if(cosc<0.05) return null;                     /* behind the tangent plane */
+  const x=Math.cos(d)*Math.sin(dA)/cosc;
+  const y=(Math.cos(de0)*Math.sin(d)-Math.sin(de0)*Math.cos(d)*Math.cos(dA))/cosc;
+  const k=(S/2)/Math.tan(rad(state.fov)/2);
+  return {x:S/2 - x*k, y:S/2 - y*k};             /* N up, E left */
+}
+function fmtRALabel(r){
+  const h=norm360(r)/15;
+  let H=Math.floor(h+1e-6), M=Math.round((h-H)*60);
+  if(M===60){ M=0; H=(H+1)%24; }
+  return String(H).padStart(2,'0')+'h'+(M?String(M).padStart(2,'0')+'m':'');
+}
+function fmtDecLabel(d){
+  const sg=d<0?'\u2212':'+', a=Math.abs(d);
+  let D=Math.floor(a+1e-6), M=Math.round((a-D)*60);
+  if(M===60){ M=0; D+=1; }
+  return M ? sg+D+'°'+String(M).padStart(2,'0')+'\u2032' : sg+D+'°';
+}
+function drawGrid(svg){
+  if(!state.showGrid) return;
+  const step=gridDecStep(state.fov);
+  const cosd=Math.max(0.05, Math.cos(rad(state.dec)));
+  const raStep=GRID_RA_STEPS.find(v=>v>=step/cosd-1e-9)||90;
+  const half=state.fov*0.75;
+  const rr=Math.min(179, half/cosd*1.6);
+  const g=svgEl('g',{stroke:'#8a96ab',['stroke-opacity']:.22,['stroke-width']:1,fill:'none'});
+  const labels=[];
+  const addLine=(samples, text, mode)=>{
+    let seg=[], best=null;
+    const flush=()=>{ if(seg.length>1) g.appendChild(svgEl('polyline',
+      {points:seg.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')})); seg=[]; };
+    for(const s of samples){
+      const p=projPx(s.ra, s.dec);
+      if(!p){ flush(); continue; }
+      seg.push(p);
+      if(p.x>=6 && p.x<=S-6 && p.y>=26 && p.y<=S-10){
+        if(mode==='dec' ? (!best||p.x<best.x) : (!best||p.y<best.y)) best=p;
+      }
+    }
+    flush();
+    if(best) labels.push({p:best, text, mode});
+  };
+  const dMin=Math.max(-89.9, state.dec-half), dMax=Math.min(89.9, state.dec+half);
+  for(let de=Math.ceil(dMin/step)*step; de<=dMax+1e-9; de+=step){
+    const N=56, s=[];
+    for(let i=0;i<=N;i++) s.push({ra:state.ra-rr+2*rr*i/N, dec:de});
+    addLine(s, fmtDecLabel(de), 'dec');
+  }
+  for(let a=Math.ceil((state.ra-rr)/raStep)*raStep; a<=state.ra+rr+1e-9; a+=raStep){
+    const N=56, s=[];
+    for(let i=0;i<=N;i++) s.push({ra:a, dec:dMin+(dMax-dMin)*i/N});
+    addLine(s, fmtRALabel(a), 'ra');
+  }
+  svg.appendChild(g);
+  labels.forEach(({p,text,mode})=>{
+    const t=svgEl('text',{x:p.x+5, y:mode==='dec'?p.y-6:p.y+18,
+      fill:'#8a96ab',['fill-opacity']:.85,['font-size']:17,
+      ['font-family']:'IBM Plex Mono, monospace'});
+    t.textContent=text;
+    svg.appendChild(t);
+  });
+}
+
 function drawOverlay(){
   const svg=$('overlay');
   svg.innerHTML='';
+
+  drawGrid(svg);
 
   /* center crosshair */
   const ch=18;
@@ -783,6 +887,189 @@ function parseAngle(str, isRA){
   return neg ? -val : val;
 }
 
+/* ================= NAME SEARCH (CDS Sesame) ================= */
+
+const SESAME_HOSTS=[
+  'https://cds.unistra.fr/cgi-bin/nph-sesame',
+  'https://vizier.cfa.harvard.edu/viz-bin/nph-sesame',
+];
+function parseSesame(text){
+  const m=text.match(/%J\s+([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)/);
+  if(!m) return null;
+  const ra=parseFloat(m[1]), dec=parseFloat(m[2]);
+  if(!Number.isFinite(ra)||!Number.isFinite(dec)||dec<-90||dec>90) return null;
+  const im=text.match(/%I\.0\s+(.+)/);
+  return {ra:normRA(ra), dec, name: im ? im[1].trim().replace(/\s+/g,' ') : null};
+}
+async function resolveObject(q){
+  let reached=false;
+  for(const h of SESAME_HOSTS){
+    try{
+      const res=await fetch(`${h}/-op/SNV?${encodeURIComponent(q)}`);
+      if(!res.ok) continue;
+      reached=true;
+      const hit=parseSesame(await res.text());
+      if(hit) return hit;
+      break;                       /* service answered: a miss is a genuine miss */
+    }catch(e){ /* network problem — try the mirror */ }
+  }
+  if(!reached) throw new Error('unreachable');
+  return null;
+}
+async function doSearch(){
+  const q=$('searchIn').value.trim();
+  if(!q) return;
+  const st=$('searchStatus');
+  st.style.display='block'; st.style.color='var(--muted)';
+  st.textContent='Resolving \u201c'+q+'\u201d\u2026';
+  $('searchBtn').disabled=true;
+  try{
+    const hit=await resolveObject(q);
+    if(!hit){
+      st.style.color='var(--danger)';
+      st.textContent='No match \u2014 try a catalog id like \u201cNGC 7000\u201d or \u201cSh2-155\u201d.';
+    }else{
+      state.targetId='custom';
+      state.ra=hit.ra; state.dec=clampDec(hit.dec);
+      state.customName=hit.name||q;
+      $('targetSel').value='custom';
+      $('customTarget').classList.remove('hidden');
+      $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3);
+      st.style.color='var(--amber)';
+      st.textContent='\u2713 '+state.customName+' \u00b7 RA '+fmtRA(state.ra)+' \u00b7 Dec '+fmtDec(state.dec);
+      applyFit(false, true);
+    }
+  }catch(e){
+    st.style.color='var(--danger)';
+    st.textContent='Name resolver unreachable \u2014 check your connection and retry.';
+  }
+  $('searchBtn').disabled=false;
+}
+
+/* ================= FRAMING EXPORT ================= */
+
+function raHMS(ra){
+  let t=Math.round(normRA(ra)/15*36000);      /* tenths of a second of time */
+  let H=Math.floor(t/36000); t-=H*36000;
+  const M=Math.floor(t/600); t-=M*600;
+  H%=24;
+  return String(H).padStart(2,'0')+'h '+String(M).padStart(2,'0')+'m '+(t/10).toFixed(1).padStart(4,'0')+'s';
+}
+function decDMS(dec){
+  const sg=dec<0?'-':'+';
+  let t=Math.round(Math.abs(dec)*3600);       /* arcseconds */
+  const D=Math.floor(t/3600); t-=D*3600;
+  const M=Math.floor(t/60);
+  return sg+String(D).padStart(2,'0')+'\u00b0 '+String(M).padStart(2,'0')+'\u2032 '+String(t-M*60).padStart(2,'0')+'\u2033';
+}
+function buildFramingText(){
+  const tName = state.targetId==='custom'
+    ? (state.customName || 'Custom position')
+    : (TARGETS.find(t=>t.id===state.targetId)||{}).name || 'Custom position';
+  const lines=[
+    'FOV Viewer framing \u2014 Washington Valley Observatory',
+    'Target: '+tName,
+    'Center: RA '+raHMS(state.ra)+' ('+state.ra.toFixed(4)+'\u00b0) \u00b7 Dec '+decDMS(state.dec)+' ('+state.dec.toFixed(4)+'\u00b0)',
+    'View width: '+fmtAngle(state.fov),
+  ];
+  state.rigs.filter(r=>r.vis).forEach(r=>{
+    const d=rigData(r); if(!d) return;
+    lines.push('Rig: '+d.label+' \u2014 frame '+fmtFovPair(d)+' \u2014 rotation '+Math.round(r.rot)+'\u00b0');
+  });
+  lines.push('Link: '+location.href);
+  return lines.join('\n');
+}
+
+/* ================= PNG EXPORT ================= */
+
+async function exportPNG(){
+  const btn=$('pngBtn');
+  try{
+    const img=$('skyImg');
+    if(!img.complete || !img.naturalWidth) throw new Error('image not loaded');
+    const canvas=document.createElement('canvas');
+    canvas.width=S; canvas.height=S;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#05080f'; ctx.fillRect(0,0,S,S);
+    ctx.drawImage(img,0,0,S,S);
+    /* rasterize the SVG overlay on top */
+    const sv=$('overlay').cloneNode(true);
+    sv.setAttribute('width',S); sv.setAttribute('height',S);
+    const svgImg=new Image();
+    await new Promise((res,rej)=>{
+      svgImg.onload=res; svgImg.onerror=rej;
+      svgImg.src='data:image/svg+xml;charset=utf-8,'
+        + encodeURIComponent(new XMLSerializer().serializeToString(sv));
+    });
+    ctx.drawImage(svgImg,0,0,S,S);
+    /* caption */
+    const tName = state.targetId==='custom'
+      ? (state.customName||'Custom position')
+      : ((TARGETS.find(t=>t.id===state.targetId)||{}).name||'');
+    ctx.font='300 20px "IBM Plex Mono", monospace';
+    ctx.fillStyle='rgba(5,8,15,0.55)';
+    ctx.fillRect(0,S-40,S,40);
+    ctx.fillStyle='rgba(232,236,244,0.9)';
+    ctx.fillText(tName+' · myobservatory.org', 16, S-14);
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    if(!blob) throw new Error('encode failed');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='wvo-fov-'+((tName||'view').toLowerCase()
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'view')+'.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    btn.textContent='Saved!';
+  }catch(err){
+    btn.textContent='Export failed';
+    alert('PNG export needs the survey image fully loaded from the live site. Let the sky finish loading, then try again.');
+  }
+  setTimeout(()=>btn.textContent='Export PNG', 1800);
+}
+
+/* ================= VISIBILITY (observer-based) ================= */
+
+function julianDate(d){ return d.getTime()/86400000 + 2440587.5; }
+function gmstDeg(d){
+  const D=julianDate(d)-2451545.0, T=D/36525;
+  return norm360(280.46061837 + 360.98564736629*D + 0.000387933*T*T - T*T*T/38710000);
+}
+function lstDeg(d){ return norm360(gmstDeg(d) + state.lon); }
+/* altitude + azimuth (from N through E) of the current view center */
+function altAz(d){
+  const H=rad(norm360(lstDeg(d) - state.ra));
+  const la=rad(state.lat), de=rad(state.dec);
+  const alt=Math.asin(Math.sin(la)*Math.sin(de)+Math.cos(la)*Math.cos(de)*Math.cos(H))*180/Math.PI;
+  const az=Math.atan2(-Math.cos(de)*Math.sin(H),
+                       Math.cos(la)*Math.sin(de)-Math.sin(la)*Math.cos(de)*Math.cos(H))*180/Math.PI;
+  return {alt, az:norm360(az)};
+}
+const SIDEREAL_DAY_MS=86164090.5;
+function nextTransit(d){
+  const dLst=norm360(state.ra - lstDeg(d));
+  return new Date(d.getTime() + dLst/360*SIDEREAL_DAY_MS);
+}
+function compass8(az){ return ['N','NE','E','SE','S','SW','W','NW'][Math.round(az/45)%8]; }
+function fmtClock(d){ return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
+function visSummary(){
+  const now=new Date();
+  const maxAlt=90-Math.abs(state.lat-state.dec);
+  if(maxAlt<=0) return 'never rises from '+state.lat.toFixed(1)+'° latitude';
+  const tr=nextTransit(now);
+  const cosH0=-Math.tan(rad(state.lat))*Math.tan(rad(state.dec));
+  let span;
+  if(cosH0<=-1) span='circumpolar';
+  else if(cosH0>=1) span='never rises';
+  else{
+    const half=Math.acos(cosH0)*180/Math.PI/360*SIDEREAL_DAY_MS;
+    span='up '+fmtClock(new Date(tr.getTime()-half))+'–'+fmtClock(new Date(tr.getTime()+half));
+  }
+  const a=altAz(now);
+  const nowTxt=a.alt>0 ? 'now '+Math.round(a.alt)+'° up in the '+compass8(a.az) : 'below horizon now';
+  return 'transit '+fmtClock(tr)+' at '+Math.round(maxAlt)+'° · '+span+' · '+nowTxt;
+}
+function updateVisibility(){ $('visOut').textContent = visSummary(); }
+
 /* ================= VIEW: FIT + ZOOM ================= */
 
 /* width of the smallest square view that holds every visible frame, +10% */
@@ -821,6 +1108,7 @@ function liveZoom(targetFov){
 function updateReadout(){
   $('coordOut').textContent = `RA ${fmtRA(state.ra)} · Dec ${fmtDec(state.dec)}`;
   $('fovOut').textContent = `${fmtAngle(state.fov)} wide`;
+  updateVisibility();
 }
 
 /* ================= POINTER INTERACTION (pan / rotate / pinch) ================= */
@@ -933,6 +1221,8 @@ function syncHash(){
     const cfg={
       t:state.targetId, ra:+state.ra.toFixed(4), dec:+state.dec.toFixed(4),
       f:+state.fov.toFixed(4), s:state.survey, L:state.showLabels?1:0,
+      G:state.showGrid?1:0, la:+state.lat.toFixed(3), lo:+state.lon.toFixed(3),
+      n:state.customName||undefined,
       r:state.rigs.map(r=>({
         s:r.scope, cfl:r.cfl, cap:r.cap, x:r.red,
         c:r.cam, cw:r.cw, ch:r.ch, cp:r.cpx,
@@ -953,6 +1243,10 @@ function loadHash(){
     state.ra=ra; state.dec=dec;
     state.fov=clampFov(+cfg.f||4); state.survey=cfg.s||state.survey;
     state.showLabels=!!cfg.L;
+    if(typeof cfg.n==='string' && cfg.n.length<=120) state.customName=cfg.n;
+    state.showGrid=!!cfg.G;
+    if(Number.isFinite(+cfg.la) && Math.abs(+cfg.la)<=90) state.lat=+cfg.la;
+    if(Number.isFinite(+cfg.lo) && Math.abs(+cfg.lo)<=180) state.lon=+cfg.lo;
     cfg.r.forEach(x=>{
       state.rigs.push(newRig({
         scope:x.s, cfl:x.cfl, cap:x.cap, red:+x.x||1,
@@ -981,10 +1275,20 @@ function init(){
   if($('targetSel').value==='custom'){ $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3); }
   $('surveySel').value=state.survey;
   $('labelsChk').checked=state.showLabels;
+  $('gridChk').checked=state.showGrid;
+  $('latIn').value=state.lat; $('lonIn').value=state.lon;
 
   state.rigs.forEach(buildRigCard);
 
   /* --- sky controls --- */
+  $('searchBtn').addEventListener('click', doSearch);
+  $('searchIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doSearch(); } });
+  $('framingBtn').addEventListener('click', async e=>{
+    const btn=e.currentTarget, txt=buildFramingText();
+    try{ await navigator.clipboard.writeText(txt); btn.textContent='Framing copied'; }
+    catch(err){ window.prompt('Copy this framing info:', txt); }
+    setTimeout(()=>btn.textContent='Copy framing', 1600);
+  });
   $('targetSel').addEventListener('change', e=>{
     const v=e.target.value;
     if(v==='custom'){
@@ -995,7 +1299,7 @@ function init(){
     }
     $('customTarget').classList.add('hidden');
     const t=TARGETS.find(t=>t.id===v);
-    state.targetId=t.id;
+    state.targetId=t.id; state.customName=null;
     applyFit(true, true);                /* recenter on target + fit zoom */
   });
   $('goCustom').addEventListener('click', ()=>{
@@ -1005,7 +1309,7 @@ function init(){
       alert('Could not read those coordinates. RA accepts decimal degrees (83.82) or hours (5h35m17s); Dec accepts decimal degrees or D M S.');
       return;
     }
-    state.targetId='custom'; state.ra=ra; state.dec=dec;
+    state.targetId='custom'; state.ra=ra; state.dec=dec; state.customName=null;
     applyFit(false, true);
   });
   $('surveySel').addEventListener('change', e=>{ state.survey=e.target.value; loadSky(); syncHash(); });
@@ -1020,6 +1324,19 @@ function init(){
     const r=newRig(); state.rigs.push(r); buildRigCard(r); applyFit(false, true);
   });
   $('labelsChk').addEventListener('change', e=>{ state.showLabels=e.target.checked; drawOverlay(); syncHash(); });
+  $('gridChk').addEventListener('change', e=>{ state.showGrid=e.target.checked; drawOverlay(); syncHash(); });
+  $('latIn').addEventListener('change', e=>{
+    const v=parseFloat(e.target.value);
+    if(Number.isFinite(v)) state.lat=Math.min(90,Math.max(-90,v));
+    e.target.value=state.lat; updateReadout(); syncHash();
+  });
+  $('lonIn').addEventListener('change', e=>{
+    const v=parseFloat(e.target.value);
+    if(Number.isFinite(v)) state.lon=Math.min(180,Math.max(-180,v));
+    e.target.value=state.lon; updateReadout(); syncHash();
+  });
+  $('pngBtn').addEventListener('click', exportPNG);
+  setInterval(updateVisibility, 60000);          /* keep “now …” fresh */
 
   /* --- misc --- */
   $('retryBtn').addEventListener('click', loadSky);
