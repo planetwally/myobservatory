@@ -125,6 +125,10 @@
   .release-title em { font-style: italic; color: var(--accent-blue); }
   .release-desc { font-size: 0.92rem; font-weight: 300; color: var(--text-nebula); max-width: 56ch; margin-top: 0.9rem; line-height: 1.75; }
   .cta-button { display: inline-flex; align-items: center; gap: 0.55rem; margin-top: 1.6rem; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-void); background: var(--accent-gold); text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 6px; border: 1px solid var(--accent-gold); transition: background 0.3s, transform 0.3s, box-shadow 0.3s; }
+  .release-ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; }
+  .release-ctas .cta-button { margin-top: 1.6rem; }
+  .cta-button.secondary { background: transparent; color: var(--accent-gold); }
+  .cta-button.secondary:hover { background: rgba(201,168,76,0.08); box-shadow: none; }
   .cta-button:hover { background: #dab84f; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(201,168,76,0.18); }
   .cta-button .arrow { transition: transform 0.3s; }
   .cta-button:hover .arrow { transform: translateX(4px); }
@@ -153,6 +157,7 @@
     <li><a href="#about">About</a></li>
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="fov.html">FOV Viewer</a></li>
+    <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="#rigs">Imaging Rigs</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
@@ -189,9 +194,12 @@
   <div class="release-card">
     <div class="release-body">
       <div class="release-tag">New &middot; Observatory Tools</div>
-      <h2 class="release-title">Introducing the <em>Field of View Viewer</em></h2>
-      <p class="release-desc">Plan your framing before you ever uncap the scope. Stack any telescope, reducer and camera combination and watch each sensor's frame fall over real survey imagery of the night sky &mdash; drag to pan, scroll to zoom, right-drag to rotate, and share a link to any setup. Built for our imaging community.</p>
-      <a href="fov.html" class="cta-button">Launch the FOV Viewer <span class="arrow">&rarr;</span></a>
+      <h2 class="release-title">Plan the whole night: <em>FOV Viewer</em> &amp; <em>Sky Conditions</em></h2>
+      <p class="release-desc">Two homegrown tools for the imaging community. Frame any target over real survey imagery with the FOV Viewer &mdash; search by name, compare rigs, export your framing. Then check the Sky Conditions Planner: scrub forecast cloud cover across a live map, hour by hour into the future, with seeing and transparency estimates, darkness windows and moonrise for any site.</p>
+      <div class="release-ctas">
+        <a href="fov.html" class="cta-button">FOV Viewer <span class="arrow">&rarr;</span></a>
+        <a href="sky.html" class="cta-button secondary">Sky Conditions Planner <span class="arrow">&rarr;</span></a>
+      </div>
     </div>
     <svg class="release-art" width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect x="1" y="1" width="218" height="148" rx="9" fill="#0a0c12" stroke="rgba(255,255,255,0.06)"/>
@@ -470,6 +478,7 @@
     <a href="https://www.instagram.com/" target="_blank">Instagram</a>
     <a href="#gallery">Gallery</a>
     <a href="fov.html">FOV Viewer</a>
+    <a href="sky.html">Sky Planner</a>
     <a href="#rigs">Rigs</a>
   </div>
   <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
