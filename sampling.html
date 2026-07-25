@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sampling Calculator &middot; Washington Valley Observatory</title>
+<meta name="description" content="Match a camera to a telescope. Calculates image scale in arcseconds per pixel and shows how a star actually lands on the sensor.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #07080c;
+    --bg-panel: #0c0e14;
+    --bg-card: #10131b;
+    --bg-card-hover: #161a25;
+    --text-star: #e8e4df;
+    --text-nebula: #9a958d;
+    --text-dim: #5a564f;
+    --accent-blue: #4a7cad;
+    --accent-gold: #c9a84c;
+    --accent-ember: #b35a3a;
+    --accent-teal: #3a8a7a;
+    --border-faint: rgba(255,255,255,0.04);
+    --border-glow: rgba(74,124,173,0.2);
+    --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg-void); color: var(--text-star); line-height: 1.7; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  body::after { content: ''; position: fixed; inset: 0; background: var(--grain); pointer-events: none; z-index: 9999; opacity: 0.5; }
+  ::selection { background: rgba(74,124,173,0.35); }
+  :focus-visible { outline: 1px solid var(--accent-gold); outline-offset: 3px; }
+
+  /* ---------- nav (matches index) ---------- */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 3rem; display: flex; align-items: center; justify-content: space-between; background: rgba(7,8,12,0.7); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border-bottom: 1px solid var(--border-faint); }
+  .nav-brand { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.15rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-star); text-decoration: none; }
+  .nav-brand span { color: var(--accent-gold); }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a { font-size: 0.78rem; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; }
+  .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent-gold); transition: width 0.3s; }
+  .nav-links a:hover { color: var(--text-star); }
+  .nav-links a.current { color: var(--text-star); }
+  .nav-links a.current::after, .nav-links a:hover::after { width: 100%; }
+  .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+  .nav-toggle span { display: block; width: 22px; height: 1.5px; background: var(--text-star); margin: 5px 0; transition: 0.3s; }
+
+  /* ---------- page head ---------- */
+  .tool-head { max-width: 1300px; margin: 0 auto; padding: 9rem 2rem 0; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 1rem; }
+  .tool-head h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.15; letter-spacing: -0.01em; }
+  .tool-head h1 em { font-style: italic; color: var(--accent-blue); }
+  .tool-sub { font-size: 0.95rem; font-weight: 300; color: var(--text-nebula); max-width: 620px; margin-top: 1.1rem; line-height: 1.8; }
+
+  /* ---------- layout ---------- */
+  .calc { max-width: 1300px; margin: 0 auto; padding: 3rem 2rem 2rem; display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 1.75rem; align-items: start; }
+  .panel { background: var(--bg-panel); border: 1px solid var(--border-faint); border-radius: 12px; padding: 1.75rem; }
+  .panel-label { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1.5rem; }
+
+  /* ---------- form ---------- */
+  .field { margin-bottom: 1.15rem; }
+  .field > label, .field-label { display: block; font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-nebula); margin-bottom: 0.45rem; font-weight: 500; }
+  .control { width: 100%; background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: 6px; color: var(--text-star); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.65rem 0.8rem; transition: border-color 0.25s, background 0.25s; appearance: none; -webkit-appearance: none; }
+  .control:hover { background: var(--bg-card-hover); }
+  .control:focus { outline: none; border-color: var(--border-glow); background: var(--bg-card-hover); }
+  select.control { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a958d' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.85rem center; background-size: 10px; padding-right: 2.2rem; cursor: pointer; }
+  select.control option { background: #10131b; color: var(--text-star); }
+  select.control optgroup { background: #07080c; color: var(--accent-gold); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; }
+  .numeric { font-family: 'JetBrains Mono', monospace; font-weight: 400; }
+  .input-unit { display: flex; align-items: stretch; }
+  .input-unit .control { border-radius: 6px 0 0 6px; border-right: none; }
+  .unit-tag { display: flex; align-items: center; padding: 0 0.85rem; background: rgba(74,124,173,0.12); border: 1px solid var(--border-faint); border-left: none; border-radius: 0 6px 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-nebula); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  .field-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); margin-top: 0.4rem; letter-spacing: 0.03em; }
+  .divider { height: 1px; background: var(--border-faint); margin: 1.6rem 0; }
+  .custom-seeing { display: none; }
+  .custom-seeing.show { display: block; }
+
+  /* ---------- result ---------- */
+  .result-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+  .scale-readout { display: flex; align-items: baseline; gap: 0.5rem; }
+  .scale-value { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(3.2rem, 7vw, 4.6rem); line-height: 0.95; letter-spacing: -0.02em; color: var(--text-star); font-variant-numeric: tabular-nums; }
+  .scale-unit { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
+  .verdict { display: inline-flex; align-items: center; gap: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; padding: 0.45rem 0.9rem; border-radius: 4px; border: 1px solid; white-space: nowrap; }
+  .verdict::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .verdict.optimal { color: var(--accent-teal); border-color: rgba(58,138,122,0.35); background: rgba(58,138,122,0.08); }
+  .verdict.over { color: var(--accent-gold); border-color: rgba(201,168,76,0.35); background: rgba(201,168,76,0.08); }
+  .verdict.under { color: var(--accent-ember); border-color: rgba(179,90,58,0.35); background: rgba(179,90,58,0.08); }
+
+  /* ---------- signature: star on pixels ---------- */
+  .star-block { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center; margin-top: 2rem; }
+  .star-frame { width: 260px; height: 260px; border: 1px solid var(--border-faint); border-radius: 8px; background: #05060a; position: relative; overflow: hidden; flex-shrink: 0; }
+  .star-frame canvas { width: 100%; height: 100%; display: block; }
+  .star-caption { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); text-align: center; margin-top: 0.7rem; }
+  .star-read h3 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.55rem; line-height: 1.3; margin-bottom: 0.6rem; }
+  .star-read h3 strong { font-weight: 400; color: var(--accent-blue); font-style: italic; }
+  .star-read p { font-size: 0.87rem; font-weight: 300; color: var(--text-nebula); line-height: 1.75; }
+
+  /* ---------- scale bar ---------- */
+  .bar-wrap { margin-top: 2.2rem; }
+  .bar-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.7rem; }
+  .bar-title { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+  .bar-ideal { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-nebula); }
+  .bar-ideal b { color: var(--accent-teal); font-weight: 400; }
+  .bar { position: relative; height: 7px; border-radius: 4px; overflow: hidden; background: var(--bg-card); }
+  .bar-zone { position: absolute; top: 0; bottom: 0; }
+  .zone-over { background: linear-gradient(90deg, rgba(201,168,76,0.15), rgba(201,168,76,0.45)); }
+  .zone-ok { background: var(--accent-teal); opacity: 0.75; }
+  .zone-under { background: linear-gradient(90deg, rgba(179,90,58,0.45), rgba(179,90,58,0.85)); }
+  .bar-marker { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--text-star); border-radius: 2px; transition: left 0.35s cubic-bezier(0.22,1,0.36,1); box-shadow: 0 0 8px rgba(232,228,223,0.5); }
+  .bar-ticks { position: relative; height: 1.3rem; margin-top: 0.45rem; }
+  .bar-tick { position: absolute; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
+  .bar-legend { display: flex; gap: 1.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+  .legend-dot { width: 7px; height: 2px; border-radius: 2px; }
+
+  /* ---------- metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border-faint); border: 1px solid var(--border-faint); border-radius: 8px; overflow: hidden; margin-top: 2.2rem; }
+  .metric { background: var(--bg-card); padding: 1.1rem 1rem; }
+  .metric-val { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; color: var(--accent-blue); line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .metric-val small { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-dim); margin-left: 0.15rem; }
+  .metric-key { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-top: 0.3rem; }
+
+  /* ---------- guidance ---------- */
+  .guidance { margin-top: 1.75rem; padding: 1.1rem 1.25rem; border-radius: 8px; border-left: 2px solid var(--accent-blue); background: rgba(74,124,173,0.06); font-size: 0.87rem; font-weight: 300; color: var(--text-nebula); line-height: 1.75; }
+  .guidance b { color: var(--text-star); font-weight: 500; }
+  .guidance.warn { border-left-color: var(--accent-ember); background: rgba(179,90,58,0.06); }
+  .guidance.good { border-left-color: var(--accent-teal); background: rgba(58,138,122,0.06); }
+
+  /* ---------- explainer ---------- */
+  .explain { max-width: 1300px; margin: 0 auto; padding: 2rem 2rem 6rem; }
+  .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem; }
+  .ex-card { background: var(--bg-card); border: 1px solid var(--border-faint); border-radius: 10px; padding: 1.6rem; transition: border-color 0.3s, transform 0.3s; }
+  .ex-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+  .ex-term { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 0.8rem; }
+  .ex-card.a .ex-term { color: var(--accent-gold); }
+  .ex-card.b .ex-term { color: var(--accent-teal); }
+  .ex-card.c .ex-term { color: var(--accent-ember); }
+  .ex-card h4 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.35rem; margin-bottom: 0.6rem; }
+  .ex-card p { font-size: 0.86rem; font-weight: 300; color: var(--text-nebula); line-height: 1.8; }
+  .formula { margin-top: 2rem; padding: 1.5rem; background: var(--bg-panel); border: 1px solid var(--border-faint); border-radius: 10px; text-align: center; }
+  .formula-eq { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text-star); letter-spacing: 0.02em; }
+  .formula-eq span { color: var(--accent-gold); }
+  .formula-note { font-size: 0.8rem; font-weight: 300; color: var(--text-dim); margin-top: 0.8rem; }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(1.7rem, 3vw, 2.4rem); line-height: 1.2; }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--border-faint); padding: 3.5rem 2rem 2.5rem; text-align: center; background: var(--bg-panel); }
+  .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 300; letter-spacing: 0.1em; text-transform: uppercase; }
+  .footer-tagline { font-size: 0.85rem; font-weight: 300; color: var(--text-nebula); max-width: 480px; margin: 0.8rem auto 0; line-height: 1.7; }
+  .footer-links { display: flex; justify-content: center; gap: 2rem; margin-top: 1.8rem; flex-wrap: wrap; }
+  .footer-links a { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; }
+  .footer-links a:hover { color: var(--accent-gold); }
+  .footer-copy { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-dim); margin-top: 2rem; letter-spacing: 0.05em; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1080px) {
+    .calc { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .explain-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: 0; background: rgba(7,8,12,0.97); padding: 1rem 1.5rem 1.5rem; border-bottom: 1px solid var(--border-faint); }
+    .nav-links.show { display: flex; }
+    .nav-links li { padding: 0.6rem 0; }
+    .nav-toggle { display: block; }
+    .tool-head { padding: 7rem 1.5rem 0; }
+    .calc { padding: 2rem 1.5rem; gap: 1.25rem; }
+    .explain { padding: 1rem 1.5rem 4rem; }
+    .panel { padding: 1.35rem; }
+    .star-block { grid-template-columns: 1fr; gap: 1.5rem; justify-items: center; text-align: center; }
+    .star-frame { width: 100%; max-width: 260px; height: auto; aspect-ratio: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Washington Valley <span>Observatory</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="fov.html">FOV Viewer</a></li>
+    <li><a href="sky.html">Sky Planner</a></li>
+    <li><a href="sampling.html" class="current">Sampling</a></li>
+    <li><a href="index.html#rigs">Imaging Rigs</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
+</nav>
+
+<header class="tool-head">
+  <div class="eyebrow">Observatory Tools</div>
+  <h1>How your stars <em>land on pixels</em></h1>
+  <p class="tool-sub">Pair a telescope with a camera and see the image scale it produces &mdash; then see the star itself, rendered on the actual pixel grid your sensor would record.</p>
+</header>
+
+<main class="calc">
+
+  <!-- ============ CONTROLS ============ -->
+  <section class="panel" aria-label="Equipment settings">
+    <div class="panel-label">The Setup</div>
+
+    <div class="field">
+      <label for="scope">Telescope</label>
+      <select id="scope" class="control"></select>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="fl">Focal length</label>
+        <div class="input-unit">
+          <input id="fl" class="control numeric" type="number" min="1" step="1" value="250">
+          <div class="unit-tag">mm</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="corrector">Reducer / Barlow</label>
+        <select id="corrector" class="control"></select>
+      </div>
+    </div>
+
+    <div class="field-hint" id="flHint">Effective focal length: 250 mm at f/4.9</div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label for="cam">Camera</label>
+      <select id="cam" class="control"></select>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="px">Pixel size</label>
+        <div class="input-unit">
+          <input id="px" class="control numeric" type="number" min="0.1" step="0.01" value="2.90">
+          <div class="unit-tag">&micro;m</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="binning">Binning</label>
+        <select id="binning" class="control">
+          <option value="1">1 &times; 1</option>
+          <option value="2">2 &times; 2</option>
+          <option value="3">3 &times; 3</option>
+          <option value="4">4 &times; 4</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label for="seeing">Seeing conditions</label>
+      <select id="seeing" class="control">
+        <option value="1,2">Excellent &mdash; 1&Prime; to 2&Prime; FWHM</option>
+        <option value="2,3">Good &mdash; 2&Prime; to 3&Prime; FWHM</option>
+        <option value="2,4" selected>Typical &mdash; 2&Prime; to 4&Prime; FWHM</option>
+        <option value="3,5">Soft &mdash; 3&Prime; to 5&Prime; FWHM</option>
+        <option value="4,6">Poor &mdash; 4&Prime; to 6&Prime; FWHM</option>
+        <option value="custom">Measured &mdash; enter my own</option>
+      </select>
+    </div>
+
+    <div class="field custom-seeing" id="customSeeing">
+      <div class="field-row">
+        <div>
+          <span class="field-label">Best FWHM</span>
+          <div class="input-unit">
+            <input id="seeMin" class="control numeric" type="number" min="0.2" step="0.1" value="2">
+            <div class="unit-tag">&Prime;</div>
+          </div>
+        </div>
+        <div>
+          <span class="field-label">Worst FWHM</span>
+          <div class="input-unit">
+            <input id="seeMax" class="control numeric" type="number" min="0.2" step="0.1" value="4">
+            <div class="unit-tag">&Prime;</div>
+          </div>
+        </div>
+      </div>
+      <div class="field-hint">Read this off a night's subs &mdash; ASIAir reports it beside average star size.</div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="panel" aria-label="Results" aria-live="polite">
+    <div class="panel-label">The Result</div>
+
+    <div class="result-top">
+      <div class="scale-readout">
+        <div class="scale-value" id="resValue">2.39</div>
+        <div class="scale-unit">arcsec<br>per pixel</div>
+      </div>
+      <div class="verdict optimal" id="verdict">Optimal</div>
+    </div>
+
+    <div class="star-block">
+      <div>
+        <div class="star-frame">
+          <canvas id="starCanvas" role="img" aria-label="Rendering of a star spread across the sensor pixel grid"></canvas>
+        </div>
+        <div class="star-caption">One square = one pixel</div>
+      </div>
+      <div class="star-read">
+        <h3 id="starHeadline">A 3&Prime; star spreads across <strong>1.3 pixels</strong></h3>
+        <p id="starBody">Stars need roughly two to three pixels across to render as round. Fewer and they turn blocky; many more and you are magnifying blur rather than recording detail.</p>
+      </div>
+    </div>
+
+    <div class="bar-wrap">
+      <div class="bar-head">
+        <div class="bar-title">Sampling Scale</div>
+        <div class="bar-ideal">Ideal window <b id="idealRange">0.67&Prime; &ndash; 2.00&Prime;</b></div>
+      </div>
+      <div class="bar" id="bar">
+        <div class="bar-zone zone-over" id="zoneOver"></div>
+        <div class="bar-zone zone-ok" id="zoneOk"></div>
+        <div class="bar-zone zone-under" id="zoneUnder"></div>
+        <div class="bar-marker" id="marker"></div>
+      </div>
+      <div class="bar-ticks" id="ticks"></div>
+      <div class="bar-legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--accent-gold)"></span>Over-sampled</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--accent-teal)"></span>Well matched</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--accent-ember)"></span>Under-sampled</div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><div class="metric-val" id="mFov">&mdash;</div><div class="metric-key">Field of view</div></div>
+      <div class="metric"><div class="metric-val" id="mFrame">&mdash;</div><div class="metric-key">Frame size</div></div>
+      <div class="metric"><div class="metric-val" id="mStar">&mdash;<small>px</small></div><div class="metric-key">Star FWHM</div></div>
+      <div class="metric"><div class="metric-val" id="mRatio">&mdash;<small>&times;</small></div><div class="metric-key">Nyquist ratio</div></div>
+    </div>
+
+    <div class="guidance good" id="guidance">Good pairing. Stars will sample cleanly at this scale.</div>
+  </section>
+</main>
+
+<!-- ============ EXPLAINER ============ -->
+<section class="explain">
+  <h2 class="section-title">Reading the result</h2>
+  <div class="explain-grid">
+    <div class="ex-card a">
+      <div class="ex-term">Below the window</div>
+      <h4>Over-sampled</h4>
+      <p>Each star is spread over more pixels than the atmosphere justifies. Star shapes stay pleasing, but you are trading away field of view and splitting the same photons across more wells, so every sub needs longer to reach the same signal. Binning or a focal reducer pulls you back.</p>
+    </div>
+    <div class="ex-card b">
+      <div class="ex-term">Inside the window</div>
+      <h4>Well matched</h4>
+      <p>A star covers enough pixels to record as a smooth disc without wasting resolution on seeing blur. This is the range where sub length, field of view, and star shape all sit in balance &mdash; and where guiding error stays a small fraction of a pixel.</p>
+    </div>
+    <div class="ex-card c">
+      <div class="ex-term">Above the window</div>
+      <h4>Under-sampled</h4>
+      <p>Stars land on too few pixels and take on square, angular edges. Fine detail is lost for good, since no amount of processing recovers what the grid never separated. This is the worse failure of the two &mdash; a longer focal length or smaller pixels is the fix.</p>
+    </div>
+  </div>
+
+  <div class="formula">
+    <div class="formula-eq">image scale = ( <span>pixel size &micro;m</span> &divide; <span>focal length mm</span> ) &times; 206.265</div>
+    <p class="formula-note">The ideal window is derived from your seeing: the coarse limit is half the best FWHM you expect, and the fine limit is a third of the worst. Sampling below two pixels per star is where square stars begin.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">Washington Valley Observatory</div>
+  <p class="footer-tagline">A nonprofit amateur astronomy collective exploring the cosmos through astrophotography and education from suburban New Jersey.</p>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#gallery">Gallery</a>
+    <a href="fov.html">FOV Viewer</a>
+    <a href="sky.html">Sky Planner</a>
+    <a href="sampling.html">Sampling</a>
+    <a href="mailto:inquiries@myobservatory.org">Email</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
+</footer>
+
+<script>
+/* ============================================================
+   Equipment data
+   fl = focal length in mm, fr = focal ratio (display only)
+   ============================================================ */
+const SCOPES = [
+  { group: 'Observatory Rigs', items: [
+    { n: 'Askar 65PHQ',                 fl: 416,  fr: 6.4 },
+    { n: 'Astro-Tech AT60EDP',          fl: 300,  fr: 5.0 },
+    { n: 'William Optics RedCat 51',    fl: 250,  fr: 4.9 },
+    { n: 'Askar FMA180 (reduced)',      fl: 180,  fr: 4.5 },
+    { n: 'Askar FMA180 (native)',       fl: 220,  fr: 5.5 },
+    { n: 'Takahashi FS-60CB',           fl: 355,  fr: 5.9 },
+    { n: 'Apertura 60EDR',              fl: 360,  fr: 6.0 },
+    { n: 'Astro-Tech AT72ED II',        fl: 430,  fr: 6.0 },
+    { n: 'Astro-Tech AT102ED',          fl: 714,  fr: 7.0 },
+    { n: 'William Optics Z61',          fl: 360,  fr: 5.9 },
+    { n: 'Explore Scientific AR102',    fl: 663,  fr: 6.5 },
+    { n: 'Meade LX85 6" ACF',           fl: 1524, fr: 10.0 },
+    { n: 'Meade MTS-SC8 8" SCT',        fl: 2000, fr: 10.0 },
+    { n: 'Orion XT6 Dobsonian',         fl: 1200, fr: 8.0 },
+    { n: 'Orion XT10 Dobsonian',        fl: 1200, fr: 4.7 }
+  ]},
+  { group: 'Refractors & Astrographs', items: [
+    { n: 'Radian Raptor 61',            fl: 275,  fr: 4.5 },
+    { n: 'Askar FRA400',                fl: 400,  fr: 5.6 },
+    { n: 'Askar FRA500',                fl: 500,  fr: 5.6 },
+    { n: 'Askar FRA600',                fl: 600,  fr: 5.6 },
+    { n: 'Askar 71F',                   fl: 490,  fr: 6.9 },
+    { n: 'Askar 107PHQ',                fl: 749,  fr: 7.0 },
+    { n: 'William Optics GT71',         fl: 420,  fr: 5.9 },
+    { n: 'Sky-Watcher Evostar 72ED',    fl: 420,  fr: 5.8 },
+    { n: 'Sky-Watcher Evostar 80ED',    fl: 600,  fr: 7.5 },
+    { n: 'Sky-Watcher Esprit 100ED',    fl: 550,  fr: 5.5 },
+    { n: 'Takahashi FSQ-106EDX4',       fl: 530,  fr: 5.0 },
+    { n: 'Takahashi FC-76DCU',          fl: 570,  fr: 7.5 }
+  ]},
+  { group: 'Reflectors & Catadioptrics', items: [
+    { n: 'Celestron RASA 8',            fl: 400,  fr: 2.0 },
+    { n: 'Sky-Watcher Quattro 8" f/4',  fl: 800,  fr: 4.0 },
+    { n: 'GSO / TS RC8',                fl: 1624, fr: 8.0 },
+    { n: 'Celestron C6 SCT',            fl: 1500, fr: 10.0 },
+    { n: 'Celestron C8 SCT',            fl: 2032, fr: 10.0 },
+    { n: 'Celestron C11 SCT',           fl: 2800, fr: 10.0 },
+    { n: 'Sky-Watcher Skymax 127 Mak',  fl: 1500, fr: 11.8 }
+  ]},
+  { group: 'Camera Lenses', items: [
+    { n: 'Rokinon 85mm f/1.4',          fl: 85,   fr: 1.4 },
+    { n: 'Sigma 105mm f/1.4 Art',       fl: 105,  fr: 1.4 },
+    { n: 'Samyang 135mm f/2',           fl: 135,  fr: 2.0 },
+    { n: 'Canon 200mm f/2.8L',          fl: 200,  fr: 2.8 },
+    { n: 'Sony 300mm f/2.8 GM',         fl: 300,  fr: 2.8 }
+  ]}
+];
+
+const CAMERAS = [
+  { group: 'Observatory Cameras', items: [
+    { n: 'ZWO ASI585MC Air',      px: 2.90, w: 3840, h: 2160 },
+    { n: 'ZWO ASI585MC Pro',      px: 2.90, w: 3840, h: 2160 },
+    { n: 'ZWO ASI585MC',          px: 2.90, w: 3840, h: 2160 },
+    { n: 'ZWO ASI2600MC Pro',     px: 3.76, w: 6248, h: 4176 },
+    { n: 'Sony A7R II',           px: 4.50, w: 7952, h: 5304 }
+  ]},
+  { group: 'Cooled Astro Cameras', items: [
+    { n: 'ZWO ASI533MC Pro',      px: 3.76, w: 3008, h: 3008 },
+    { n: 'ZWO ASI294MC Pro',      px: 4.63, w: 4144, h: 2822 },
+    { n: 'ZWO ASI183MC Pro',      px: 2.40, w: 5496, h: 3672 },
+    { n: 'ZWO ASI1600MM Pro',     px: 3.80, w: 4656, h: 3520 },
+    { n: 'ZWO ASI2400MC Pro',     px: 5.94, w: 6072, h: 4042 },
+    { n: 'ZWO ASI6200MM Pro',     px: 3.76, w: 9576, h: 6388 },
+    { n: 'QHY268C',               px: 3.76, w: 6280, h: 4210 },
+    { n: 'QHY294C Pro',           px: 4.63, w: 4164, h: 2796 },
+    { n: 'Player One Poseidon-C', px: 3.76, w: 6248, h: 4176 }
+  ]},
+  { group: 'Planetary & Guide', items: [
+    { n: 'ZWO ASI662MC',          px: 2.90, w: 1920, h: 1080 },
+    { n: 'ZWO ASI676MC',          px: 2.00, w: 3552, h: 3552 },
+    { n: 'ZWO ASI715MC',          px: 1.45, w: 3864, h: 2180 },
+    { n: 'ZWO ASI178MC',          px: 2.40, w: 3096, h: 2080 },
+    { n: 'ZWO ASI220MM Mini',     px: 4.00, w: 1920, h: 1080 },
+    { n: 'ZWO ASI120MM Mini',     px: 3.75, w: 1280, h: 960 }
+  ]},
+  { group: 'DSLR & Mirrorless', items: [
+    { n: 'Canon EOS Ra',          px: 5.36, w: 6720, h: 4480 },
+    { n: 'Canon EOS R6',          px: 6.56, w: 5472, h: 3648 },
+    { n: 'Nikon D5600',           px: 3.89, w: 6000, h: 4000 },
+    { n: 'Sony A7 III',           px: 5.94, w: 6000, h: 4000 }
+  ]}
+];
+
+const CORRECTORS = [
+  { n: 'None',              v: 1.00 },
+  { n: '0.5\u00d7 reducer', v: 0.50 },
+  { n: '0.6\u00d7 reducer', v: 0.60 },
+  { n: '0.63\u00d7 reducer',v: 0.63 },
+  { n: '0.7\u00d7 reducer', v: 0.70 },
+  { n: '0.72\u00d7 reducer',v: 0.72 },
+  { n: '0.75\u00d7 reducer',v: 0.75 },
+  { n: '0.8\u00d7 reducer', v: 0.80 },
+  { n: '0.85\u00d7 reducer',v: 0.85 },
+  { n: '1.04\u00d7 flattener', v: 1.04 },
+  { n: '1.5\u00d7 barlow',  v: 1.50 },
+  { n: '2\u00d7 barlow',    v: 2.00 },
+  { n: '2.5\u00d7 barlow',  v: 2.50 },
+  { n: '3\u00d7 barlow',    v: 3.00 }
+];
+
+/* ============================================================
+   Populate controls
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function fillGrouped(sel, data, labelFn) {
+  data.forEach(g => {
+    const og = document.createElement('optgroup');
+    og.label = g.group;
+    g.items.forEach((it, i) => {
+      const o = document.createElement('option');
+      o.value = JSON.stringify(it);
+      o.textContent = labelFn(it);
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+fillGrouped($('scope'), SCOPES, s => `${s.n} \u2014 ${s.fl}mm f/${s.fr}`);
+fillGrouped($('cam'),   CAMERAS, c => `${c.n} \u2014 ${c.px.toFixed(2)}\u00b5m`);
+
+CORRECTORS.forEach(c => {
+  const o = document.createElement('option');
+  o.value = c.v;
+  o.textContent = c.n;
+  $('corrector').appendChild(o);
+});
+
+// Defaults: RedCat 51 + ASI585MC Air
+$('scope').selectedIndex = 2;
+$('cam').selectedIndex = 0;
+
+let activeScope = JSON.parse($('scope').value);
+let activeCam   = JSON.parse($('cam').value);
+
+/* ============================================================
+   Calculation
+   ============================================================ */
+const ARCSEC = 206.265;
+
+function seeingRange() {
+  const v = $('seeing').value;
+  if (v === 'custom') {
+    let lo = parseFloat($('seeMin').value) || 2;
+    let hi = parseFloat($('seeMax').value) || 4;
+    if (hi < lo) [lo, hi] = [hi, lo];
+    return [lo, hi];
+  }
+  return v.split(',').map(Number);
+}
+
+function compute() {
+  const fl    = Math.max(1, parseFloat($('fl').value) || 1);
+  const mult  = parseFloat($('corrector').value) || 1;
+  const px    = Math.max(0.1, parseFloat($('px').value) || 0.1);
+  const bin   = parseInt($('binning').value, 10) || 1;
+
+  const flEff = fl * mult;
+  const pxEff = px * bin;
+  const res   = (pxEff / flEff) * ARCSEC;
+
+  const [sLo, sHi] = seeingRange();
+  const idealMin = sLo / 3;      // finest useful scale
+  const idealMax = sHi / 2;      // coarsest useful scale
+  const typical  = (sLo + sHi) / 2;
+  const fwhmPx   = typical / res;
+
+  return { fl, mult, px, bin, flEff, pxEff, res, sLo, sHi, idealMin, idealMax, typical, fwhmPx };
+}
+
+/* ---------- log scale bar mapping: 0.1" .. 10" ---------- */
+const BAR_LO = 0.1, BAR_HI = 10;
+const pos = v => {
+  const c = Math.min(BAR_HI, Math.max(BAR_LO, v));
+  return (Math.log10(c) - Math.log10(BAR_LO)) / (Math.log10(BAR_HI) - Math.log10(BAR_LO)) * 100;
+};
+
+[0.1, 0.3, 1, 3, 10].forEach(t => {
+  const el = document.createElement('div');
+  el.className = 'bar-tick';
+  el.style.left = pos(t) + '%';
+  el.textContent = t + '\u2033';
+  $('ticks').appendChild(el);
+});
+
+/* ============================================================
+   Star render — a Gaussian PSF integrated over the pixel grid
+   ============================================================ */
+function drawStar(fwhmPx) {
+  const cv = $('starCanvas');
+  const box = cv.parentElement.clientWidth;
+  if (!box) { requestAnimationFrame(() => drawStar(fwhmPx)); return; }
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = box * dpr;
+  cv.height = box * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, box, box);
+
+  // Show roughly four FWHM of sky, clamped so the grid stays legible
+  let cells = Math.round(fwhmPx * 4);
+  cells = Math.max(5, Math.min(27, cells));
+  if (cells % 2 === 0) cells += 1;           // odd keeps the star centred on a pixel
+
+  const cell  = box / cells;
+  const sigma = Math.max(0.12, fwhmPx / 2.3548);
+  const c     = (cells - 1) / 2;
+  const S     = 6;                            // supersamples per axis
+  const vals  = [];
+  let peak = 0;
+
+  for (let y = 0; y < cells; y++) {
+    vals[y] = [];
+    for (let x = 0; x < cells; x++) {
+      let sum = 0;
+      for (let sy = 0; sy < S; sy++) {
+        for (let sx = 0; sx < S; sx++) {
+          const dx = (x + (sx + 0.5) / S - 0.5) - c;
+          const dy = (y + (sy + 0.5) / S - 0.5) - c;
+          sum += Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
+        }
+      }
+      const v = sum / (S * S);
+      vals[y][x] = v;
+      if (v > peak) peak = v;
+    }
+  }
+
+  for (let y = 0; y < cells; y++) {
+    for (let x = 0; x < cells; x++) {
+      const a = Math.pow(vals[y][x] / peak, 0.62);
+      if (a < 0.004) continue;
+      ctx.fillStyle = `rgba(238,235,228,${a.toFixed(3)})`;
+      ctx.fillRect(x * cell, y * cell, cell + 0.5, cell + 0.5);
+    }
+  }
+
+  // pixel grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < cells; i++) {
+    const p = Math.round(i * cell) + 0.5;
+    ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, box); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(box, p); ctx.stroke();
+  }
+
+  // FWHM ring
+  const r = (fwhmPx / 2) * cell;
+  if (r > 2 && r < box * 0.55) {
+    ctx.strokeStyle = 'rgba(74,124,173,0.75)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc((c + 0.5) * cell, (c + 0.5) * cell, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+function fmtFov(deg) {
+  if (deg >= 1) return deg.toFixed(2) + '\u00b0';
+  return (deg * 60).toFixed(0) + '\u2032';
+}
+
+function render() {
+  const d = compute();
+
+  // headline number
+  $('resValue').textContent = d.res.toFixed(2);
+
+  // focal length hint
+  const fr = activeScope ? (activeScope.fr * d.mult) : null;
+  $('flHint').textContent = d.mult === 1
+    ? `Effective focal length: ${Math.round(d.flEff)} mm` + (fr ? ` at f/${fr.toFixed(1)}` : '')
+    : `Effective focal length: ${Math.round(d.flEff)} mm` + (fr ? ` at f/${fr.toFixed(1)}` : '') + ` (${d.mult}\u00d7)`;
+
+  // ideal window + bar
+  $('idealRange').innerHTML = `${d.idealMin.toFixed(2)}\u2033 \u2013 ${d.idealMax.toFixed(2)}\u2033`;
+  const a = pos(d.idealMin), b = pos(d.idealMax);
+  $('zoneOver').style.left  = '0%';
+  $('zoneOver').style.width = a + '%';
+  $('zoneOk').style.left    = a + '%';
+  $('zoneOk').style.width   = (b - a) + '%';
+  $('zoneUnder').style.left = b + '%';
+  $('zoneUnder').style.width= (100 - b) + '%';
+  $('marker').style.left    = pos(d.res) + '%';
+
+  // verdict
+  const v = $('verdict');
+  let state;
+  if (d.res > d.idealMax)      state = 'under';
+  else if (d.res < d.idealMin) state = 'over';
+  else                          state = 'optimal';
+  v.className = 'verdict ' + state;
+  v.textContent = state === 'under' ? 'Under-sampled' : state === 'over' ? 'Over-sampled' : 'Well matched';
+
+  // star render + headline
+  drawStar(d.fwhmPx);
+  $('starHeadline').innerHTML =
+    `A ${d.typical.toFixed(1)}\u2033 star spreads across <strong>${d.fwhmPx.toFixed(1)} pixels</strong>`;
+
+  let body;
+  if (d.fwhmPx < 1.6) {
+    body = 'Too few pixels to hold a round profile. The star is being recorded as a block, and no processing recovers the shape afterwards.';
+  } else if (d.fwhmPx < 2) {
+    body = 'Right at the edge. Stars will read as slightly angular, and fine structure sits below what the grid can separate.';
+  } else if (d.fwhmPx <= 3.5) {
+    body = 'A comfortable spread. Enough pixels for a smooth round profile without spending resolution on atmospheric blur.';
+  } else if (d.fwhmPx <= 6) {
+    body = 'Generously sampled. Star shapes will be very clean, though you are giving up field of view and signal per pixel to get there.';
+  } else {
+    body = 'Far more pixels than the seeing supports. You are magnifying atmospheric blur, spreading the same photons thinner, and narrowing the field for no gain in detail.';
+  }
+  $('starBody').textContent = body;
+
+  // metrics
+  if (activeCam) {
+    const wDeg = (activeCam.w / d.bin) * d.res / 3600;
+    const hDeg = (activeCam.h / d.bin) * d.res / 3600;
+    $('mFov').textContent = `${fmtFov(wDeg)} \u00d7 ${fmtFov(hDeg)}`;
+    $('mFrame').textContent = `${Math.round(activeCam.w / d.bin)} \u00d7 ${Math.round(activeCam.h / d.bin)}`;
+  } else {
+    $('mFov').textContent = '\u2014';
+    $('mFrame').textContent = '\u2014';
+  }
+  $('mStar').innerHTML  = d.fwhmPx.toFixed(2) + '<small>px</small>';
+  $('mRatio').innerHTML = (d.fwhmPx / 2).toFixed(2) + '<small>\u00d7</small>';
+
+  // guidance
+  const g = $('guidance');
+  if (state === 'optimal') {
+    g.className = 'guidance good';
+    g.innerHTML = `Well matched. At ${d.res.toFixed(2)}\u2033 per pixel this pairing sits inside the useful window for ${d.sLo}\u2033\u2013${d.sHi}\u2033 seeing \u2014 <b>no correction needed</b>.`;
+  } else if (state === 'under') {
+    const need = d.res / d.idealMax;
+    g.className = 'guidance warn';
+    g.innerHTML = `Under-sampled by <b>${need.toFixed(2)}\u00d7</b>. Stars will look angular and detail is lost permanently. A barlow of <b>${need.toFixed(1)}\u00d7 or stronger</b> would bring it into range, or move to a camera with pixels around <b>${(d.px / need).toFixed(2)}&micro;m</b>. If neither is available, this pairing still works for wide nebula fields where fine star shape matters less.`;
+  } else {
+    const over = d.idealMin / d.res;
+    g.className = 'guidance';
+    g.innerHTML = `Over-sampled by <b>${over.toFixed(2)}\u00d7</b>. Star shapes will be clean, but you are narrowing the field and thinning signal per pixel. <b>${Math.ceil(over)}\u00d7${Math.ceil(over)} binning</b> would recover it, or a <b>${(1 / over).toFixed(2)}\u00d7 reducer</b>. Left as-is it is a soft loss, not a failure \u2014 over-sampling costs efficiency, under-sampling costs detail.`;
+  }
+}
+
+/* ============================================================
+   Wiring
+   ============================================================ */
+$('scope').addEventListener('change', e => {
+  activeScope = JSON.parse(e.target.value);
+  $('fl').value = activeScope.fl;
+  render();
+});
+
+$('cam').addEventListener('change', e => {
+  activeCam = JSON.parse(e.target.value);
+  $('px').value = activeCam.px.toFixed(2);
+  render();
+});
+
+$('seeing').addEventListener('change', e => {
+  $('customSeeing').classList.toggle('show', e.target.value === 'custom');
+  render();
+});
+
+['fl', 'px', 'corrector', 'binning', 'seeMin', 'seeMax'].forEach(id =>
+  $(id).addEventListener('input', render)
+);
+
+let rt;
+window.addEventListener('resize', () => {
+  clearTimeout(rt);
+  rt = setTimeout(render, 120);
+});
+
+render();
+window.addEventListener('load', render);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+</script>
+</body>
+</html>
