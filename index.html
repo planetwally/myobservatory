@@ -125,9 +125,10 @@
   .release-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1.15; }
   .release-title em { font-style: italic; color: var(--accent-blue); }
   .release-desc { font-size: 0.92rem; font-weight: 300; color: var(--text-nebula); max-width: 56ch; margin-top: 0.9rem; line-height: 1.75; }
+  .release-desc strong { color: var(--text-star); font-weight: 500; }
   .cta-button { display: inline-flex; align-items: center; gap: 0.55rem; margin-top: 1.6rem; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-void); background: var(--accent-gold); text-decoration: none; padding: 0.8rem 1.5rem; border-radius: 6px; border: 1px solid var(--accent-gold); transition: background 0.3s, transform 0.3s, box-shadow 0.3s; }
-  .release-ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; }
-  .release-ctas .cta-button { margin-top: 1.6rem; }
+  .release-ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 1.6rem; }
+  .release-ctas .cta-button { margin-top: 0; }
   .cta-button.secondary { background: transparent; color: var(--accent-gold); }
   .cta-button.secondary:hover { background: rgba(201,168,76,0.08); box-shadow: none; }
   .cta-button:hover { background: #dab84f; transform: translateY(-2px); box-shadow: 0 10px 26px rgba(201,168,76,0.18); }
@@ -208,11 +209,12 @@
   <div class="release-card">
     <div class="release-body">
       <div class="release-tag">New &middot; Observatory Tools</div>
-      <h2 class="release-title">Plan the whole night: <em>FOV Viewer</em> &amp; <em>Sky Conditions</em></h2>
-      <p class="release-desc">Two homegrown tools for the imaging community. Frame any target over real survey imagery with the FOV Viewer &mdash; search by name, compare rigs, export your framing. Then check the Sky Conditions Planner: scrub forecast cloud cover across a live map, hour by hour into the future, with seeing and transparency estimates, darkness windows and moonrise for any site.</p>
+      <h2 class="release-title">Plan the whole night: <em>FOV Viewer</em>, <em>Sky Conditions</em> &amp; <em>Sampling</em></h2>
+      <p class="release-desc">Three homegrown tools for the imaging community. The <strong>FOV Viewer</strong> frames any target over real survey imagery &mdash; resolve it by name, compare rigs side by side, then copy the coordinates straight into ASIAir or NINA. The <strong>Sky Conditions Planner</strong> scrubs forecast cloud cover across a live map, hour by hour into the future, with seeing and transparency estimates, darkness windows and moonrise for any site. The <strong>Sampling Calculator</strong> matches a camera to a telescope and draws the star on your actual pixel grid, so you can see whether a pairing under-samples before you commit to it.</p>
       <div class="release-ctas">
         <a href="fov.html" class="cta-button">FOV Viewer <span class="arrow">&rarr;</span></a>
         <a href="sky.html" class="cta-button secondary">Sky Conditions Planner <span class="arrow">&rarr;</span></a>
+        <a href="sampling.html" class="cta-button secondary">Sampling Calculator <span class="arrow">&rarr;</span></a>
       </div>
     </div>
     <svg class="release-art" width="220" height="150" viewBox="0 0 220 150" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
