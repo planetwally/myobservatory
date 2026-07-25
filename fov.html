@@ -41,7 +41,8 @@
     --radius:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  html,body{height:100%;overflow-x:hidden;overflow-x:clip}
+  img,svg,video{max-width:100%}
   body{
     background:var(--bg);
     color:var(--text);
@@ -64,9 +65,10 @@
   .nav-brand{
     font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
     letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
-    text-decoration:none;white-space:nowrap;
+    text-decoration:none;min-width:0;
   }
   .nav-brand span{color:var(--accent-gold)}
+  .nav-brand .brand-long{color:var(--text-star)}
   .nav-links{display:flex;gap:2.1rem;list-style:none;align-items:center}
   .nav-links a{
     font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
@@ -103,6 +105,15 @@
   .footer-links a{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-nebula);text-decoration:none;transition:color .3s}
   .footer-links a:hover{color:var(--accent-gold)}
   .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
+  @media (max-width:620px){
+    .brand-long{display:none}
+    .nav-brand{font-size:1rem;letter-spacing:.1em}
+    #nightBtn{padding:.45rem .6rem;font-size:.58rem}
+    main{padding:16px 14px 24px}
+    .tool-title{padding:1.3rem 1rem .2rem}
+    nav{padding:.85rem 1rem}
+    .nav-links.show{padding:.8rem 1rem 1.2rem}
+  }
   @media (max-width:1000px){
     nav{padding:.9rem 1.4rem}
     .nav-toggle{display:block}
@@ -142,14 +153,14 @@
   }
   label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
   select,input[type=number],input[type=text]{
-    width:100%;margin-top:4px;
+    width:100%;min-width:0;margin-top:4px;
     background:var(--panel-2);color:var(--text);
     border:1px solid var(--line);border-radius:7px;
     padding:7px 9px;font:inherit;font-size:14px;
   }
   select:hover,input:hover{border-color:#2c3444}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px}
   .searchrow{display:flex;gap:8px;margin-top:4px}
   .searchrow input{flex:1;margin-top:0}
@@ -174,7 +185,7 @@
     border-top:1px dashed var(--line);padding-top:8px;
   }
   #addRig{width:100%}
-  .side-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .side-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .side-actions button{width:100%}
 
   /* ---------- viewport ---------- */
@@ -246,7 +257,7 @@
   html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
 
   @media (max-width:1020px){
-    main{grid-template-columns:1fr}
+    main{grid-template-columns:minmax(0,1fr)}
     .sky{width:100%}
   }
 </style>
@@ -254,7 +265,7 @@
 <body>
 
 <nav>
-  <a href="index.html" class="nav-brand">Washington Valley <span>Observatory</span></a>
+  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
   <ul class="nav-links" id="navLinks">
     <li><a href="index.html#about">About</a></li>
     <li><a href="index.html#gallery">Gallery</a></li>
