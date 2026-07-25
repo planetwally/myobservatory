@@ -157,12 +157,15 @@
     .metrics { grid-template-columns: repeat(2, 1fr); }
     .explain-grid { grid-template-columns: 1fr; }
   }
-  @media (max-width: 768px) {
-    nav { padding: 1rem 1.5rem; }
-    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: 0; background: rgba(7,8,12,0.97); padding: 1rem 1.5rem 1.5rem; border-bottom: 1px solid var(--border-faint); }
+  @media (max-width: 1000px) {
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: flex-start; gap: 0; background: rgba(7,8,12,0.97); padding: 0.8rem 3rem 1.2rem; border-bottom: 1px solid var(--border-faint); }
     .nav-links.show { display: flex; }
-    .nav-links li { padding: 0.6rem 0; }
+    .nav-links li { padding: 0.55rem 0; }
     .nav-toggle { display: block; }
+  }
+  @media (max-width: 768px) {
+    .nav-links { padding: 0.8rem 1.5rem 1.2rem; }
+    nav { padding: 1rem 1.5rem; }
     .tool-head { padding: 7rem 1.5rem 0; }
     .calc { padding: 2rem 1.5rem; gap: 1.25rem; }
     .explain { padding: 1rem 1.5rem 4rem; }
@@ -185,7 +188,7 @@
     <li><a href="index.html#gallery">Gallery</a></li>
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html">Sky Planner</a></li>
-    <li><a href="sampling.html" class="current">Sampling</a></li>
+    <li><a href="sampling.html" class="current">Sampling Calc</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
   </ul>
   <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
@@ -375,7 +378,7 @@
     <a href="index.html#gallery">Gallery</a>
     <a href="fov.html">FOV Viewer</a>
     <a href="sky.html">Sky Planner</a>
-    <a href="sampling.html">Sampling</a>
+    <a href="sampling.html">Sampling Calc</a>
     <a href="mailto:inquiries@myobservatory.org">Email</a>
   </div>
   <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>

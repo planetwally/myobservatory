@@ -6,22 +6,39 @@
 <title>Sky Conditions Planner — Washington Valley Observatory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root{
-    --bg:#0a0f1a;          /* zenith */
-    --panel:#101725;       /* panel */
-    --panel-2:#0d1320;
-    --line:#223047;
-    --text:#e8ecf4;        /* starlight */
-    --muted:#8a96ab;
-    --amber:#f2b33d;       /* sodium lamp */
-    --amber-dim:#c98f23;
-    --danger:#f87171;
-    --good:#3a8a7a;
-    --fair:#c9a84c;
-    --poor:#b35a3a;
+    /* ---- Washington Valley Observatory shared palette ---- */
+    --bg-void:#07080c;
+    --bg-panel:#0c0e14;
+    --bg-card:#10131b;
+    --bg-card-hover:#161a25;
+    --text-star:#e8e4df;
+    --text-nebula:#9a958d;
+    --text-dim:#5a564f;
+    --accent-blue:#4a7cad;
+    --accent-gold:#c9a84c;
+    --accent-ember:#b35a3a;
+    --accent-teal:#3a8a7a;
+    --border-faint:rgba(255,255,255,0.04);
+    --border-glow:rgba(74,124,173,0.2);
+    --grain:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+
+    /* ---- instrument aliases: the tool CSS below reads these ---- */
+    --bg:var(--bg-void);
+    --panel:var(--bg-panel);
+    --panel-2:var(--bg-card);
+    --line:#1b1f29;
+    --text:var(--text-star);
+    --muted:var(--text-nebula);
+    --amber:var(--accent-gold);
+    --amber-dim:#a8883a;
+    --danger:var(--accent-ember);
+    --good:var(--accent-teal);
+    --fair:var(--accent-gold);
+    --poor:var(--accent-ember);
     --radius:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -29,26 +46,76 @@
   body{
     background:var(--bg);
     color:var(--text);
-    font:15px/1.5 "Inter",system-ui,sans-serif;
+    font:15px/1.5 "DM Sans",system-ui,sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;z-index:1;
-    background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
-    background-size:3px 3px;
+  body::before{ /* observatory film grain */
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;z-index:1;
+    background:var(--grain);
   }
-  header{
-    display:flex;align-items:center;gap:16px;
-    padding:18px 26px;border-bottom:1px solid var(--line);position:relative;z-index:2;
+  /* ---------- shared observatory chrome ---------- */
+  nav{
+    position:sticky;top:0;z-index:60;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:1.05rem 1.9rem;
+    background:rgba(7,8,12,.82);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid var(--border-faint);
   }
-  .home-link{
-    font:13px/1 "Inter",system-ui,sans-serif;color:var(--muted);text-decoration:none;
-    letter-spacing:.03em;white-space:nowrap;transition:color .15s;
+  .nav-brand{
+    font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
+    text-decoration:none;white-space:nowrap;
   }
-  .home-link:hover{color:var(--amber)}
-  .wordmark h1{font:700 22px/1.1 "Bricolage Grotesque",sans-serif;letter-spacing:.2px}
-  .wordmark p{color:var(--muted);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
-  .spacer{flex:1}
+  .nav-brand span{color:var(--accent-gold)}
+  .nav-links{display:flex;gap:2.1rem;list-style:none;align-items:center}
+  .nav-links a{
+    font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
+  }
+  .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
+  .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
+  .nav-links a.current::after,.nav-links a:hover::after{width:100%}
+  .nav-right{display:flex;align-items:center;gap:.8rem}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
+  .nav-toggle:hover{background:none;border:none}
+  .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
+  #nightBtn{
+    font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;padding:.5rem .85rem;white-space:nowrap;
+  }
+  .tool-title{max-width:1500px;margin:0 auto;padding:2.2rem 1.9rem .2rem;position:relative;z-index:2}
+  .tool-title .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:.64rem;font-weight:300;
+    letter-spacing:.3em;text-transform:uppercase;color:var(--accent-gold);margin-bottom:.55rem;
+  }
+  .tool-title h1{
+    font-family:"Cormorant Garamond",serif;font-weight:300;
+    font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.15;letter-spacing:-.01em;
+  }
+  .tool-title h1 em{font-style:italic;color:var(--accent-blue)}
+  .tool-title p{font-size:.9rem;font-weight:300;color:var(--text-nebula);max-width:640px;margin-top:.6rem;line-height:1.75}
+  footer{
+    border-top:1px solid var(--border-faint);padding:3rem 1.9rem 2.2rem;text-align:center;
+    background:var(--bg-panel);margin-top:2.5rem;position:relative;z-index:2;
+  }
+  .footer-brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;font-weight:300;letter-spacing:.1em;text-transform:uppercase}
+  .footer-links{display:flex;justify-content:center;gap:1.7rem;margin-top:1.3rem;flex-wrap:wrap}
+  .footer-links a{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-nebula);text-decoration:none;transition:color .3s}
+  .footer-links a:hover{color:var(--accent-gold)}
+  .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
+  @media (max-width:1000px){
+    nav{padding:.9rem 1.4rem}
+    .nav-toggle{display:block}
+    .nav-links{
+      display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+      align-items:flex-start;gap:0;background:rgba(7,8,12,.97);
+      padding:.8rem 1.4rem 1.2rem;border-bottom:1px solid var(--border-faint);
+    }
+    .nav-links.show{display:flex}
+    .nav-links li{padding:.55rem 0}
+    .tool-title{padding:1.6rem 1.4rem .2rem}
+  }
   button{
     font:inherit;color:var(--text);cursor:pointer;
     background:var(--panel);border:1px solid var(--line);border-radius:8px;
@@ -57,8 +124,8 @@
   button:hover{border-color:var(--amber-dim)}
   button:disabled{opacity:.45;cursor:default}
   button:focus-visible, select:focus-visible, input:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
-  button.primary{background:var(--amber);border-color:var(--amber);color:#1a1304;font-weight:600}
-  button.primary:hover{background:#ffc44f}
+  button.primary{background:var(--amber);border-color:var(--amber);color:#0a0b0f;font-weight:600}
+  button.primary:hover{background:#d9b85e}
   main{
     display:grid;grid-template-columns:370px minmax(0,1fr);
     gap:22px;padding:22px 26px 30px;max-width:1500px;margin:0 auto;position:relative;z-index:2;
@@ -66,7 +133,7 @@
   aside{display:flex;flex-direction:column;gap:14px;min-width:0}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 15px}
   .card h2{
-    font:600 11.5px/1 "Inter",sans-serif;color:var(--muted);
+    font:500 11px/1 "JetBrains Mono",monospace;color:var(--text-dim);
     letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px;
   }
   label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
@@ -76,17 +143,17 @@
     border:1px solid var(--line);border-radius:7px;
     padding:7px 9px;font:inherit;font-size:14px;
   }
-  select:hover,input:hover{border-color:#33486b}
+  select:hover,input:hover{border-color:#2c3444}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px}
-  .mono{font-family:"IBM Plex Mono",monospace}
+  .mono{font-family:"JetBrains Mono",monospace}
   .searchrow{display:flex;gap:8px;margin-top:4px}
   .searchrow input{flex:1;margin-top:0}
   .searchrow button{padding:7px 14px;flex-shrink:0}
   #locStatus{margin-top:7px;font-size:12.5px;line-height:1.45;display:none}
   .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
   .chips button{font-size:12.5px;padding:5px 10px;border-radius:99px}
-  .tonight{font:13px/1.9 "IBM Plex Mono",monospace;color:var(--muted)}
+  .tonight{font:13px/1.9 "JetBrains Mono",monospace;color:var(--muted)}
   .tonight b{color:var(--text);font-weight:500}
   .tonight .lbl{display:inline-block;min-width:86px;color:var(--muted)}
 
@@ -94,17 +161,17 @@
   .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
   .mapbox{
     position:relative;border:1px solid var(--line);border-radius:var(--radius);
-    overflow:hidden;background:#05080f;
+    overflow:hidden;background:#07080c;
   }
-  #map{height:480px;background:#05080f}
-  .leaflet-container{background:#05080f;font:12px "Inter",sans-serif}
+  #map{height:480px;background:#07080c}
+  .leaflet-container{background:#07080c;font:12px "DM Sans",sans-serif}
   .leaflet-control-attribution{
-    background:rgba(13,19,32,.8) !important;color:var(--muted) !important;
-    font:10.5px "Inter",sans-serif !important;
+    background:rgba(12,14,20,.8) !important;color:var(--muted) !important;
+    font:10.5px "DM Sans",sans-serif !important;
   }
   .leaflet-control-attribution a{color:var(--muted) !important}
   .leaflet-control-zoom a{
-    background:rgba(13,19,32,.85) !important;color:var(--text) !important;
+    background:rgba(12,14,20,.85) !important;color:var(--text) !important;
     border-color:var(--line) !important;
   }
   .mapbox::after{ /* viewfinder corner ticks */
@@ -127,11 +194,11 @@
   }
   .timebar button{width:38px;height:34px;padding:0;font-size:16px;line-height:1;flex-shrink:0}
   .timebar input[type=range]{flex:1;accent-color:var(--amber);min-width:0}
-  #frameLabel{font:13px "IBM Plex Mono",monospace;color:var(--text);white-space:nowrap;min-width:190px;text-align:right}
+  #frameLabel{font:13px "JetBrains Mono",monospace;color:var(--text);white-space:nowrap;min-width:190px;text-align:right}
   #frameLabel small{color:var(--muted)}
   .readout{
     display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
-    font:13px "IBM Plex Mono",monospace;color:var(--muted);padding:0 4px;
+    font:13px "JetBrains Mono",monospace;color:var(--muted);padding:0 4px;
   }
   .readout b{color:var(--text);font-weight:500}
 
@@ -139,7 +206,7 @@
   .sixgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
   .hourcard{
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
-    padding:10px 10px 11px;font-family:"IBM Plex Mono",monospace;
+    padding:10px 10px 11px;font-family:"JetBrains Mono",monospace;
   }
   .hourcard .hr{font-size:12px;color:var(--muted);letter-spacing:.05em}
   .hourcard .cl{font-size:24px;font-weight:500;margin:4px 0 2px}
@@ -153,17 +220,17 @@
   .hourcard .sc{font-size:11.5px;color:var(--muted);line-height:1.7}
   .hourcard .sc b{color:var(--text);font-weight:500}
   .dot-on{color:var(--amber)}
-  .dot-off{color:#3a465e}
+  .dot-off{color:#3a3630}
 
   /* ---------- chart ---------- */
   .chartwrap{overflow-x:auto}
   #chart{display:block;width:100%;min-width:720px}
-  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font:11.5px "IBM Plex Mono",monospace;color:var(--muted);margin-top:8px;padding:0 4px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font:11.5px "JetBrains Mono",monospace;color:var(--muted);margin-top:8px;padding:0 4px}
   .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:2px;margin-right:5px}
 
   .veil{
     display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;
-    font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--muted);
+    font-family:"JetBrains Mono",monospace;font-size:13.5px;color:var(--muted);
     text-align:center;padding:26px;
   }
   .veil .spin{
@@ -188,16 +255,27 @@
 </head>
 <body>
 
-<header>
-  <a class="home-link" href="index.html" title="Back to Washington Valley Observatory">&larr; Observatory</a>
-  <div class="wordmark">
-    <h1>Sky Conditions Planner</h1>
-    <p>Washington Valley Observatory</p>
+<nav>
+  <a href="index.html" class="nav-brand">Washington Valley <span>Observatory</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="fov.html">FOV Viewer</a></li>
+    <li><a href="sky.html" class="current">Sky Planner</a></li>
+    <li><a href="sampling.html">Sampling Calc</a></li>
+    <li><a href="index.html#rigs">Imaging Rigs</a></li>
+  </ul>
+  <div class="nav-right">
+    <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+    <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
   </div>
-  <div class="spacer"></div>
-  <a class="home-link" href="fov.html" title="Frame your target in the FOV Viewer">FOV Viewer &rarr;</a>
-  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
-</header>
+</nav>
+
+<div class="tool-title">
+  <div class="eyebrow">Observatory Tools</div>
+  <h1>Sky <em>Conditions</em> Planner</h1>
+  <p>Scrub forecast cloud cover across a live map, hour by hour into the future &mdash; with seeing, transparency, darkness windows and moonrise for any site.</p>
+</div>
 
 <main>
   <aside>
@@ -272,11 +350,11 @@
       <h2>48-hour outlook — clouds, darkness &amp; moon</h2>
       <div id="chartBox"><div class="veil"><div class="spin"></div><div>Building chart…</div></div></div>
       <div class="legend">
-        <span><i style="background:rgba(232,236,244,.7)"></i>total cloud</span>
+        <span><i style="background:rgba(232,228,223,.7)"></i>total cloud</span>
         <span><i style="background:var(--good)"></i>low</span>
         <span><i style="background:#4a7cad"></i>mid</span>
         <span><i style="background:#8a7cbf"></i>high</span>
-        <span><i style="background:rgba(16,24,48,.9)"></i>astro darkness</span>
+        <span><i style="background:rgba(10,14,26,.9)"></i>astro darkness</span>
         <span><i style="background:var(--amber);opacity:.6"></i>moon above horizon</span>
         <span><i style="background:var(--good)"></i><i style="background:var(--fair)"></i><i style="background:var(--poor)"></i>hourly imaging score</span>
       </div>
@@ -291,6 +369,19 @@
     </p>
   </section>
 </main>
+
+<footer>
+  <div class="footer-brand">Washington Valley Observatory</div>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#gallery">Gallery</a>
+    <a href="fov.html">FOV Viewer</a>
+    <a href="sky.html">Sky Planner</a>
+    <a href="sampling.html">Sampling Calc</a>
+    <a href="mailto:inquiries@myobservatory.org">Email</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
+</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -463,7 +554,7 @@ function initMap(){
     subdomains:'abcd', maxZoom:12, minZoom:3,
   }).addTo(map);
   marker=L.circleMarker([state.lat,state.lon],{
-    radius:7, color:'#f2b33d', weight:2, fillColor:'#f2b33d', fillOpacity:.35,
+    radius:7, color:'#c9a84c', weight:2, fillColor:'#c9a84c', fillOpacity:.35,
   }).addTo(map);
   map.on('click', e=>setLocation(e.latlng.lat, e.latlng.lng, 'Map point', {recenter:false}));
   map.on('moveend', ()=>{ state.zoom=map.getZoom(); syncHash(); });
@@ -649,7 +740,7 @@ function renderChart(){
   }
   let run=null;
   const flushRun=(end)=>{ if(run && run.k!=='day'){
-    const fill=run.k==='dark' ? 'rgba(16,24,48,0.9)' : 'rgba(26,38,70,0.45)';
+    const fill=run.k==='dark' ? 'rgba(10,14,26,0.9)' : 'rgba(18,24,42,0.45)';
     svg+=`<rect x="${X(run.t).toFixed(1)}" y="${padT}" width="${(X(end)-X(run.t)).toFixed(1)}" height="${H-padT-padB}" fill="${fill}"/>`;
   } run=null; };
   bands.forEach(b=>{
@@ -673,20 +764,20 @@ function renderChart(){
 
   /* gridlines + labels */
   [0,25,50,75,100].forEach(v=>{
-    svg+=`<line x1="${padL}" y1="${Y(v)}" x2="${W-padR}" y2="${Y(v)}" stroke="#223047" stroke-width="1" stroke-dasharray="${v?'3 4':'none'}"/>`;
-    svg+=`<text x="${padL-6}" y="${Y(v)+4}" text-anchor="end" fill="#8a96ab" font-size="11" font-family="IBM Plex Mono, monospace">${v}</text>`;
+    svg+=`<line x1="${padL}" y1="${Y(v)}" x2="${W-padR}" y2="${Y(v)}" stroke="#1b1f29" stroke-width="1" stroke-dasharray="${v?'3 4':'none'}"/>`;
+    svg+=`<text x="${padL-6}" y="${Y(v)+4}" text-anchor="end" fill="#9a958d" font-size="11" font-family="JetBrains Mono, monospace">${v}</text>`;
   });
   const firstTick=Math.ceil(t0/(6*3600))*6*3600;
   for(let t=firstTick; t<=t1; t+=6*3600){
     const d=new Date(t*1000);
-    svg+=`<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${H-padB}" stroke="#223047" stroke-width="1" opacity="0.6"/>`;
-    svg+=`<text x="${X(t)}" y="${H-padB+34}" text-anchor="middle" fill="#8a96ab" font-size="11" font-family="IBM Plex Mono, monospace">${d.toLocaleString([],{weekday:'short', hour:'numeric'})}</text>`;
+    svg+=`<line x1="${X(t)}" y1="${padT}" x2="${X(t)}" y2="${H-padB}" stroke="#1b1f29" stroke-width="1" opacity="0.6"/>`;
+    svg+=`<text x="${X(t)}" y="${H-padB+34}" text-anchor="middle" fill="#9a958d" font-size="11" font-family="JetBrains Mono, monospace">${d.toLocaleString([],{weekday:'short', hour:'numeric'})}</text>`;
   }
 
   /* cloud area + component lines */
   const line=(key)=>pts.map((h,i)=>(i?'L':'M')+X(h.tt).toFixed(1)+' '+Y(h[key]).toFixed(1)).join(' ');
-  svg+=`<path d="${line('cloud')} L ${X(pts[pts.length-1].tt).toFixed(1)} ${Y(0)} L ${X(pts[0].tt).toFixed(1)} ${Y(0)} Z" fill="rgba(232,236,244,0.16)"/>`;
-  svg+=`<path d="${line('cloud')}" fill="none" stroke="rgba(232,236,244,0.85)" stroke-width="2"/>`;
+  svg+=`<path d="${line('cloud')} L ${X(pts[pts.length-1].tt).toFixed(1)} ${Y(0)} L ${X(pts[0].tt).toFixed(1)} ${Y(0)} Z" fill="rgba(232,228,223,0.16)"/>`;
+  svg+=`<path d="${line('cloud')}" fill="none" stroke="rgba(232,228,223,0.85)" stroke-width="2"/>`;
   svg+=`<path d="${line('lo')}" fill="none" stroke="var(--good)" stroke-width="1.3" opacity="0.9"/>`;
   svg+=`<path d="${line('mi')}" fill="none" stroke="#4a7cad" stroke-width="1.3" opacity="0.9"/>`;
   svg+=`<path d="${line('hi')}" fill="none" stroke="#8a7cbf" stroke-width="1.3" opacity="0.9"/>`;
@@ -705,7 +796,7 @@ function renderChart(){
 
   /* now line */
   svg+=`<line x1="${X(nowS)}" y1="${padT}" x2="${X(nowS)}" y2="${H-padB}" stroke="var(--amber)" stroke-width="1.5"/>`;
-  svg+=`<text x="${X(nowS)+4}" y="${padT+12}" fill="var(--amber)" font-size="11" font-family="IBM Plex Mono, monospace">now</text>`;
+  svg+=`<text x="${X(nowS)+4}" y="${padT+12}" fill="var(--amber)" font-size="11" font-family="JetBrains Mono, monospace">now</text>`;
 
   $('chartBox').innerHTML=`<svg id="chart" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="48 hour cloud and darkness chart">${svg}</svg>`;
 }

@@ -6,18 +6,38 @@
 <title>Field of View Viewer — Washington Valley Observatory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0f1a;          /* zenith */
-    --panel:#101725;       /* panel */
-    --panel-2:#0d1320;
-    --line:#223047;
-    --text:#e8ecf4;        /* starlight */
-    --muted:#8a96ab;
-    --amber:#f2b33d;       /* sodium lamp */
-    --amber-dim:#c98f23;
-    --danger:#f87171;
+    /* ---- Washington Valley Observatory shared palette ---- */
+    --bg-void:#07080c;
+    --bg-panel:#0c0e14;
+    --bg-card:#10131b;
+    --bg-card-hover:#161a25;
+    --text-star:#e8e4df;
+    --text-nebula:#9a958d;
+    --text-dim:#5a564f;
+    --accent-blue:#4a7cad;
+    --accent-gold:#c9a84c;
+    --accent-ember:#b35a3a;
+    --accent-teal:#3a8a7a;
+    --border-faint:rgba(255,255,255,0.04);
+    --border-glow:rgba(74,124,173,0.2);
+    --grain:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+
+    /* ---- instrument aliases: the tool CSS below reads these ---- */
+    --bg:var(--bg-void);
+    --panel:var(--bg-panel);
+    --panel-2:var(--bg-card);
+    --line:#1b1f29;
+    --text:var(--text-star);
+    --muted:var(--text-nebula);
+    --amber:var(--accent-gold);
+    --amber-dim:#a8883a;
+    --danger:var(--accent-ember);
+    --good:var(--accent-teal);
+    --fair:var(--accent-gold);
+    --poor:var(--accent-ember);
     --radius:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -25,31 +45,76 @@
   body{
     background:var(--bg);
     color:var(--text);
-    font:15px/1.5 "Inter",system-ui,sans-serif;
+    font:15px/1.5 "DM Sans",system-ui,sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  body::before{ /* faint static grain so the chrome isn't dead-flat */
-    content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;
-    background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
-    background-size:3px 3px;
+  body::before{ /* observatory film grain */
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+    background:var(--grain);
   }
-  header{
-    display:flex;align-items:center;gap:16px;
-    padding:18px 26px;border-bottom:1px solid var(--line);
+  /* ---------- shared observatory chrome ---------- */
+  nav{
+    position:sticky;top:0;z-index:60;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:1.05rem 1.9rem;
+    background:rgba(7,8,12,.82);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid var(--border-faint);
   }
-  .wordmark h1{
-    font:700 22px/1.1 "Bricolage Grotesque",sans-serif;
-    letter-spacing:.2px;
+  .nav-brand{
+    font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
+    text-decoration:none;white-space:nowrap;
   }
-  .wordmark p{
-    color:var(--muted);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px;
+  .nav-brand span{color:var(--accent-gold)}
+  .nav-links{display:flex;gap:2.1rem;list-style:none;align-items:center}
+  .nav-links a{
+    font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
   }
-  .home-link{
-    font:13px/1 "Inter",system-ui,sans-serif;color:var(--muted);text-decoration:none;
-    letter-spacing:.03em;white-space:nowrap;transition:color .15s;
+  .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
+  .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
+  .nav-links a.current::after,.nav-links a:hover::after{width:100%}
+  .nav-right{display:flex;align-items:center;gap:.8rem}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
+  .nav-toggle:hover{background:none;border:none}
+  .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
+  #nightBtn{
+    font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;padding:.5rem .85rem;white-space:nowrap;
   }
-  .home-link:hover{color:var(--amber)}
-  .spacer{flex:1}
+  .tool-title{max-width:1500px;margin:0 auto;padding:2.2rem 1.9rem .2rem;position:relative;z-index:2}
+  .tool-title .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:.64rem;font-weight:300;
+    letter-spacing:.3em;text-transform:uppercase;color:var(--accent-gold);margin-bottom:.55rem;
+  }
+  .tool-title h1{
+    font-family:"Cormorant Garamond",serif;font-weight:300;
+    font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.15;letter-spacing:-.01em;
+  }
+  .tool-title h1 em{font-style:italic;color:var(--accent-blue)}
+  .tool-title p{font-size:.9rem;font-weight:300;color:var(--text-nebula);max-width:640px;margin-top:.6rem;line-height:1.75}
+  footer{
+    border-top:1px solid var(--border-faint);padding:3rem 1.9rem 2.2rem;text-align:center;
+    background:var(--bg-panel);margin-top:2.5rem;position:relative;z-index:2;
+  }
+  .footer-brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;font-weight:300;letter-spacing:.1em;text-transform:uppercase}
+  .footer-links{display:flex;justify-content:center;gap:1.7rem;margin-top:1.3rem;flex-wrap:wrap}
+  .footer-links a{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-nebula);text-decoration:none;transition:color .3s}
+  .footer-links a:hover{color:var(--accent-gold)}
+  .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
+  @media (max-width:1000px){
+    nav{padding:.9rem 1.4rem}
+    .nav-toggle{display:block}
+    .nav-links{
+      display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+      align-items:flex-start;gap:0;background:rgba(7,8,12,.97);
+      padding:.8rem 1.4rem 1.2rem;border-bottom:1px solid var(--border-faint);
+    }
+    .nav-links.show{display:flex}
+    .nav-links li{padding:.55rem 0}
+    .tool-title{padding:1.6rem 1.4rem .2rem}
+  }
   button{
     font:inherit;color:var(--text);cursor:pointer;
     background:var(--panel);border:1px solid var(--line);border-radius:8px;
@@ -59,8 +124,8 @@
   button:focus-visible, select:focus-visible, input:focus-visible{
     outline:2px solid var(--amber);outline-offset:1px;
   }
-  button.primary{background:var(--amber);border-color:var(--amber);color:#1a1304;font-weight:600}
-  button.primary:hover{background:#ffc44f}
+  button.primary{background:var(--amber);border-color:var(--amber);color:#0a0b0f;font-weight:600}
+  button.primary:hover{background:#d9b85e}
   main{
     display:grid;grid-template-columns:370px minmax(0,1fr);
     gap:22px;padding:22px 26px 30px;max-width:1500px;margin:0 auto;
@@ -72,7 +137,7 @@
     padding:14px 14px 15px;
   }
   .card h2{
-    font:600 11.5px/1 "Inter",sans-serif;color:var(--muted);
+    font:500 11px/1 "JetBrains Mono",monospace;color:var(--text-dim);
     letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px;
   }
   label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
@@ -82,7 +147,7 @@
     border:1px solid var(--line);border-radius:7px;
     padding:7px 9px;font:inherit;font-size:14px;
   }
-  select:hover,input:hover{border-color:#33486b}
+  select:hover,input:hover{border-color:#2c3444}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px}
@@ -91,7 +156,7 @@
   .searchrow button{padding:7px 14px;flex-shrink:0}
   #searchStatus{margin-top:7px;font-size:12.5px;line-height:1.45;display:none}
   .hidden{display:none !important}
-  .mono{font-family:"IBM Plex Mono",monospace}
+  .mono{font-family:"JetBrains Mono",monospace}
 
   /* ---------- rig cards ---------- */
   .rig{
@@ -100,12 +165,12 @@
   }
   .rig.dim{opacity:.45}
   .rig-top{display:flex;align-items:center;gap:8px}
-  .rig-title{font:600 13.5px "Inter",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rig-title{font:600 13.5px "DM Sans",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .icon{padding:3px 8px;font-size:13px;line-height:1.2;border-radius:6px}
   .icon.del:hover{border-color:var(--danger);color:var(--danger)}
   .rig label{margin:0}
   .rig .mini{
-    font:12px "IBM Plex Mono",monospace;color:var(--muted);
+    font:12px "JetBrains Mono",monospace;color:var(--muted);
     border-top:1px dashed var(--line);padding-top:8px;
   }
   #addRig{width:100%}
@@ -116,7 +181,7 @@
   .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
   .sky{
     position:relative;width:min(100%, 82vh);aspect-ratio:1/1;margin-inline:auto;
-    background:#05080f;border:1px solid var(--line);border-radius:var(--radius);
+    background:#07080c;border:1px solid var(--line);border-radius:var(--radius);
     overflow:hidden;cursor:grab;touch-action:none;user-select:none;
   }
   .sky.busy{cursor:grabbing}
@@ -143,14 +208,14 @@
   .skyctl{position:absolute;right:14px;bottom:14px;z-index:4;display:flex;flex-direction:column;gap:6px}
   .skyctl button{
     width:38px;height:38px;padding:0;font-size:19px;line-height:1;
-    background:rgba(13,19,32,.78);border:1px solid var(--line);color:var(--text);
+    background:rgba(12,14,20,.78);border:1px solid var(--line);color:var(--text);
     -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
   }
   .skyctl button:hover{border-color:var(--amber-dim)}
   .veil{
     position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;
-    align-items:center;justify-content:center;background:rgba(5,8,15,.82);
-    font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--muted);
+    align-items:center;justify-content:center;background:rgba(7,8,12,.82);
+    font-family:"JetBrains Mono",monospace;font-size:13.5px;color:var(--muted);
     text-align:center;padding:20px;z-index:5;
   }
   .veil .spin{
@@ -163,13 +228,13 @@
 
   .readout{
     display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
-    font:13px "IBM Plex Mono",monospace;color:var(--muted);padding:0 4px;
+    font:13px "JetBrains Mono",monospace;color:var(--muted);padding:0 4px;
   }
   .readout b{color:var(--text);font-weight:500}
   .gesture{font-size:12px;color:var(--muted);padding:0 4px;letter-spacing:.01em}
 
   /* ---------- stats ---------- */
-  table{width:100%;border-collapse:collapse;font:13px "IBM Plex Mono",monospace}
+  table{width:100%;border-collapse:collapse;font:13px "JetBrains Mono",monospace}
   th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
   th{color:var(--muted);font-weight:500;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
   td .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;vertical-align:1px}
@@ -188,15 +253,27 @@
 </head>
 <body>
 
-<header>
-  <a class="home-link" href="index.html" title="Back to Washington Valley Observatory">&larr; Observatory</a>
-  <div class="wordmark">
-    <h1>Field of View Viewer</h1>
-    <p>Washington Valley Observatory</p>
+<nav>
+  <a href="index.html" class="nav-brand">Washington Valley <span>Observatory</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="fov.html" class="current">FOV Viewer</a></li>
+    <li><a href="sky.html">Sky Planner</a></li>
+    <li><a href="sampling.html">Sampling Calc</a></li>
+    <li><a href="index.html#rigs">Imaging Rigs</a></li>
+  </ul>
+  <div class="nav-right">
+    <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+    <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
   </div>
-  <div class="spacer"></div>
-  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
-</header>
+</nav>
+
+<div class="tool-title">
+  <div class="eyebrow">Observatory Tools</div>
+  <h1>Field of <em>View</em> Viewer</h1>
+  <p>Frame any target over real survey imagery &mdash; resolve it by name, compare every rig side by side, then copy the coordinates straight into ASIAir or NINA.</p>
+</div>
 
 <main>
   <aside>
@@ -298,6 +375,19 @@
     </p>
   </section>
 </main>
+
+<footer>
+  <div class="footer-brand">Washington Valley Observatory</div>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#gallery">Gallery</a>
+    <a href="fov.html">FOV Viewer</a>
+    <a href="sky.html">Sky Planner</a>
+    <a href="sampling.html">Sampling Calc</a>
+    <a href="mailto:inquiries@myobservatory.org">Email</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
+</footer>
 
 <script>
 'use strict';
@@ -443,7 +533,7 @@ const SURVEYS = [
   {id:'CDS/P/unWISE/color-W2-W1W2-W1', name:'unWISE mid-infrared'},
 ];
 
-const COLORS = ['#fbbf24','#22d3ee','#f472b6','#a3e635','#fb923c','#c084fc','#34d399','#f87171'];
+const COLORS = ['#c9a84c','#4a7cad','#8a7cbf','#9cb04a','#c97a4a','#b35a7a','#3a8a7a','#d9b98a'];
 const HOSTS = ['alasky.cds.unistra.fr','alasky.u-strasbg.fr'];
 const S = 1100;                 /* SVG viewBox + fetched image size */
 const NS = 'http://www.w3.org/2000/svg';
@@ -704,7 +794,7 @@ function drawGrid(svg){
   const raStep=GRID_RA_STEPS.find(v=>v>=step/cosd-1e-9)||90;
   const half=state.fov*0.75;
   const rr=Math.min(179, half/cosd*1.6);
-  const g=svgEl('g',{stroke:'#8a96ab',['stroke-opacity']:.22,['stroke-width']:1,fill:'none'});
+  const g=svgEl('g',{stroke:'#9a958d',['stroke-opacity']:.22,['stroke-width']:1,fill:'none'});
   const labels=[];
   const addLine=(samples, text, mode)=>{
     let seg=[], best=null;
@@ -735,8 +825,8 @@ function drawGrid(svg){
   svg.appendChild(g);
   labels.forEach(({p,text,mode})=>{
     const t=svgEl('text',{x:p.x+5, y:mode==='dec'?p.y-6:p.y+18,
-      fill:'#8a96ab',['fill-opacity']:.85,['font-size']:17,
-      ['font-family']:'IBM Plex Mono, monospace'});
+      fill:'#9a958d',['fill-opacity']:.85,['font-size']:17,
+      ['font-family']:'JetBrains Mono, monospace'});
     t.textContent=text;
     svg.appendChild(t);
   });
@@ -755,8 +845,8 @@ function drawOverlay(){
   });
 
   /* compass */
-  const comp=svgEl('text',{x:S-26,y:42,fill:'#e8ecf4',['fill-opacity']:.8,
-    ['font-size']:24,['text-anchor']:'end',['font-family']:'IBM Plex Mono, monospace'});
+  const comp=svgEl('text',{x:S-26,y:42,fill:'#e8e4df',['fill-opacity']:.8,
+    ['font-size']:24,['text-anchor']:'end',['font-family']:'JetBrains Mono, monospace'});
   comp.textContent='N ↑  E ←';
   svg.appendChild(comp);
 
@@ -769,11 +859,11 @@ function drawOverlay(){
   else{ barDeg=1/60; barLabel='1′'; }
   const barPx = 2*halfPx(barDeg);
   const bx=36, by=S-44;
-  svg.appendChild(svgEl('line',{x1:bx,y1:by,x2:bx+barPx,y2:by,stroke:'#e8ecf4',['stroke-width']:2}));
+  svg.appendChild(svgEl('line',{x1:bx,y1:by,x2:bx+barPx,y2:by,stroke:'#e8e4df',['stroke-width']:2}));
   [[bx],[bx+barPx]].forEach(([x])=>{
-    svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8ecf4',['stroke-width']:2}));
+    svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8e4df',['stroke-width']:2}));
   });
-  const bt=svgEl('text',{x:bx,y:by-14,fill:'#e8ecf4',['font-size']:22,['font-family']:'IBM Plex Mono, monospace'});
+  const bt=svgEl('text',{x:bx,y:by-14,fill:'#e8e4df',['font-size']:22,['font-family']:'JetBrains Mono, monospace'});
   bt.textContent=barLabel;
   svg.appendChild(bt);
 
@@ -789,7 +879,7 @@ function drawOverlay(){
     }));
     if(state.showLabels){
       const t=svgEl('text',{x:S/2-w/2+10, y:S/2-h/2+28, fill:r.color,
-        ['font-size']:22, ['font-family']:'IBM Plex Mono, monospace'});
+        ['font-size']:22, ['font-family']:'JetBrains Mono, monospace'});
       t.textContent=d.label;
       g.appendChild(t);
     }
@@ -990,7 +1080,7 @@ async function exportPNG(){
     const canvas=document.createElement('canvas');
     canvas.width=S; canvas.height=S;
     const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#05080f'; ctx.fillRect(0,0,S,S);
+    ctx.fillStyle='#07080c'; ctx.fillRect(0,0,S,S);
     ctx.drawImage(img,0,0,S,S);
     /* rasterize the SVG overlay on top */
     const sv=$('overlay').cloneNode(true);
@@ -1006,10 +1096,10 @@ async function exportPNG(){
     const tName = state.targetId==='custom'
       ? (state.customName||'Custom position')
       : ((TARGETS.find(t=>t.id===state.targetId)||{}).name||'');
-    ctx.font='300 20px "IBM Plex Mono", monospace';
-    ctx.fillStyle='rgba(5,8,15,0.55)';
+    ctx.font='300 20px "JetBrains Mono", monospace';
+    ctx.fillStyle='rgba(7,8,12,0.55)';
     ctx.fillRect(0,S-40,S,40);
-    ctx.fillStyle='rgba(232,236,244,0.9)';
+    ctx.fillStyle='rgba(232,228,223,0.9)';
     ctx.fillText(tName+' · myobservatory.org', 16, S-14);
     const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
     if(!blob) throw new Error('encode failed');
