@@ -6,50 +6,142 @@
 <title>Astro Calculators — Washington Valley Observatory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0f1a; --panel:#101725; --panel-2:#0d1320; --line:#223047;
-    --text:#e8ecf4; --muted:#8a96ab;
-    --amber:#f2b33d; --amber-dim:#c98f23; --danger:#f87171;
-    --good:#3a8a7a; --fair:#c9a84c; --poor:#b35a3a;
+    /* ---- Washington Valley Observatory shared palette ---- */
+    --bg-void:#07080c;
+    --bg-panel:#0c0e14;
+    --bg-card:#10131b;
+    --bg-card-hover:#161a25;
+    --text-star:#e8e4df;
+    --text-nebula:#9a958d;
+    --text-dim:#5a564f;
+    --accent-blue:#4a7cad;
+    --accent-gold:#c9a84c;
+    --accent-ember:#b35a3a;
+    --accent-teal:#3a8a7a;
+    --border-faint:rgba(255,255,255,0.04);
+    --border-glow:rgba(74,124,173,0.2);
+    --grain:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+
+    /* ---- instrument aliases: the tool CSS below reads these ---- */
+    --bg:var(--bg-void);
+    --panel:var(--bg-panel);
+    --panel-2:var(--bg-card);
+    --line:#1b1f29;
+    --text:var(--text-star);
+    --muted:var(--text-nebula);
+    --amber:var(--accent-gold);
+    --amber-dim:#a8883a;
+    --danger:var(--accent-ember);
+    --good:var(--accent-teal);
+    --fair:var(--accent-gold);
+    --poor:var(--accent-ember);
     --radius:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--text);font:15px/1.5 "Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-  body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;z-index:1;
-    background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
-    background-size:3px 3px;
+  html,body{height:100%;overflow-x:hidden;overflow-x:clip}
+  img,svg,video{max-width:100%}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 "DM Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body::before{ /* observatory film grain */
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;z-index:1;
+    background:var(--grain);
   }
-  header{display:flex;align-items:center;gap:16px;padding:18px 26px;border-bottom:1px solid var(--line);position:relative;z-index:2}
-  .home-link{font:13px/1 "Inter",sans-serif;color:var(--muted);text-decoration:none;letter-spacing:.03em;white-space:nowrap;transition:color .15s}
-  .home-link:hover{color:var(--amber)}
-  .wordmark h1{font:700 22px/1.1 "Bricolage Grotesque",sans-serif;letter-spacing:.2px}
-  .wordmark p{color:var(--muted);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
-  .spacer{flex:1}
+  /* ---------- shared observatory chrome ---------- */
+  nav{
+    position:sticky;top:0;z-index:60;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:1.05rem 1.9rem;
+    background:rgba(7,8,12,.82);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid var(--border-faint);
+  }
+  .nav-brand{
+    font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
+    text-decoration:none;min-width:0;
+  }
+  .nav-brand span{color:var(--accent-gold)}
+  .nav-brand .brand-long{color:var(--text-star)}
+  .nav-links{display:flex;gap:1.5rem;list-style:none;align-items:center}
+  .nav-links a{
+    font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
+  }
+  .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
+  .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
+  .nav-links a.current::after,.nav-links a:hover::after{width:100%}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
+  .nav-toggle:hover{background:none;border:none}
+  .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
+  #nightBtn{
+    font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;padding:.5rem .85rem;white-space:nowrap;
+  }
+  .tool-title{max-width:1280px;margin:0 auto;padding:2.2rem 26px .2rem;position:relative;z-index:2}
+  .tool-title .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:.64rem;font-weight:300;
+    letter-spacing:.3em;text-transform:uppercase;color:var(--accent-gold);margin-bottom:.55rem;
+  }
+  .tool-title h1{
+    font-family:"Cormorant Garamond",serif;font-weight:300;
+    font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.15;letter-spacing:-.01em;
+  }
+  .tool-title h1 em{font-style:italic;color:var(--accent-blue)}
+  .tool-title p{font-size:.9rem;font-weight:300;color:var(--text-nebula);max-width:640px;margin-top:.6rem;line-height:1.75}
+  footer{
+    border-top:1px solid var(--border-faint);padding:3rem 1.9rem 2.2rem;text-align:center;
+    background:var(--bg-panel);margin-top:2.5rem;position:relative;z-index:2;
+  }
+  .footer-brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;font-weight:300;letter-spacing:.1em;text-transform:uppercase}
+  .footer-links{display:flex;justify-content:center;gap:1.7rem;margin-top:1.3rem;flex-wrap:wrap}
+  .footer-links a{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-nebula);text-decoration:none;transition:color .3s}
+  .footer-links a:hover{color:var(--accent-gold)}
+  .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
+  @media (max-width:620px){
+    .brand-long{display:none}
+    .nav-brand{font-size:1rem;letter-spacing:.1em}
+    #nightBtn{padding:.45rem .6rem;font-size:.58rem}
+    main{padding:16px 14px 24px}
+    .tool-title{padding:1.3rem 1rem .2rem}
+    main{padding:16px 16px 24px}
+    nav{padding:.85rem 1rem}
+    .nav-links.show{padding:.8rem 1rem 1.2rem}
+  }
+  @media (max-width:1180px){
+    nav{padding:.9rem 1.4rem}
+    .nav-toggle{display:block}
+    .nav-links{
+      display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+      align-items:flex-start;gap:0;background:rgba(7,8,12,.97);
+      padding:.8rem 1.4rem 1.2rem;border-bottom:1px solid var(--border-faint);
+    }
+    .nav-links.show{display:flex}
+    .nav-links li{padding:.55rem 0}
+    .tool-title{padding:1.6rem 1.4rem .2rem}
+  }
   button{font:inherit;color:var(--text);cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 13px;transition:border-color .15s, background .15s}
   button:hover{border-color:var(--amber-dim)}
   button:focus-visible, select:focus-visible, input:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
   main{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;padding:22px 26px 30px;max-width:1280px;margin:0 auto;position:relative;z-index:2}
   aside{display:flex;flex-direction:column;gap:14px;min-width:0}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 15px}
-  .card h2{font:600 11.5px/1 "Inter",sans-serif;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px}
+  .card h2{font:600 11.5px/1 "DM Sans",sans-serif;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px}
   label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
   select,input[type=number],input[type=text],input[type=datetime-local]{
     width:100%;margin-top:4px;background:var(--panel-2);color:var(--text);
     border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:inherit;font-size:14px;
   }
   select:hover,input:hover{border-color:#33486b}
-  .mono{font-family:"IBM Plex Mono",monospace}
+  .mono{font-family:"JetBrains Mono",monospace}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55}
 
   /* calculator rail */
   .calcnav{display:flex;flex-direction:column;gap:2px}
-  .calcnav .grp{font:600 10.5px "Inter",sans-serif;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin:10px 0 5px}
+  .calcnav .grp{font:600 10.5px "DM Sans",sans-serif;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin:10px 0 5px}
   .calcnav .grp:first-child{margin-top:0}
   .calcnav button, .calcnav a{
     text-align:left;border:1px solid transparent;background:transparent;
@@ -62,16 +154,16 @@
   /* calculator sections */
   .calc{display:none}
   .calc.on{display:block}
-  .calc h3{font:600 19px "Bricolage Grotesque",sans-serif;margin-bottom:4px}
+  .calc h3{font:300 1.55rem/1.3 "Cormorant Garamond",serif;margin-bottom:5px;letter-spacing:-.01em}
   .calc .blurb{color:var(--muted);font-size:13.5px;margin-bottom:14px;line-height:1.6;max-width:64ch}
   .result{
     margin-top:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
-    padding:13px 14px;font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:2;color:var(--muted);
+    padding:13px 14px;font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:2;color:var(--muted);
   }
   .result b{color:var(--text);font-weight:500}
-  .result .big{font-size:26px;color:var(--amber);font-weight:500;line-height:1.3}
+  .result .big{font-family:"Cormorant Garamond",serif;font-size:2.2rem;font-weight:300;color:var(--accent-gold);line-height:1.15;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:2px 0}
   .pill{
-    display:inline-block;font:500 11.5px "Inter",sans-serif;letter-spacing:.08em;text-transform:uppercase;
+    display:inline-block;font:500 11.5px "DM Sans",sans-serif;letter-spacing:.08em;text-transform:uppercase;
     padding:3px 10px;border-radius:99px;vertical-align:2px;
   }
   .pill.good{background:rgba(58,138,122,.18);color:#6fc4b0;border:1px solid rgba(58,138,122,.5)}
@@ -92,17 +184,26 @@
 </head>
 <body>
 
-<header>
-  <a class="home-link" href="index.html" title="Back to Washington Valley Observatory">&larr; Observatory</a>
-  <div class="wordmark">
-    <h1>Astro Calculators</h1>
-    <p>Washington Valley Observatory</p>
-  </div>
-  <div class="spacer"></div>
-  <a class="home-link" href="fov.html">FOV Viewer</a>
-  <a class="home-link" href="sky.html">Sky Planner</a>
+<nav>
+  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
   <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
-</header>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="fov.html">FOV Viewer</a></li>
+    <li><a href="sky.html">Sky Planner</a></li>
+    <li><a href="calc.html" class="current">Calculators</a></li>
+    <li><a href="sampling.html">Sampling Calc</a></li>
+    <li><a href="index.html#rigs">Imaging Rigs</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="tool-title">
+  <div class="eyebrow">Observatory Tools</div>
+  <h1>The numbers behind <em>a good night</em></h1>
+  <p>Seven calculators for the questions that come up at the scope &mdash; how long a sub should be under your sky, what spacer closes the imaging train, whether the Moon ruins tonight, and how good polar alignment really needs to be.</p>
+</div>
 
 <main>
   <aside>
@@ -314,6 +415,55 @@ const SCOPES = [
   {name:'Celestron C6', ap:150, fl:1500}, {name:'Celestron C8 / EdgeHD 8', ap:203, fl:2032},
   {name:'Celestron C9.25', ap:235, fl:2350}, {name:'Celestron C11', ap:280, fl:2800},
   {name:'Meade LX85 6" ACF', ap:152, fl:1524},
+  {name:'Askar SQA70', ap:70, fl:355},
+  {name:'Askar 103APO', ap:103, fl:700},
+  {name:'Askar 120APO', ap:120, fl:840},
+  {name:'Sharpstar 76EDPH', ap:76, fl:418},
+  {name:'Sharpstar 94EDPH', ap:94, fl:517},
+  {name:'WO RedCat 61', ap:61, fl:300},
+  {name:'WO RedCat 91', ap:91, fl:405},
+  {name:'WO GT102', ap:102, fl:703},
+  {name:'Stellarvue SVX080T', ap:80, fl:480},
+  {name:'Stellarvue SV70T', ap:70, fl:420},
+  {name:'Tele Vue NP101is', ap:101, fl:540},
+  {name:'Tele Vue TV-85', ap:85, fl:600},
+  {name:'Tele Vue TV-76', ap:76, fl:480},
+  {name:'Takahashi FSQ-130ED', ap:130, fl:650},
+  {name:'Takahashi TOA-130', ap:130, fl:1000},
+  {name:'Takahashi Epsilon-160ED', ap:160, fl:530},
+  {name:'Takahashi FC-100DZ', ap:100, fl:800},
+  {name:'Explore Scientific ED80', ap:80, fl:480},
+  {name:'Explore Scientific ED102', ap:102, fl:714},
+  {name:'Explore Scientific ED127', ap:127, fl:952},
+  {name:'Explore Scientific AR102', ap:102, fl:663},
+  {name:'Sky-Watcher Evostar 80ED', ap:80, fl:600},
+  {name:'Sky-Watcher Evostar 100ED', ap:100, fl:900},
+  {name:'Sky-Watcher Evostar 120ED', ap:120, fl:900},
+  {name:'Sky-Watcher Esprit 150', ap:150, fl:1050},
+  {name:'Sky-Watcher 150PDS', ap:150, fl:750},
+  {name:'Sky-Watcher 200PDS', ap:200, fl:1000},
+  {name:'Sky-Watcher Quattro 6', ap:150, fl:600},
+  {name:'Sky-Watcher Quattro 10', ap:250, fl:1000},
+  {name:'Sky-Watcher Skymax 127 Mak', ap:127, fl:1500},
+  {name:'Sky-Watcher Skymax 150 Mak', ap:150, fl:1800},
+  {name:'Orion ED80T CF', ap:80, fl:600},
+  {name:'Orion XT6 Dobsonian', ap:150, fl:1200},
+  {name:'Orion XT10 Dobsonian', ap:254, fl:1200},
+  {name:'Apertura AD8 Dobsonian', ap:203, fl:1200},
+  {name:'GSO 8\" f/4 Imaging Newt', ap:203, fl:800},
+  {name:'Vixen FL55SS', ap:55, fl:300},
+  {name:'Borg 55FL', ap:55, fl:250},
+  {name:'Celestron RASA 6', ap:150, fl:300},
+  {name:'Celestron C5', ap:125, fl:1250},
+  {name:'Meade 8\" ACF (LX90 / LX200)', ap:203, fl:2032},
+  {name:'Meade MTS-SC8 8\" SCT', ap:203, fl:2000},
+  {name:'ZWO Seestar S50', ap:50, fl:250},
+  {name:'ZWO Seestar S30', ap:30, fl:150},
+  {name:'Dwarflab Dwarf 3', ap:35, fl:150},
+  {name:'Unistellar eVscope 2', ap:114, fl:450},
+  {name:'Samyang 85mm f/1.4', ap:61, fl:85},
+  {name:'Sigma 105mm f/1.4 Art', ap:75, fl:105},
+  {name:'Canon EF 200mm f/2.8L', ap:71, fl:200},
 ];
 
 /* px µm · sensor mm · typical QE peak · typical read noise (high-gain mode) */

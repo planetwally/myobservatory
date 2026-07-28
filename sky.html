@@ -70,7 +70,7 @@
   }
   .nav-brand span{color:var(--accent-gold)}
   .nav-brand .brand-long{color:var(--text-star)}
-  .nav-links{display:flex;gap:2.1rem;list-style:none;align-items:center}
+  .nav-links{display:flex;gap:1.5rem;list-style:none;align-items:center}
   .nav-links a{
     font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
     color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
@@ -78,7 +78,6 @@
   .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
   .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
   .nav-links a.current::after,.nav-links a:hover::after{width:100%}
-  .nav-right{display:flex;align-items:center;gap:.8rem}
   .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
   .nav-toggle:hover{background:none;border:none}
   .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
@@ -115,7 +114,7 @@
     nav{padding:.85rem 1rem}
     .nav-links.show{padding:.8rem 1rem 1.2rem}
   }
-  @media (max-width:1000px){
+  @media (max-width:1180px){
     nav{padding:.9rem 1.4rem}
     .nav-toggle{display:block}
     .nav-links{
@@ -268,18 +267,17 @@
 
 <nav>
   <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
   <ul class="nav-links" id="navLinks">
     <li><a href="index.html#about">About</a></li>
     <li><a href="index.html#gallery">Gallery</a></li>
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html" class="current">Sky Planner</a></li>
+    <li><a href="calc.html">Calculators</a></li>
     <li><a href="sampling.html">Sampling Calc</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
   </ul>
-  <div class="nav-right">
-    <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
-    <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
-  </div>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
 </nav>
 
 <div class="tool-title">

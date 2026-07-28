@@ -69,7 +69,7 @@
   }
   .nav-brand span{color:var(--accent-gold)}
   .nav-brand .brand-long{color:var(--text-star)}
-  .nav-links{display:flex;gap:2.1rem;list-style:none;align-items:center}
+  .nav-links{display:flex;gap:1.5rem;list-style:none;align-items:center}
   .nav-links a{
     font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
     color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
@@ -77,7 +77,6 @@
   .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
   .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
   .nav-links a.current::after,.nav-links a:hover::after{width:100%}
-  .nav-right{display:flex;align-items:center;gap:.8rem}
   .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
   .nav-toggle:hover{background:none;border:none}
   .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
@@ -114,7 +113,7 @@
     nav{padding:.85rem 1rem}
     .nav-links.show{padding:.8rem 1rem 1.2rem}
   }
-  @media (max-width:1000px){
+  @media (max-width:1180px){
     nav{padding:.9rem 1.4rem}
     .nav-toggle{display:block}
     .nav-links{
@@ -266,18 +265,17 @@
 
 <nav>
   <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
   <ul class="nav-links" id="navLinks">
     <li><a href="index.html#about">About</a></li>
     <li><a href="index.html#gallery">Gallery</a></li>
     <li><a href="fov.html" class="current">FOV Viewer</a></li>
     <li><a href="sky.html">Sky Planner</a></li>
+    <li><a href="calc.html">Calculators</a></li>
     <li><a href="sampling.html">Sampling Calc</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
   </ul>
-  <div class="nav-right">
-    <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
-    <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
-  </div>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
 </nav>
 
 <div class="tool-title">
@@ -463,6 +461,56 @@ const SCOPES = [
   {name:'Celestron C11',           short:'C11',        ap:280, fl:2800},
   {name:'Celestron RASA 11',       short:'RASA 11',    ap:279, fl:620},
   {name:'Meade LX85 6" ACF',       short:'LX85 ACF',   ap:152, fl:1524},
+  /* 2026 expansion II — appended so existing share links keep working */
+  {name:'Askar SQA70',                  short:'SQA70',      ap:70,   fl:355},
+  {name:'Askar 103APO',                 short:'103APO',     ap:103,  fl:700},
+  {name:'Askar 120APO',                 short:'120APO',     ap:120,  fl:840},
+  {name:'Sharpstar 76EDPH',             short:'76EDPH',     ap:76,   fl:418},
+  {name:'Sharpstar 94EDPH',             short:'94EDPH',     ap:94,   fl:517},
+  {name:'WO RedCat 61',                 short:'RedCat 61',  ap:61,   fl:300},
+  {name:'WO RedCat 91',                 short:'RedCat 91',  ap:91,   fl:405},
+  {name:'WO GT102',                     short:'GT102',      ap:102,  fl:703},
+  {name:'Stellarvue SVX080T',           short:'SVX080T',    ap:80,   fl:480},
+  {name:'Stellarvue SV70T',             short:'SV70T',      ap:70,   fl:420},
+  {name:'Tele Vue NP101is',             short:'NP101is',    ap:101,  fl:540},
+  {name:'Tele Vue TV-85',               short:'TV-85',      ap:85,   fl:600},
+  {name:'Tele Vue TV-76',               short:'TV-76',      ap:76,   fl:480},
+  {name:'Takahashi FSQ-130ED',          short:'FSQ-130',    ap:130,  fl:650},
+  {name:'Takahashi TOA-130',            short:'TOA-130',    ap:130,  fl:1000},
+  {name:'Takahashi Epsilon-160ED',      short:'E-160ED',    ap:160,  fl:530},
+  {name:'Takahashi FC-100DZ',           short:'FC-100DZ',   ap:100,  fl:800},
+  {name:'Explore Scientific ED80',      short:'ES ED80',    ap:80,   fl:480},
+  {name:'Explore Scientific ED102',     short:'ES ED102',   ap:102,  fl:714},
+  {name:'Explore Scientific ED127',     short:'ES ED127',   ap:127,  fl:952},
+  {name:'Explore Scientific AR102',     short:'ES AR102',   ap:102,  fl:663},
+  {name:'Sky-Watcher Evostar 80ED',     short:'Evostar 80', ap:80,   fl:600},
+  {name:'Sky-Watcher Evostar 100ED',    short:'Evostar 100',ap:100,  fl:900},
+  {name:'Sky-Watcher Evostar 120ED',    short:'Evostar 120',ap:120,  fl:900},
+  {name:'Sky-Watcher Esprit 150',       short:'Esprit 150', ap:150,  fl:1050},
+  {name:'Sky-Watcher 150PDS',           short:'150PDS',     ap:150,  fl:750},
+  {name:'Sky-Watcher 200PDS',           short:'200PDS',     ap:200,  fl:1000},
+  {name:'Sky-Watcher Quattro 6',        short:'Quattro 6',  ap:150,  fl:600},
+  {name:'Sky-Watcher Quattro 10',       short:'Quattro 10', ap:250,  fl:1000},
+  {name:'Sky-Watcher Skymax 127 Mak',   short:'Skymax 127', ap:127,  fl:1500},
+  {name:'Sky-Watcher Skymax 150 Mak',   short:'Skymax 150', ap:150,  fl:1800},
+  {name:'Orion ED80T CF',               short:'ED80T CF',   ap:80,   fl:600},
+  {name:'Orion XT6 Dobsonian',          short:'XT6',        ap:150,  fl:1200},
+  {name:'Orion XT10 Dobsonian',         short:'XT10',       ap:254,  fl:1200},
+  {name:'Apertura AD8 Dobsonian',       short:'AD8',        ap:203,  fl:1200},
+  {name:'GSO 8\" f/4 Imaging Newt',     short:'GSO 8 f/4',  ap:203,  fl:800},
+  {name:'Vixen FL55SS',                 short:'FL55SS',     ap:55,   fl:300},
+  {name:'Borg 55FL',                    short:'Borg 55FL',  ap:55,   fl:250},
+  {name:'Celestron RASA 6',             short:'RASA 6',     ap:150,  fl:300},
+  {name:'Celestron C5',                 short:'C5',         ap:125,  fl:1250},
+  {name:'Meade 8\" ACF (LX90 / LX200)', short:'Meade 8 ACF',ap:203,  fl:2032},
+  {name:'Meade MTS-SC8 8\" SCT',        short:'MTS-SC8',    ap:203,  fl:2000},
+  {name:'ZWO Seestar S50',              short:'Seestar S50',ap:50,   fl:250},
+  {name:'ZWO Seestar S30',              short:'Seestar S30',ap:30,   fl:150},
+  {name:'Dwarflab Dwarf 3',             short:'Dwarf 3',    ap:35,   fl:150},
+  {name:'Unistellar eVscope 2',         short:'eVscope 2',  ap:114,  fl:450},
+  {name:'Samyang 85mm f/1.4',           short:'Samyang 85', ap:61,   fl:85},
+  {name:'Sigma 105mm f/1.4 Art',        short:'Sigma 105',  ap:75,   fl:105},
+  {name:'Canon EF 200mm f/2.8L',        short:'Canon 200',  ap:71,   fl:200},
 ];
 
 /* w/h = sensor size in mm, pw/ph = pixel count, px = pixel pitch in µm */
