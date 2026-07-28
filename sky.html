@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sky Conditions Planner — Washington Valley Observatory</title>
+<title>Sky Conditions Planner · Washington Valley Observatory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -70,9 +70,9 @@
   }
   .nav-brand span{color:var(--accent-gold)}
   .nav-brand .brand-long{color:var(--text-star)}
-  .nav-links{display:flex;gap:1.5rem;list-style:none;align-items:center}
+  .nav-links{display:flex;gap:1.4rem;list-style:none;align-items:center}
   .nav-links a{
-    font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+    font-size:.74rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
     color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
   }
   .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
@@ -114,7 +114,7 @@
     nav{padding:.85rem 1rem}
     .nav-links.show{padding:.8rem 1rem 1.2rem}
   }
-  @media (max-width:1180px){
+  @media (max-width:1300px){
     nav{padding:.9rem 1.4rem}
     .nav-toggle{display:block}
     .nav-links{
@@ -274,8 +274,9 @@
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html" class="current">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
-    <li><a href="sampling.html">Sampling Calc</a></li>
+    <li><a href="sampling.html">Sampling</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
   </ul>
   <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
 </nav>
@@ -283,7 +284,7 @@
 <div class="tool-title">
   <div class="eyebrow">Observatory Tools</div>
   <h1>Sky <em>Conditions</em> Planner</h1>
-  <p>Scrub forecast cloud cover across a live map, hour by hour into the future &mdash; with seeing, transparency, darkness windows and moonrise for any site.</p>
+  <p>Scrub forecast cloud cover across a live map, hour by hour into the future, with seeing, transparency, darkness windows and moonrise for any site.</p>
 </div>
 
 <main>
@@ -298,7 +299,7 @@
       </label>
       <p class="mono" id="locStatus"></p>
       <div class="chips">
-        <button data-lat="40.797" data-lon="-74.482" data-name="WVO — Morristown NJ">WVO home</button>
+        <button data-lat="40.797" data-lon="-74.482" data-name="WVO · Morristown NJ">WVO home</button>
         <button data-lat="41.191" data-lon="-74.823" data-name="Stokes State Forest">Stokes dark site</button>
         <button id="geoBtn">Use my location</button>
       </div>
@@ -314,10 +315,10 @@
       <h2>Cloud layer</h2>
       <label>Overlay
         <select id="layerSel">
-          <option value="auto" selected>Cloud forecast — auto model</option>
-          <option value="hrdps">Cloud forecast — HRDPS 2.5 km (N. America · hourly)</option>
-          <option value="gdps">Cloud forecast — GDPS 15 km (global · 3-hourly)</option>
-          <option value="sat">Satellite infrared — recent (past 2 h)</option>
+          <option value="auto" selected>Cloud forecast · auto model</option>
+          <option value="hrdps">Cloud forecast · HRDPS 2.5 km (N. America · hourly)</option>
+          <option value="gdps">Cloud forecast · GDPS 15 km (global · 3-hourly)</option>
+          <option value="sat">Satellite infrared · recent (past 2 h)</option>
           <option value="radar">Radar + short nowcast</option>
         </select>
       </label>
@@ -356,7 +357,7 @@
     </div>
 
     <div class="card chartwrap">
-      <h2>48-hour outlook — clouds, darkness &amp; moon</h2>
+      <h2>48-hour outlook: clouds, darkness &amp; moon</h2>
       <div id="chartBox"><div class="veil"><div class="spin"></div><div>Building chart…</div></div></div>
       <div class="legend">
         <span><i style="background:rgba(232,228,223,.7)"></i>total cloud</span>
@@ -374,7 +375,7 @@
       Cloud-forecast map layers from the <a href="https://eccc-msc.github.io/open-data/" target="_blank" rel="noopener">MSC GeoMet</a> service, Environment and Climate Change Canada.
       Satellite &amp; radar frames by <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>.
       Basemap &copy; OpenStreetMap contributors &copy; CARTO.
-      Seeing and transparency are heuristic estimates from jet-stream winds, humidity and aerosol depth — treat them as guidance, not gospel.
+      Seeing and transparency are heuristic estimates from jet-stream winds, humidity and aerosol depth. Treat them as guidance, not gospel.
     </p>
   </section>
 </main>
@@ -396,9 +397,9 @@
 <script>
 'use strict';
 
-/* ================= CONFIG — edit freely ================= */
+/* ================= CONFIG: edit freely ================= */
 
-const PRESET_DEFAULT = {lat:40.797, lon:-74.482, name:'WVO — Morristown NJ'};
+const PRESET_DEFAULT = {lat:40.797, lon:-74.482, name:'WVO · Morristown NJ'};
 const GEOMET = 'https://geo.weather.gc.ca/geomet';
 const WMS_LAYERS = { hrdps:'HRDPS.CONTINENTAL_NT', gdps:'GDPS.ETA_NT' };
 /* HRDPS coverage box (rough): pick it automatically inside North America */

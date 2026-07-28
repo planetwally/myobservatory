@@ -34,8 +34,9 @@
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 3rem; display: flex; align-items: center; justify-content: space-between; background: rgba(7,8,12,0.7); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border-bottom: 1px solid var(--border-faint); }
   .nav-brand { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.15rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-star); text-decoration: none; }
   .nav-brand span { color: var(--accent-gold); }
-  .nav-links { display: flex; gap: 1.5rem; list-style: none; align-items: center; }
-  .nav-links a { font-size: 0.78rem; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; }
+  .nav-brand .brand-long { color: var(--text-star); }
+  .nav-links { display: flex; gap: 1.4rem; list-style: none; align-items: center; }
+  .nav-links a { font-size: 0.74rem; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; }
   .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent-gold); transition: width 0.3s; }
   .nav-links a:hover { color: var(--text-star); }
   .nav-links a.current { color: var(--text-star); }
@@ -160,7 +161,7 @@
     .metrics { grid-template-columns: repeat(2, 1fr); }
     .explain-grid { grid-template-columns: 1fr; }
   }
-  @media (max-width: 1180px) {
+  @media (max-width: 1300px) {
     .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: flex-start; gap: 0; background: rgba(7,8,12,0.97); padding: 0.8rem 3rem 1.2rem; border-bottom: 1px solid var(--border-faint); }
     .nav-links.show { display: flex; }
     .nav-links li { padding: 0.55rem 0; }
@@ -181,12 +182,13 @@
     * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     html { scroll-behavior: auto; }
   }
+  @media (max-width: 620px) { .brand-long { display: none; } .nav-brand { font-size: 1rem; letter-spacing: 0.1em; } }
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="index.html" class="nav-brand">Washington Valley <span>Observatory</span></a>
+  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
   <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
   <ul class="nav-links" id="navLinks">
     <li><a href="index.html#about">About</a></li>
@@ -194,8 +196,9 @@
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
-    <li><a href="sampling.html" class="current">Sampling Calc</a></li>
+    <li><a href="sampling.html" class="current">Sampling</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
   </ul>
   <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
 </nav>
@@ -203,7 +206,7 @@
 <header class="tool-head">
   <div class="eyebrow">Observatory Tools</div>
   <h1>How your stars <em>land on pixels</em></h1>
-  <p class="tool-sub">Pair a telescope with a camera and see the image scale it produces &mdash; then see the star itself, rendered on the actual pixel grid your sensor would record.</p>
+  <p class="tool-sub">Pair a telescope with a camera and see the image scale it produces, then see the star itself, rendered on the actual pixel grid your sensor would record.</p>
 </header>
 
 <main class="calc">
@@ -264,12 +267,12 @@
     <div class="field">
       <label for="seeing">Seeing conditions</label>
       <select id="seeing" class="control">
-        <option value="1,2">Excellent &mdash; 1&Prime; to 2&Prime; FWHM</option>
-        <option value="2,3">Good &mdash; 2&Prime; to 3&Prime; FWHM</option>
-        <option value="2,4" selected>Typical &mdash; 2&Prime; to 4&Prime; FWHM</option>
-        <option value="3,5">Soft &mdash; 3&Prime; to 5&Prime; FWHM</option>
-        <option value="4,6">Poor &mdash; 4&Prime; to 6&Prime; FWHM</option>
-        <option value="custom">Measured &mdash; enter my own</option>
+        <option value="1,2">Excellent &middot; 1&Prime; to 2&Prime; FWHM</option>
+        <option value="2,3">Good &middot; 2&Prime; to 3&Prime; FWHM</option>
+        <option value="2,4" selected>Typical &middot; 2&Prime; to 4&Prime; FWHM</option>
+        <option value="3,5">Soft &middot; 3&Prime; to 5&Prime; FWHM</option>
+        <option value="4,6">Poor &middot; 4&Prime; to 6&Prime; FWHM</option>
+        <option value="custom">Measured &middot; enter my own</option>
       </select>
     </div>
 
@@ -290,7 +293,7 @@
           </div>
         </div>
       </div>
-      <div class="field-hint">Read this off a night's subs &mdash; ASIAir reports it beside average star size.</div>
+      <div class="field-hint">Read this off a night's subs. ASIAir reports it beside average star size.</div>
     </div>
   </section>
 
@@ -361,12 +364,12 @@
     <div class="ex-card b">
       <div class="ex-term">Inside the window</div>
       <h4>Well matched</h4>
-      <p>A star covers enough pixels to record as a smooth disc without wasting resolution on seeing blur. This is the range where sub length, field of view, and star shape all sit in balance &mdash; and where guiding error stays a small fraction of a pixel.</p>
+      <p>A star covers enough pixels to record as a smooth disc without wasting resolution on seeing blur. This is the range where sub length, field of view, and star shape all sit in balance, and where guiding error stays a small fraction of a pixel.</p>
     </div>
     <div class="ex-card c">
       <div class="ex-term">Above the window</div>
       <h4>Under-sampled</h4>
-      <p>Stars land on too few pixels and take on square, angular edges. Fine detail is lost for good, since no amount of processing recovers what the grid never separated. This is the worse failure of the two &mdash; a longer focal length or smaller pixels is the fix.</p>
+      <p>Stars land on too few pixels and take on square, angular edges. Fine detail is lost for good, since no amount of processing recovers what the grid never separated. This is the worse failure of the two, and the fix is a longer focal length or smaller pixels.</p>
     </div>
   </div>
 
@@ -584,7 +587,7 @@ const pos = v => {
 });
 
 /* ============================================================
-   Star render — a Gaussian PSF integrated over the pixel grid
+   Star render: a Gaussian PSF integrated over the pixel grid
    ============================================================ */
 function drawStar(fwhmPx) {
   const cv = $('starCanvas');

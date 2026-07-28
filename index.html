@@ -30,8 +30,9 @@
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 3rem; display: flex; align-items: center; justify-content: space-between; background: rgba(7,8,12,0.7); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border-bottom: 1px solid var(--border-faint); }
   .nav-brand { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.15rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-star); text-decoration: none; }
   .nav-brand span { color: var(--accent-gold); }
-  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
-  .nav-links a { font-size: 0.78rem; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; }
+  .nav-brand .brand-long { color: var(--text-star); }
+  .nav-links { display: flex; gap: 1.4rem; list-style: none; align-items: center; }
+  .nav-links a { font-size: 0.74rem; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; }
   .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent-gold); transition: width 0.3s; }
   .nav-links a:hover { color: var(--text-star); }
   .nav-links a:hover::after { width: 100%; }
@@ -141,7 +142,7 @@
   @media (max-width: 768px) { nav { padding: 1rem 1.5rem; } .about-grid { grid-template-columns: 1fr; } .rigs-grid { grid-template-columns: 1fr; } .equip-summary { grid-template-columns: 1fr 1fr; } .gallery-grid { grid-template-columns: 1fr; } .gallery-item.featured { grid-column: span 1; aspect-ratio: 16/9; } section { padding: 4rem 1.5rem; } }
   .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
   .nav-toggle span { display: block; width: 22px; height: 1.5px; background: var(--text-star); margin: 5px 0; transition: 0.3s; }
-  @media (max-width: 1000px) {
+  @media (max-width: 1300px) {
     .nav-links { display: none; }
     .nav-toggle { display: block; }
     .nav-links.show {
@@ -162,22 +163,23 @@
   .lightbox-caption p { font-size: 0.82rem; color: var(--text-nebula); margin-top: 0.4rem; max-width: 600px; font-weight: 300; line-height: 1.7; }
   .lightbox-close { position: absolute; top: 2rem; right: 2rem; font-size: 1.5rem; color: var(--text-nebula); cursor: pointer; background: none; border: none; transition: color 0.3s; }
   .lightbox-close:hover { color: var(--text-star); }
+  @media (max-width: 620px) { .brand-long { display: none; } .nav-brand { font-size: 1rem; letter-spacing: 0.1em; } }
 </style>
 </head>
 <body>
 <nav>
-  <a href="#" class="nav-brand">Washington Valley <span>Observatory</span></a>
-  <ul class="nav-links">
+  <a href="#" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <ul class="nav-links" id="navLinks">
     <li><a href="#about">About</a></li>
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
-    <li><a href="sampling.html">Sampling Calc</a></li>
+    <li><a href="sampling.html">Sampling</a></li>
     <li><a href="#rigs">Imaging Rigs</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
-  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('show')"><span></span><span></span><span></span></button>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
 </nav>
 <section class="hero">
   <div class="stars-layer" id="stars"></div>
@@ -211,7 +213,7 @@
     <div class="release-body">
       <div class="release-tag">New &middot; Observatory Tools</div>
       <h2 class="release-title">Plan the whole night with the <em>Observatory Toolkit</em></h2>
-      <p class="release-desc">Homegrown tools for the imaging community. The <strong>FOV Viewer</strong> frames any target over real survey imagery &mdash; resolve it by name, compare rigs side by side, then copy the coordinates straight into ASIAir or NINA. The <strong>Sky Conditions Planner</strong> scrubs forecast cloud cover across a live map, hour by hour into the future, with seeing and transparency estimates, darkness windows and moonrise for any site. The <strong>Sampling Calculator</strong> matches a camera to a telescope and draws the star on your actual pixel grid. And the new <strong>Astro Calculators</strong> hub answers the rest: sub-exposure length for your sky, backfocus chains, focus zones, untracked limits, planetary Barlow picks &mdash; plus moon-interference and polar-alignment advisors.</p>
+      <p class="release-desc">Homegrown tools for the imaging community. The <strong>FOV Viewer</strong> frames any target over real survey imagery: resolve it by name, compare rigs side by side, then copy the coordinates straight into ASIAir or NINA. The <strong>Sky Conditions Planner</strong> scrubs forecast cloud cover across a live map, hour by hour into the future, with seeing and transparency estimates, darkness windows and moonrise for any site. The <strong>Sampling Calculator</strong> matches a camera to a telescope and draws the star on your actual pixel grid. And the new <strong>Astro Calculators</strong> hub answers the rest: sub-exposure length for your sky, backfocus chains, focus zones, untracked limits, planetary Barlow picks, plus moon-interference and polar-alignment advisors.</p>
       <div class="release-ctas">
         <a href="fov.html" class="cta-button">FOV Viewer <span class="arrow">&rarr;</span></a>
         <a href="sky.html" class="cta-button secondary">Sky Conditions <span class="arrow">&rarr;</span></a>
@@ -334,7 +336,7 @@
         <div class="gallery-meta">Local Imaging</div>
         <div class="gallery-tag">Galaxies</div>
       </div>
-      <div class="lb-data" data-title="M81 &amp; M82: Bode's Galaxies" data-desc="A striking pair of interacting galaxies ~12 million light-years away in Ursa Major — the grand spiral M81 and the starburst cigar galaxy M82."></div>
+      <div class="lb-data" data-title="M81 &amp; M82: Bode's Galaxies" data-desc="A striking pair of interacting galaxies ~12 million light-years away in Ursa Major: the grand spiral M81 and the starburst cigar galaxy M82."></div>
     </div>
     <div class="gallery-item" onclick="openLightbox(this)">
       <img src="images/soul.jpg" alt="IC 1848: Soul Nebula">
@@ -482,9 +484,9 @@
     </div>
     <div class="rigs-grid">
       <div class="rig-card fade-in"><div class="rig-number">01</div><div class="rig-role role-workhorse">Primary 416mm Rig</div><div class="rig-scope">Askar 65PHQ</div><div class="rig-fl">416mm f/6.4 (flat-field astrograph)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Air (shared w/ RedCat 51)</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO EAF</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">The new workhorse. Flat-field optics and 416mm of reach for compact nebulae and galaxy fields alike.</div></div>
-      <div class="rig-card fade-in"><div class="rig-number">02</div><div class="rig-role role-nebula">Mobile 300mm Rig</div><div class="rig-scope">Astro-Tech AT60EDP</div><div class="rig-fl">300mm f/5 (Petzval quadruplet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI2600MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Plus</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">Wide-field master rig — the APS-C sensor drinks in huge swaths of sky at 300mm.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">02</div><div class="rig-role role-nebula">Mobile 300mm Rig</div><div class="rig-scope">Astro-Tech AT60EDP</div><div class="rig-fl">300mm f/5 (Petzval quadruplet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI2600MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Plus</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">Wide-field master rig. The APS-C sensor drinks in huge swaths of sky at 300mm.</div></div>
       <div class="rig-card fade-in"><div class="rig-number">03</div><div class="rig-role role-travel">Mobile 250mm Rig</div><div class="rig-scope">William Optics RedCat 51</div><div class="rig-fl">250mm f/4.9</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Air (shared w/ 65PHQ)</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir (built-in)</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">Dark site kit for Stokes State Forest. Fast Petzval design, grab-and-go on the Juwei-17.</div></div>
-      <div class="rig-card fade-in"><div class="rig-number">04</div><div class="rig-role role-portable">Ultralight Portable</div><div class="rig-scope">Askar FMA180</div><div class="rig-fl">180mm f/4.5 (w/ reducer) / 220mm f/5.5 (native)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585 (non-Pro) — winter</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li><li class="rig-spec"><span class="rig-spec-icon"></span>Sky-Watcher Star Adventurer 2i</li></ul><div class="rig-note">The lightest rig. Second simultaneous mount at Stokes dark site. Tracking only, no goto.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">04</div><div class="rig-role role-portable">Ultralight Portable</div><div class="rig-scope">Askar FMA180</div><div class="rig-fl">180mm f/4.5 (w/ reducer) / 220mm f/5.5 (native)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585 (non-Pro) for winter</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li><li class="rig-spec"><span class="rig-spec-icon"></span>Sky-Watcher Star Adventurer 2i</li></ul><div class="rig-note">The lightest rig. Second simultaneous mount at Stokes dark site. Tracking only, no goto.</div></div>
       <div class="rig-card fade-in"><div class="rig-number">05</div><div class="rig-role role-portable">Backup Mobile Rig</div><div class="rig-scope">Apertura 60EDR</div><div class="rig-fl">360mm f/6 (ED doublet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li></ul><div class="rig-note">Backup and secondary mobile rig. Pairs with the Juwei-17 for grab-and-go when the primary mobile rigs are deployed.</div></div>
       <div class="rig-card retired fade-in"><div class="rig-number">06</div><div class="rig-role role-workhorse">Primary 350mm Rig</div><div class="rig-role role-retired">Retired</div><div class="rig-scope">Astro-Tech AT72ED II</div><div class="rig-fl">~344mm f/4.8 (w/ 0.8x reducer)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li></ul><div class="rig-note">The former go-to setup for fast-deployment wide-field deep sky from the driveway. Succeeded by the 65PHQ.</div></div>
       <div class="rig-card retired fade-in"><div class="rig-number">07</div><div class="rig-role role-galaxy">Galaxy Season</div><div class="rig-role role-retired">Retired</div><div class="rig-scope">Astro-Tech AT102ED</div><div class="rig-fl">~571mm f/5.6 (w/ 0.8x reducer)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO AM5</li><li class="rig-spec"><span class="rig-spec-icon"></span>Touptek guidecam</li><li class="rig-spec"><span class="rig-spec-icon"></span>Raspberry Pi + CCDCiel</li></ul><div class="rig-note">Indoor window station for galaxy season. RPi-driven due to Gemini focuser + Touptek incompatibility with ASIAir.</div></div>

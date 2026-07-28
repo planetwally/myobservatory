@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Astro Calculators — Washington Valley Observatory</title>
+<title>Astro Calculators · Washington Valley Observatory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -64,9 +64,9 @@
   }
   .nav-brand span{color:var(--accent-gold)}
   .nav-brand .brand-long{color:var(--text-star)}
-  .nav-links{display:flex;gap:1.5rem;list-style:none;align-items:center}
+  .nav-links{display:flex;gap:1.4rem;list-style:none;align-items:center}
   .nav-links a{
-    font-size:.78rem;font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+    font-size:.74rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
     color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
   }
   .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
@@ -109,7 +109,7 @@
     nav{padding:.85rem 1rem}
     .nav-links.show{padding:.8rem 1rem 1.2rem}
   }
-  @media (max-width:1180px){
+  @media (max-width:1300px){
     nav{padding:.9rem 1.4rem}
     .nav-toggle{display:block}
     .nav-links{
@@ -143,13 +143,12 @@
   .calcnav{display:flex;flex-direction:column;gap:2px}
   .calcnav .grp{font:600 10.5px "DM Sans",sans-serif;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin:10px 0 5px}
   .calcnav .grp:first-child{margin-top:0}
-  .calcnav button, .calcnav a{
+  .calcnav button{
     text-align:left;border:1px solid transparent;background:transparent;
-    padding:8px 10px;border-radius:7px;font-size:14px;color:var(--text);text-decoration:none;display:block;
+    padding:8px 10px;border-radius:7px;font-size:14px;color:var(--text);display:block;
   }
-  .calcnav button:hover, .calcnav a:hover{background:var(--panel-2);border-color:var(--line)}
+  .calcnav button:hover{background:var(--panel-2);border-color:var(--line)}
   .calcnav button.on{background:var(--panel-2);border-color:var(--amber-dim);color:var(--amber)}
-  .calcnav a .ext{color:var(--muted);font-size:12px}
 
   /* calculator sections */
   .calc{display:none}
@@ -180,6 +179,25 @@
   .credit{font-size:12px;color:var(--muted);padding:8px 4px 0;line-height:1.6}
   html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
   @media (max-width:900px){ main{grid-template-columns:1fr} }
+  /* ---------- narrow screens: let every calculator form fit ---------- */
+  @media (max-width:700px){
+    .grid3{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:540px){
+    main{padding:16px 14px 26px;gap:16px}
+    .card{padding:12px 12px 13px}
+    .grid2,.grid3{grid-template-columns:1fr;gap:8px}
+    .chainrow{grid-template-columns:1fr 84px 32px;gap:6px}
+    .chainrow button{font-size:12px}
+    .calc h3{font-size:1.35rem}
+    .calc .blurb{font-size:13px}
+    .result{padding:11px 12px;font-size:12.5px;line-height:1.85}
+    .result .big{font-size:1.85rem}
+    .kv{gap:2px 16px}
+    .kv span{white-space:normal}
+    label{margin-bottom:6px}
+    select,input[type=number],input[type=text],input[type=datetime-local]{font-size:16px}
+  }
 </style>
 </head>
 <body>
@@ -193,8 +211,9 @@
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html" class="current">Calculators</a></li>
-    <li><a href="sampling.html">Sampling Calc</a></li>
+    <li><a href="sampling.html">Sampling</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
   </ul>
   <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
 </nav>
@@ -202,7 +221,7 @@
 <div class="tool-title">
   <div class="eyebrow">Observatory Tools</div>
   <h1>The numbers behind <em>a good night</em></h1>
-  <p>Seven calculators for the questions that come up at the scope &mdash; how long a sub should be under your sky, what spacer closes the imaging train, whether the Moon ruins tonight, and how good polar alignment really needs to be.</p>
+  <p>Seven calculators for the questions that come up at the scope: how long a sub should be under your sky, what spacer closes the imaging train, whether the Moon ruins tonight, and how good polar alignment really needs to be.</p>
 </div>
 
 <main>
@@ -216,7 +235,6 @@
         <button data-c="cfz">Critical focus zone</button>
         <button data-c="npf">Untracked exposure (NPF)</button>
         <button data-c="plan">Planetary f-ratio</button>
-        <a href="sampling.html">Sampling &amp; star size <span class="ext">&nearr; own page</span></a>
         <div class="grp">Advisors</div>
         <button data-c="moon">Moon interference</button>
         <button data-c="polar">Polar-alignment tolerance</button>
@@ -224,7 +242,7 @@
     </div>
     <div class="card">
       <h2>Honest numbers</h2>
-      <p class="hint" style="margin-top:0">Every result here is physics plus clearly stated assumptions — defaults are typical published values you can edit. Sky-flux, seeing and interference outputs are planning estimates, not lab measurements. Formulas are documented in each calculator's notes.</p>
+      <p class="hint" style="margin-top:0">Every result here is physics plus clearly stated assumptions. Defaults are typical published values you can edit. Sky-flux, seeing and interference outputs are planning estimates, not lab measurements. Formulas are documented in each calculator's notes.</p>
     </div>
   </aside>
 
@@ -233,7 +251,7 @@
     <!-- ============ SUB-EXPOSURE ============ -->
     <div class="calc on card" id="calc-sub">
       <h3>Sub-exposure length</h3>
-      <p class="blurb">How long should one sub be? Long enough that sky noise swamps read noise — longer buys almost nothing but risks lost frames. Estimated from your sky brightness, optics and camera.</p>
+      <p class="blurb">How long should one sub be? Long enough that sky noise swamps read noise. Going longer buys almost nothing and risks lost frames. Estimated from your sky brightness, optics and camera.</p>
       <div class="grid2">
         <label>Telescope quick-pick <select id="sub-scope"></select></label>
         <label>Camera quick-pick <select id="sub-cam"></select></label>
@@ -250,11 +268,11 @@
       </div>
       <div class="grid3">
         <label>Sky quality <select id="sub-bortle" class="mono">
-          <option value="21.95">Bortle 1 — 21.95</option><option value="21.7">Bortle 2 — 21.7</option>
-          <option value="21.4">Bortle 3 — 21.4</option><option value="21.0">Bortle 4 — 21.0 (Stokes)</option>
-          <option value="20.4">Bortle 5 — 20.4</option><option value="19.6">Bortle 6 — 19.6</option>
-          <option value="18.8" selected>Bortle 7 — 18.8 (home)</option><option value="18.0">Bortle 8 — 18.0</option>
-          <option value="17.5">Bortle 9 — 17.5</option>
+          <option value="21.95">Bortle 1 · 21.95</option><option value="21.7">Bortle 2 · 21.7</option>
+          <option value="21.4">Bortle 3 · 21.4</option><option value="21.0">Bortle 4 · 21.0 (Stokes)</option>
+          <option value="20.4">Bortle 5 · 20.4</option><option value="19.6">Bortle 6 · 19.6</option>
+          <option value="18.8" selected>Bortle 7 · 18.8 (home)</option><option value="18.0">Bortle 8 · 18.0</option>
+          <option value="17.5">Bortle 9 · 17.5</option>
         </select></label>
         <label>SQM (mag/arcsec²) <input type="number" id="sub-sqm" class="mono" value="18.8" step="0.1"></label>
         <label>Filter <select id="sub-filter" class="mono">
@@ -265,18 +283,18 @@
         </select></label>
       </div>
       <label style="max-width:280px">Accepted noise penalty <select id="sub-pen" class="mono">
-        <option value="25">2% — perfectionist</option>
-        <option value="10" selected>5% — standard</option>
-        <option value="5">10% — short-sub friendly</option>
+        <option value="25">2% (perfectionist)</option>
+        <option value="10" selected>5% (standard)</option>
+        <option value="5">10% (short-sub friendly)</option>
       </select></label>
       <div class="result" id="sub-out"></div>
-      <p class="hint">Model: V-band sky photon flux 8.8×10⁵·10<sup>−0.4·SQM</sup> ph/s/cm²/arcsec², 85% optics transmission, filter bandwidth scaling; sub length = C·RN²/e<sub>sky</sub> where C sets the read-noise penalty. Broadband at Bortle 7 really is that short — that's the math telling you to stack more subs, not stretch them.</p>
+      <p class="hint">Model: V-band sky photon flux 8.8×10⁵·10<sup>−0.4·SQM</sup> ph/s/cm²/arcsec², 85% optics transmission, filter bandwidth scaling; sub length = C·RN²/e<sub>sky</sub> where C sets the read-noise penalty. Broadband at Bortle 7 really is that short. That's the math telling you to stack more subs, not stretch them.</p>
     </div>
 
     <!-- ============ BACKFOCUS ============ -->
     <div class="calc card" id="calc-bf">
       <h3>Backfocus &amp; spacing</h3>
-      <p class="blurb">Build your imaging train from the flattener/reducer flange to the sensor and see what spacer closes the gap. Filters push focus back by about a third of their thickness — accounted for automatically.</p>
+      <p class="blurb">Build your imaging train from the flattener/reducer flange to the sensor and see what spacer closes the gap. Filters push focus back by about a third of their thickness, which is accounted for automatically.</p>
       <div class="grid2">
         <label>Required backfocus (mm) <input type="number" id="bf-req" class="mono" value="55" step="0.05"></label>
         <label>Filter thickness (mm) <input type="number" id="bf-filt" class="mono" value="1.85" step="0.05" min="0"></label>
@@ -291,13 +309,13 @@
     <!-- ============ CFZ ============ -->
     <div class="calc card" id="calc-cfz">
       <h3>Critical focus zone</h3>
-      <p class="blurb">The depth of focus inside which stars stay diffraction-sharp. Slow scopes are forgiving; fast astrographs demand precision — this tells you how much.</p>
+      <p class="blurb">The depth of focus inside which stars stay diffraction-sharp. Slow scopes are forgiving; fast astrographs demand precision. This tells you how much.</p>
       <div class="grid3">
         <label>Telescope quick-pick <select id="cfz-scope"></select></label>
         <label>Focal ratio (f/) <input type="number" id="cfz-f" class="mono" value="6.4" step="0.1" min="1"></label>
         <label>Wavelength (µm) <input type="number" id="cfz-l" class="mono" value="0.55" step="0.01"></label>
       </div>
-      <label style="max-width:280px">EAF travel per step (µm) — optional <input type="number" id="cfz-step" class="mono" value="12" step="0.5" min="0"></label>
+      <label style="max-width:280px">EAF travel per step (µm), optional <input type="number" id="cfz-step" class="mono" value="12" step="0.5" min="0"></label>
       <div class="result" id="cfz-out"></div>
       <p class="hint">Classic formula CFZ = 4.88·λ·f². In average seeing the practical tolerance is ~2–3× wider, so treat this as the target for autofocus, not a cliff edge.</p>
     </div>
@@ -305,7 +323,7 @@
     <!-- ============ NPF ============ -->
     <div class="calc card" id="calc-npf">
       <h3>Untracked exposure (NPF rule)</h3>
-      <p class="blurb">Maximum exposure on a fixed tripod before stars trail — the modern NPF rule, with the old 500 rule alongside for comparison.</p>
+      <p class="blurb">Maximum exposure on a fixed tripod before stars trail. The modern NPF rule, with the old 500 rule alongside for comparison.</p>
       <div class="grid3">
         <label>Focal length (mm) <input type="number" id="npf-fl" class="mono" value="135" step="1" min="1"></label>
         <label>Aperture f-number <input type="number" id="npf-n" class="mono" value="2" step="0.1" min="0.7"></label>
@@ -313,7 +331,7 @@
       </div>
       <div class="grid2">
         <label>Crop factor <input type="number" id="npf-crop" class="mono" value="1" step="0.1" min="0.5"></label>
-        <label>Target declination (°) — 0 is worst case <input type="number" id="npf-dec" class="mono" value="0" step="1" min="-89" max="89"></label>
+        <label>Target declination (°), 0 is worst case <input type="number" id="npf-dec" class="mono" value="0" step="1" min="-89" max="89"></label>
       </div>
       <div class="result" id="npf-out"></div>
       <p class="hint">NPF t = (35·N + 30·p)/FL, stretched by 1/cos(dec) away from the celestial equator. Defaults are the Samyang 135 f/2 on the A7R II.</p>
@@ -322,7 +340,7 @@
     <!-- ============ PLANETARY ============ -->
     <div class="calc card" id="calc-plan">
       <h3>Planetary f-ratio</h3>
-      <p class="blurb">For lucky imaging, match the f-ratio to your pixel size — then this picks the Barlow that gets you there and shows how big each planet lands on the sensor.</p>
+      <p class="blurb">For lucky imaging, match the f-ratio to your pixel size, then this picks the Barlow that gets you there and shows how big each planet lands on the sensor.</p>
       <div class="grid3">
         <label>Telescope quick-pick <select id="plan-scope"></select></label>
         <label>Native focal ratio (f/) <input type="number" id="plan-f" class="mono" value="10" step="0.1"></label>
@@ -339,7 +357,7 @@
     <!-- ============ MOON ============ -->
     <div class="calc card" id="calc-moon">
       <h3>Moon interference advisor</h3>
-      <p class="blurb">How badly will the Moon hurt tonight's target? Separation, phase and altitude combined into a verdict — and whether narrowband rescues the session.</p>
+      <p class="blurb">How badly will the Moon hurt tonight's target? Separation, phase and altitude combined into a verdict, and whether narrowband rescues the session.</p>
       <div class="grid2">
         <label>Target <select id="moon-target"></select></label>
         <label>Date &amp; time <input type="datetime-local" id="moon-when" class="mono"></label>
@@ -353,13 +371,13 @@
         <label>Observer longitude (°E) <input type="number" id="moon-lon" class="mono" value="-74.482" step="0.01"></label>
       </div>
       <div class="result" id="moon-out"></div>
-      <p class="hint">Uses a compact lunar ephemeris (~0.5° accuracy — plenty for planning). Rules of thumb baked in: moonlight scatters strongly within ~30–40°, and 3 nm narrowband shrugs off all but a nearby full Moon.</p>
+      <p class="hint">Uses a compact lunar ephemeris (~0.5° accuracy, plenty for planning). Rules of thumb baked in: moonlight scatters strongly within ~30–40°, and 3 nm narrowband shrugs off all but a nearby full Moon.</p>
     </div>
 
     <!-- ============ POLAR ============ -->
     <div class="calc card" id="calc-polar">
       <h3>Polar-alignment tolerance</h3>
-      <p class="blurb">How good does polar alignment actually need to be? Worst-case drift for unguided rigs, and worst-case field rotation for guided ones — both ways: max exposure from your PA error, and required PA error from your target sub length.</p>
+      <p class="blurb">How good does polar alignment actually need to be? Worst-case drift for unguided rigs, and worst-case field rotation for guided ones, both ways: max exposure from your PA error, and required PA error from your target sub length.</p>
       <div class="grid3">
         <label>PA error (arcmin) <input type="number" id="pol-err" class="mono" value="5" step="0.5" min="0.1"></label>
         <label>Target declination (°) <input type="number" id="pol-dec" class="mono" value="40" step="1" min="-85" max="85"></label>
@@ -370,19 +388,18 @@
         <label>Sensor diagonal (mm) <input type="number" id="pol-diag" class="mono" value="28.3" step="0.1"></label>
         <label>Focal length (mm) <input type="number" id="pol-fl" class="mono" value="416" step="1"></label>
       </div>
-      <label style="max-width:280px">Planned sub length (s) — for the inverse <input type="number" id="pol-sub" class="mono" value="300" step="30" min="1"></label>
+      <label style="max-width:280px">Planned sub length (s), for the inverse <input type="number" id="pol-sub" class="mono" value="300" step="30" min="1"></label>
       <div class="result" id="pol-out"></div>
-      <p class="hint">Worst-case bounds: unguided drift ≤ ω·δ; guided field rotation ≤ ω·δ/cos(dec), trailing measured at the sensor corner. Real pointing is usually kinder — if the bound says you're fine, you're fine.</p>
+      <p class="hint">Worst-case bounds: unguided drift ≤ ω·δ; guided field rotation ≤ ω·δ/cos(dec), trailing measured at the sensor corner. Real pointing is usually kinder, so if the bound says you're fine, you're fine.</p>
     </div>
 
-    <p class="credit">Part of the Washington Valley Observatory toolkit, alongside the <a href="fov.html" style="color:var(--muted)">FOV Viewer</a>, <a href="sky.html" style="color:var(--muted)">Sky Conditions Planner</a> and <a href="sampling.html" style="color:var(--muted)">Sampling Calculator</a>. All gear data lives at the top of this file — one line to add a scope or camera.</p>
   </section>
 </main>
 
 <script>
 'use strict';
 
-/* ================= GEAR DATA — edit freely ================= */
+/* ================= GEAR DATA: edit freely ================= */
 
 const SCOPES = [
   {name:'Askar FMA135', ap:30, fl:135}, {name:'Askar FMA180 Pro', ap:40, fl:180},
@@ -480,7 +497,7 @@ const CAMS = [
 
 /* J2000 targets shared with the FOV Viewer */
 const TARGETS = [
-  {name:'M42 — Orion Nebula', ra:83.82, dec:-5.39}, {name:'Horsehead & Flame', ra:85.2, dec:-2.3},
+  {name:'M42 · Orion Nebula', ra:83.82, dec:-5.39}, {name:'Horsehead & Flame', ra:85.2, dec:-2.3},
   {name:'Rosette Nebula', ra:97.97, dec:4.94}, {name:'North America & Pelican', ra:313.7, dec:44.3},
   {name:'Veil complex', ra:312.8, dec:31.2}, {name:'Heart & Soul', ra:40.5, dec:61.0},
   {name:'California Nebula', ra:60.2, dec:36.6}, {name:"Elephant's Trunk", ra:324.75, dec:57.5},
@@ -489,10 +506,10 @@ const TARGETS = [
   {name:'Lagoon & Trifid', ra:270.8, dec:-23.7}, {name:'Iris Nebula', ra:315.4, dec:68.16},
   {name:'Bubble & M52', ra:350.7, dec:61.4}, {name:'Wizard Nebula', ra:341.8, dec:58.13},
   {name:'Cone & Christmas Tree', ra:100.25, dec:9.88}, {name:'Jellyfish Nebula', ra:94.4, dec:22.5},
-  {name:'M31 — Andromeda', ra:10.68, dec:41.27}, {name:'M33 — Triangulum', ra:23.46, dec:30.66},
-  {name:'M81 & M82', ra:148.93, dec:69.37}, {name:'M51 — Whirlpool', ra:202.47, dec:47.20},
-  {name:'M101 — Pinwheel', ra:210.80, dec:54.35}, {name:"Markarian's Chain", ra:187.2, dec:13.6},
-  {name:'M45 — Pleiades', ra:56.75, dec:24.12}, {name:'M13 — Hercules', ra:250.42, dec:36.46},
+  {name:'M31 · Andromeda', ra:10.68, dec:41.27}, {name:'M33 · Triangulum', ra:23.46, dec:30.66},
+  {name:'M81 & M82', ra:148.93, dec:69.37}, {name:'M51 · Whirlpool', ra:202.47, dec:47.20},
+  {name:'M101 · Pinwheel', ra:210.80, dec:54.35}, {name:"Markarian's Chain", ra:187.2, dec:13.6},
+  {name:'M45 · Pleiades', ra:56.75, dec:24.12}, {name:'M13 · Hercules', ra:250.42, dec:36.46},
   {name:'Double Cluster', ra:35.6, dec:57.14}, {name:'Rho Ophiuchi', ra:246.5, dec:-24.3},
 ];
 
@@ -604,17 +621,17 @@ function parseAngle(str, isRA){
 
 /* moon advice tiers */
 function moonVerdict(sep, illumPct, moonAltDeg){
-  if(moonAltDeg<=0) return {cls:'good', label:'Moon down', text:'The Moon is below the horizon at this time — full natural darkness. Shoot whatever you like.'};
-  if(sep<25) return {cls:'poor', label:'Severe', text:'The target sits inside the Moon\u2019s glow halo. Even narrowband will fight gradients this close — pick another target or another night.'};
+  if(moonAltDeg<=0) return {cls:'good', label:'Moon down', text:'The Moon is below the horizon at this time, so you have full natural darkness. Shoot whatever you like.'};
+  if(sep<25) return {cls:'poor', label:'Severe', text:'The target sits inside the Moon\u2019s glow halo. Even narrowband will fight gradients this close. Pick another target or another night.'};
   if(illumPct>=80 && sep<60) return {cls:'poor', label:'Severe', text:'A bright Moon this close floods broadband completely. 3 nm narrowband on bright emission nebulae is the only real play.'};
   if(illumPct>=80) return {cls:'fair', label:'Strong', text:'Bright Moon: broadband (galaxies, dust, clusters) will suffer everywhere in the sky. Narrowband emission targets remain very workable at this separation.'};
   if(illumPct>=40) return sep>=90
     ? {cls:'fair', label:'Moderate', text:'Half-ish Moon well away from the target: broadband is usable on brighter subjects, and narrowband is essentially unaffected.'}
     : {cls:'fair', label:'Strong', text:'Moderate Moon within 90°: expect washed-out broadband. Dual-band or 3 nm filters recommended.'};
   if(illumPct>=15) return sep>=60
-    ? {cls:'good', label:'Minor', text:'A thin-ish Moon at good separation — broadband is fine with careful gradient removal, narrowband untouched.'}
-    : {cls:'fair', label:'Moderate', text:'Crescent Moon fairly close by — usable, but keep an eye on gradients in broadband.'};
-  return {cls:'good', label:'Minimal', text:'Little illumination — effectively a moonless sky for imaging purposes.'};
+    ? {cls:'good', label:'Minor', text:'A thin-ish Moon at good separation. Broadband is fine with careful gradient removal, narrowband untouched.'}
+    : {cls:'fair', label:'Moderate', text:'Crescent Moon fairly close by. Usable, but keep an eye on gradients in broadband.'};
+  return {cls:'good', label:'Minimal', text:'Little illumination, effectively a moonless sky for imaging purposes.'};
 }
 
 /* ================= UI PLUMBING ================= */
