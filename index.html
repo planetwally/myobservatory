@@ -91,6 +91,25 @@
   .role-travel { color: var(--accent-ember); background: rgba(179,90,58,0.1); border: 1px solid rgba(179,90,58,0.15); }
   .role-portable { color: #8a7cbf; background: rgba(138,124,191,0.1); border: 1px solid rgba(138,124,191,0.15); }
   .role-visual { color: #7ba68a; background: rgba(123,166,138,0.1); border: 1px solid rgba(123,166,138,0.15); }
+  /* ── scope-matched role colors ── */
+  .role-askar { color: #4fb06e; background: rgba(79,176,110,0.10); border: 1px solid rgba(79,176,110,0.18); }
+  .role-fma { color: #d0604f; background: rgba(208,96,79,0.10); border: 1px solid rgba(208,96,79,0.18); }
+  .role-astrotech { color: #9ba4ac; background: rgba(155,164,172,0.09); border: 1px solid rgba(155,164,172,0.16); }
+  .role-tak { color: #5c8fd6; background: rgba(92,143,214,0.10); border: 1px solid rgba(92,143,214,0.18); }
+  .role-apertura { color: #2fa8c8; background: rgba(47,168,200,0.10); border: 1px solid rgba(47,168,200,0.18); }
+  .role-whitecat { color: var(--accent-gold); background: rgba(201,168,76,0.10); border: 1px solid rgba(201,168,76,0.18); }
+  .rig-card:has(.role-askar)::before { background: linear-gradient(to right, transparent, #4fb06e, transparent); }
+  .rig-card:has(.role-fma)::before { background: linear-gradient(to right, transparent, #d0604f, transparent); }
+  .rig-card:has(.role-astrotech)::before { background: linear-gradient(to right, transparent, #9ba4ac, transparent); }
+  .rig-card:has(.role-tak)::before { background: linear-gradient(to right, transparent, #5c8fd6, transparent); }
+  .rig-card:has(.role-apertura)::before { background: linear-gradient(to right, transparent, #2fa8c8, transparent); }
+  .rig-card:has(.role-whitecat)::before { background: linear-gradient(to right, transparent, var(--accent-gold), transparent); }
+  .rig-card:has(.role-askar) .rig-number { color: rgba(79,176,110,0.13); }
+  .rig-card:has(.role-fma) .rig-number { color: rgba(208,96,79,0.14); }
+  .rig-card:has(.role-astrotech) .rig-number { color: rgba(155,164,172,0.12); }
+  .rig-card:has(.role-tak) .rig-number { color: rgba(92,143,214,0.14); }
+  .rig-card:has(.role-apertura) .rig-number { color: rgba(47,168,200,0.14); }
+  .rig-card:has(.role-whitecat) .rig-number { color: rgba(201,168,76,0.13); }
   .role-retired { color: var(--text-dim); background: rgba(255,255,255,0.04); border: 1px solid var(--border-faint); }
   .rig-card.retired { opacity: 0.5; filter: grayscale(0.65); }
   .rig-card.retired:hover { transform: none; background: var(--bg-card); border-color: var(--border-faint); }
@@ -106,6 +125,35 @@
   .equip-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-top: 3rem; padding-top: 3rem; border-top: 1px solid var(--border-faint); }
   .equip-group h4 { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 0.8rem; }
   .equip-group li { font-size: 0.78rem; color: var(--text-nebula); font-weight: 300; line-height: 1.8; list-style: none; }
+  /* ── NGC 7000 Study ── */
+  .study-section { background: var(--bg-panel); padding: 6rem 0; margin: 3rem 0; position: relative; }
+  .study-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(to right, transparent, var(--accent-ember), transparent); }
+  .study-inner { max-width: 1300px; margin: 0 auto; padding: 0 2rem; }
+  .compare { --pos: 50%; position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-faint); background: var(--bg-card); line-height: 0; user-select: none; }
+  .compare img { display: block; width: 100%; height: auto; }
+  .cmp-top { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+  .cmp-top img { width: 100%; height: 100%; object-fit: cover; }
+  .cmp-divider { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 1px; background: rgba(232,228,223,0.75); box-shadow: 0 0 12px rgba(0,0,0,0.6); pointer-events: none; z-index: 4; }
+  .cmp-handle { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(7,8,12,0.72); border: 1px solid rgba(232,228,223,0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; gap: 3px; }
+  .cmp-handle span { width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+  .cmp-handle span:first-child { border-right: 6px solid var(--text-star); }
+  .cmp-handle span:last-child { border-left: 6px solid var(--text-star); }
+  .cmp-range { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: ew-resize; z-index: 5; -webkit-appearance: none; appearance: none; background: transparent; }
+  .cmp-range:focus-visible { opacity: 0; }
+  .compare:focus-within { border-color: var(--border-glow); }
+  .cmp-range::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 600px; background: transparent; }
+  .cmp-range::-moz-range-thumb { width: 8px; height: 600px; border: 0; background: transparent; }
+  .cmp-label { position: absolute; top: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 0.3rem 0.7rem; border-radius: 3px; background: rgba(7,8,12,0.65); border: 1px solid var(--border-faint); line-height: 1.6; z-index: 3; pointer-events: none; }
+  .cmp-label-l { left: 1rem; color: var(--accent-ember); }
+  .cmp-label-r { right: 1rem; color: var(--accent-teal); }
+  .cmp-hint { font-family: 'JetBrains Mono', monospace; font-size: 0.63rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-dim); text-align: center; margin-top: 0.9rem; }
+  .study-caption { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem 1.6rem; margin-top: 1.2rem; }
+  .study-caption span { font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.1em; color: var(--text-dim); }
+  .study-caption button { font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.1em; color: var(--accent-gold); background: none; border: none; border-bottom: 1px solid rgba(201,168,76,0.3); cursor: pointer; padding: 0; transition: color 0.3s; }
+  .study-caption button:hover { color: #dab84f; }
+  .study-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent-gold); text-align: center; margin: 4rem 0 1.6rem; }
+  .study-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  @media (max-width: 768px) { .study-grid { grid-template-columns: 1fr; } .cmp-label { font-size: 0.55rem; top: 0.6rem; } .cmp-label-l { left: 0.6rem; } .cmp-label-r { right: 0.6rem; } .cmp-handle { width: 36px; height: 36px; } }
   footer { text-align: center; padding: 4rem 2rem 3rem; border-top: 1px solid var(--border-faint); }
   .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300; letter-spacing: 0.08em; margin-bottom: 1rem; }
   .footer-tagline { font-size: 0.82rem; color: var(--text-nebula); font-weight: 300; margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; }
@@ -142,7 +190,7 @@
   @media (max-width: 768px) { nav { padding: 1rem 1.5rem; } .about-grid { grid-template-columns: 1fr; } .rigs-grid { grid-template-columns: 1fr; } .equip-summary { grid-template-columns: 1fr 1fr; } .gallery-grid { grid-template-columns: 1fr; } .gallery-item.featured { grid-column: span 1; aspect-ratio: 16/9; } section { padding: 4rem 1.5rem; } }
   .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
   .nav-toggle span { display: block; width: 22px; height: 1.5px; background: var(--text-star); margin: 5px 0; transition: 0.3s; }
-  @media (max-width: 1300px) {
+  @media (max-width: 1400px) {
     .nav-links { display: none; }
     .nav-toggle { display: block; }
     .nav-links.show {
@@ -171,6 +219,7 @@
   <a href="#" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
   <ul class="nav-links" id="navLinks">
     <li><a href="#about">About</a></li>
+    <li><a href="#ngc7000">NGC 7000</a></li>
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="fov.html">FOV Viewer</a></li>
     <li><a href="sky.html">Sky Planner</a></li>
@@ -231,7 +280,7 @@
       <circle cx="92" cy="40" r="0.8" fill="#9a958d" opacity="0.5"/>
       <circle cx="118" cy="96" r="2.2" fill="#4a7cad" opacity="0.35"/>
       <rect x="52" y="38" width="116" height="74" rx="2" fill="none" stroke="#c9a84c" stroke-width="1.5" opacity="0.9"/>
-      <text x="56" y="50" fill="#c9a84c" font-family="'JetBrains Mono',monospace" font-size="7" opacity="0.85">RedCat 51</text>
+      <text x="56" y="50" fill="#c9a84c" font-family="'JetBrains Mono',monospace" font-size="7" opacity="0.85">WhiteCat 51</text>
       <g transform="rotate(-13 110 75)">
         <rect x="70" y="54" width="80" height="44" rx="2" fill="none" stroke="#4a7cad" stroke-width="1.5"/>
         <text x="73" y="64" fill="#4a7cad" font-family="'JetBrains Mono',monospace" font-size="7">ASI2600</text>
@@ -241,6 +290,50 @@
     </svg>
   </div>
 </section>
+<div class="study-section" id="ngc7000">
+  <div class="study-inner">
+    <div class="section-header">
+      <div class="section-label">Object Study</div>
+      <h2 class="section-title">The NGC 7000 Complex</h2>
+      <p class="section-desc">One target, three framings. The North America Nebula sprawls across more than four full moons of sky in Cygnus &mdash; big enough that every focal length tells a different story about it. Drag the slider to trade oxygen for hydrogen.</p>
+    </div>
+    <div class="compare fade-in" id="cmp7000">
+      <img class="cmp-base" src="images/ngc7000-wide-hoo.jpg" alt="NGC 7000 complex in H-alpha and OIII">
+      <div class="cmp-top"><img src="images/ngc7000-wide-ha.jpg" alt="NGC 7000 complex in H-alpha only"></div>
+      <span class="cmp-label cmp-label-l">H&alpha; only</span>
+      <span class="cmp-label cmp-label-r">H&alpha; + OIII</span>
+      <div class="cmp-divider"><div class="cmp-handle"><span></span><span></span></div></div>
+      <input class="cmp-range" type="range" min="0" max="100" value="50" step="0.1" aria-label="Reveal OIII data">
+    </div>
+    <div class="cmp-hint">&larr; Drag to reveal &rarr;</div>
+    <div class="study-caption">
+      <span>Wide-field &middot; SVBONY SV220 dual-narrowband &middot; Parsippany, NJ (Bortle 7)</span>
+      <button type="button" onclick="openImage('images/ngc7000-wide-ha.jpg','NGC 7000 Complex &mdash; H&alpha;','The hydrogen-alpha channel alone. Ionized hydrogen traces the full extent of the complex, from the Gulf of Mexico region through the Pelican Nebula to the east.')">View H&alpha; full size</button>
+      <button type="button" onclick="openImage('images/ngc7000-wide-hoo.jpg','NGC 7000 Complex &mdash; H&alpha; + OIII','The same field with doubly-ionized oxygen mapped in. OIII is far fainter here and concentrates near the hottest ionizing sources, adding cool blue-green structure against the red hydrogen.')">View HOO full size</button>
+    </div>
+    <div class="study-sub">Closing In on the Wall</div>
+    <div class="study-grid">
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="images/cygnus-wall-hoo.jpg" alt="Cygnus Wall at 250mm">
+        <div class="gallery-overlay">
+          <div class="gallery-name">The Cygnus Wall &middot; 250mm</div>
+          <div class="gallery-meta">WhiteCat 51 &middot; Jul 2026</div>
+          <div class="gallery-tag">Dual Narrowband</div>
+        </div>
+        <div class="lb-data" data-title="The Cygnus Wall at 250mm" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII with the William Optics WhiteCat 51."></div>
+      </div>
+      <div class="gallery-item" onclick="openLightbox(this)">
+        <img src="images/cygnus-closeup.jpg" alt="Cygnus Wall at 416mm">
+        <div class="gallery-overlay">
+          <div class="gallery-name">The Cygnus Wall &middot; 416mm</div>
+          <div class="gallery-meta">Askar 65PHQ &middot; Jul 2026</div>
+          <div class="gallery-tag">Dual Narrowband</div>
+        </div>
+        <div class="lb-data" data-title="The Cygnus Wall at 416mm" data-desc="The ionization front at the heart of the North America Nebula, framed tight at 416mm with the Askar 65PHQ. Ultraviolet light from the region's hot young stars eats into a dense ridge of hydrogen here, leaving the dark dust lanes that trace its edge."></div>
+      </div>
+    </div>
+  </div>
+</div>
 <section id="gallery" class="fade-in">
   <div class="section-header">
     <div class="section-label">Image Gallery</div>
@@ -257,14 +350,14 @@
       </div>
       <div class="lb-data" data-title="IC 410: Tadpoles Nebula" data-desc="An emission nebula in Auriga featuring distinctive tadpole-shaped structures of gas and dust sculpted by stellar winds from the embedded cluster NGC 1893."></div>
     </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+            <div class="gallery-item" onclick="openLightbox(this)">
       <img src="images/cygnus-wall-hoo.jpg" alt="NGC 7000: The Cygnus Wall">
       <div class="gallery-overlay">
         <div class="gallery-name">NGC 7000: The Cygnus Wall</div>
         <div class="gallery-meta">Local &middot; Jul 2026</div>
         <div class="gallery-tag">Emission</div>
       </div>
-      <div class="lb-data" data-title="NGC 7000: The Cygnus Wall" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula in Cygnus, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII from Stokes State Forest."></div>
+      <div class="lb-data" data-title="NGC 7000: The Cygnus Wall" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula in Cygnus, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII with the WhiteCat 51 at 250mm."></div>
     </div>
     <div class="gallery-item" onclick="openLightbox(this)">
       <img src="images/cygnus-closeup.jpg" alt="NGC 7000: Cygnus Wall Close-up">
@@ -411,13 +504,13 @@
       <div class="lb-data" data-title="M42: The Orion Nebula" data-desc="The brightest diffuse nebula in the sky, a prominent star-forming region about 1,344 light-years away in Orion."></div>
     </div>
     <div class="gallery-item" onclick="openLightbox(this)">
-      <img src="images/rosette-redcat.jpg" alt="NGC 2237: Rosette (RedCat)">
+      <img src="images/rosette-redcat.jpg" alt="NGC 2237: Rosette (WhiteCat)">
       <div class="gallery-overlay">
-        <div class="gallery-name">NGC 2237: Rosette (RedCat)</div>
+        <div class="gallery-name">NGC 2237: Rosette (WhiteCat)</div>
         <div class="gallery-meta">Local Imaging</div>
         <div class="gallery-tag">Emission</div>
       </div>
-      <div class="lb-data" data-title="NGC 2237: Rosette Nebula (RedCat 51)" data-desc="A wider-field take on the Rosette captured with the William Optics RedCat 51 at 250mm."></div>
+      <div class="lb-data" data-title="NGC 2237: Rosette Nebula (WhiteCat 51)" data-desc="A wider-field take on the Rosette captured with the William Optics WhiteCat 51 at 250mm."></div>
     </div>
     <div class="gallery-item" onclick="openLightbox(this)">
       <img src="images/m5.jpg" alt="M5: Globular Cluster">
@@ -489,16 +582,17 @@
     <div class="section-header">
       <div class="section-label">Equipment &amp; Imaging Stations</div>
       <h2 class="section-title">My Rigs</h2>
-      <p class="section-desc">Five active imaging stations, each optimized for a specific use case, plus the retired rigs that earned their keep. Sensors now span the IMX585 platform and APS-C.</p>
+      <p class="section-desc">Six active imaging stations, each optimized for a specific use case, plus the retired rigs that earned their keep. Sensors now span the IMX585 platform and APS-C.</p>
     </div>
     <div class="rigs-grid">
-      <div class="rig-card fade-in"><div class="rig-number">01</div><div class="rig-role role-workhorse">Primary 416mm Rig</div><div class="rig-scope">Askar 65PHQ</div><div class="rig-fl">416mm f/6.4 (flat-field astrograph)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Air (shared w/ RedCat 51)</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO EAF</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">The new workhorse. Flat-field optics and 416mm of reach for compact nebulae and galaxy fields alike.</div></div>
-      <div class="rig-card fade-in"><div class="rig-number">02</div><div class="rig-role role-nebula">Mobile 300mm Rig</div><div class="rig-scope">Astro-Tech AT60EDP</div><div class="rig-fl">300mm f/5 (Petzval quadruplet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI2600MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Plus</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">Wide-field master rig. The APS-C sensor drinks in huge swaths of sky at 300mm.</div></div>
-      <div class="rig-card fade-in"><div class="rig-number">03</div><div class="rig-role role-travel">Mobile 250mm Rig</div><div class="rig-scope">William Optics RedCat 51</div><div class="rig-fl">250mm f/4.9</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Air (shared w/ 65PHQ)</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir (built-in)</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">Dark site kit for Stokes State Forest. Fast Petzval design, grab-and-go on the Juwei-17.</div></div>
-      <div class="rig-card fade-in"><div class="rig-number">04</div><div class="rig-role role-portable">Ultralight Portable</div><div class="rig-scope">Askar FMA180</div><div class="rig-fl">180mm f/4.5 (w/ reducer) / 220mm f/5.5 (native)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585 (non-Pro) for winter</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li><li class="rig-spec"><span class="rig-spec-icon"></span>Sky-Watcher Star Adventurer 2i</li></ul><div class="rig-note">The lightest rig. Second simultaneous mount at Stokes dark site. Tracking only, no goto.</div></div>
-      <div class="rig-card fade-in"><div class="rig-number">05</div><div class="rig-role role-portable">Backup Mobile Rig</div><div class="rig-scope">Apertura 60EDR</div><div class="rig-fl">360mm f/6 (ED doublet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li></ul><div class="rig-note">Backup and secondary mobile rig. Pairs with the Juwei-17 for grab-and-go when the primary mobile rigs are deployed.</div></div>
-      <div class="rig-card retired fade-in"><div class="rig-number">06</div><div class="rig-role role-workhorse">Primary 350mm Rig</div><div class="rig-role role-retired">Retired</div><div class="rig-scope">Astro-Tech AT72ED II</div><div class="rig-fl">~344mm f/4.8 (w/ 0.8x reducer)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li></ul><div class="rig-note">The former go-to setup for fast-deployment wide-field deep sky from the driveway. Succeeded by the 65PHQ.</div></div>
-      <div class="rig-card retired fade-in"><div class="rig-number">07</div><div class="rig-role role-galaxy">Galaxy Season</div><div class="rig-role role-retired">Retired</div><div class="rig-scope">Astro-Tech AT102ED</div><div class="rig-fl">~571mm f/5.6 (w/ 0.8x reducer)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO AM5</li><li class="rig-spec"><span class="rig-spec-icon"></span>Touptek guidecam</li><li class="rig-spec"><span class="rig-spec-icon"></span>Raspberry Pi + CCDCiel</li></ul><div class="rig-note">Indoor window station for galaxy season. RPi-driven due to Gemini focuser + Touptek incompatibility with ASIAir.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">01</div><div class="rig-role role-askar">Primary 416mm Rig</div><div class="rig-scope">Askar 65PHQ</div><div class="rig-fl">416mm f/6.4 (flat-field astrograph)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Air (shared w/ WhiteCat 51)</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO EAF</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">The new workhorse. Flat-field optics and 416mm of reach for compact nebulae and galaxy fields alike.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">02</div><div class="rig-role role-astrotech">Mobile 300mm Rig</div><div class="rig-scope">Astro-Tech AT60EDP</div><div class="rig-fl">300mm f/5 (Petzval quadruplet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI2600MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Plus (dedicated)</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">Wide-field master rig. The APS-C sensor drinks in huge swaths of sky at 300mm.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">03</div><div class="rig-role role-whitecat">Primary 250mm Rig</div><div class="rig-scope">William Optics WhiteCat 51</div><div class="rig-fl">250mm f/4.9</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Air (shared w/ 65PHQ)</li><li class="rig-spec"><span class="rig-spec-icon"></span>Askar Rail</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li></ul><div class="rig-note">The everyday 250mm workhorse. Fast Petzval optics, grab-and-go on the Juwei-17 &mdash; front yard or Stokes dark site.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">04</div><div class="rig-role role-fma">Ultralight Portable</div><div class="rig-scope">Askar FMA180</div><div class="rig-fl">180mm f/4.5 (w/ reducer) / 220mm f/5.5 (native)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585 (non-Pro) for winter</li><li class="rig-spec"><span class="rig-spec-icon"></span>Sky-Watcher Star Adventurer 2i (ASIAir Mini)</li></ul><div class="rig-note">The lightest rig. The Mini lives permanently in the 2i battery compartment. Second simultaneous mount at Stokes. Tracking only, no goto.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">05</div><div class="rig-role role-tak">Backup 366mm Rig</div><div class="rig-scope">Takahashi FS-60CB</div><div class="rig-fl">366mm f/6.1 (fluorite doublet + flattener)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO AM5 Mount (ASIAir Mini)</li><li class="rig-spec"><span class="rig-spec-icon"></span>Tak flattener + custom M52/M48 spacer stack</li></ul><div class="rig-note">Permanent home station. Fluorite glass and a validated flattener chain make this the sharpest small refractor in the fleet &mdash; the Mini rides on the AM5 itself.</div></div>
+      <div class="rig-card fade-in"><div class="rig-number">06</div><div class="rig-role role-apertura">Backup Mobile Rig</div><div class="rig-scope">Apertura 60EDR</div><div class="rig-fl">360mm f/6 (ED doublet)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li></ul><div class="rig-note">Backup and secondary mobile rig. Pairs with the Juwei-17 for grab-and-go when the primary mobile rigs are deployed.</div></div>
+      <div class="rig-card retired fade-in"><div class="rig-number">07</div><div class="rig-role role-astrotech">Primary 350mm Rig</div><div class="rig-role role-retired">Retired</div><div class="rig-scope">Astro-Tech AT72ED II</div><div class="rig-fl">~344mm f/4.8 (w/ 0.8x reducer)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>Juwei-17 EQ Mount</li><li class="rig-spec"><span class="rig-spec-icon"></span>ASIAir Mini</li></ul><div class="rig-note">The former go-to setup for fast-deployment wide-field deep sky from the driveway. Succeeded by the 65PHQ.</div></div>
+      <div class="rig-card retired fade-in"><div class="rig-number">08</div><div class="rig-role role-astrotech">Galaxy Season</div><div class="rig-role role-retired">Retired</div><div class="rig-scope">Astro-Tech AT102ED</div><div class="rig-fl">~571mm f/5.6 (w/ 0.8x reducer)</div><ul class="rig-specs"><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO ASI585MC Pro</li><li class="rig-spec"><span class="rig-spec-icon"></span>ZWO AM5</li><li class="rig-spec"><span class="rig-spec-icon"></span>Touptek guidecam</li><li class="rig-spec"><span class="rig-spec-icon"></span>Raspberry Pi + CCDCiel</li></ul><div class="rig-note">Indoor window station for galaxy season. RPi-driven due to Gemini focuser + Touptek incompatibility with ASIAir.</div></div>
     </div>
     <div class="equip-summary fade-in">
       <div class="equip-group"><h4>Cameras</h4><ul><li>1x ASI2600MC Pro (APS-C)</li><li>1x ASI585MC Air</li><li>2x ASI585MC Pro</li><li>1x ASI585 (non-Pro)</li></ul></div>
@@ -514,6 +608,7 @@
   <div class="footer-links">
     <a href="mailto:inquiries@myobservatory.org">Email</a>
     <a href="https://www.instagram.com/" target="_blank">Instagram</a>
+    <a href="#ngc7000">NGC 7000 Study</a>
     <a href="#gallery">Gallery</a>
     <a href="fov.html">FOV Viewer</a>
     <a href="sky.html">Sky Planner</a>
@@ -545,15 +640,25 @@
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-  function openLightbox(item) {
-    const img = item.querySelector('img');
-    const data = item.querySelector('.lb-data');
-    document.getElementById('lb-img').src = img.src;
-    document.getElementById('lb-title').textContent = data ? data.dataset.title : '';
-    document.getElementById('lb-desc').textContent = data ? data.dataset.desc : '';
+  function openImage(src, title, desc) {
+    document.getElementById('lb-img').src = src;
+    document.getElementById('lb-title').innerHTML = title || '';
+    document.getElementById('lb-desc').innerHTML = desc || '';
     document.getElementById('lightbox').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
+  function openLightbox(item) {
+    const img = item.querySelector('img');
+    const data = item.querySelector('.lb-data');
+    openImage(img.src, data ? data.dataset.title : '', data ? data.dataset.desc : '');
+  }
+  document.querySelectorAll('.compare').forEach(cmp => {
+    const range = cmp.querySelector('.cmp-range');
+    if (!range) return;
+    const apply = () => cmp.style.setProperty('--pos', range.value + '%');
+    range.addEventListener('input', apply);
+    apply();
+  });
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('active');
     document.body.style.overflow = '';
