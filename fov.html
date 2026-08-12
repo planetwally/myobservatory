@@ -195,6 +195,12 @@
     overflow:hidden;cursor:grab;touch-action:none;user-select:none;
   }
   .sky.busy{cursor:grabbing}
+  /* background plate fetch: a quiet pip, never a veil over a usable sky */
+  .sky.loading::before{
+    content:"";position:absolute;top:12px;left:12px;width:7px;height:7px;z-index:5;
+    border-radius:50%;background:var(--amber);animation:platepip 1.1s ease-in-out infinite;
+  }
+  @keyframes platepip{0%,100%{opacity:.2}50%{opacity:.9}}
   .sky img{
     position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;
     pointer-events:none;user-select:none;-webkit-user-drag:none;will-change:transform;
@@ -309,11 +315,18 @@
       <label>Survey imagery
         <select id="surveySel"></select>
       </label>
+      <label>Sky preloading
+        <select id="plateSel">
+          <option value="fast">Fast · fetch only what is visible</option>
+          <option value="balanced">Balanced · 2.4× plate, preload neighbours</option>
+          <option value="generous">Generous · 3.2× plate, preload zoom steps</option>
+        </select>
+      </label>
       <div class="row">
         <label>Observer lat (°N) <input type="number" id="latIn" class="mono" step="0.01" min="-90" max="90"></label>
         <label>Observer lon (°E) <input type="number" id="lonIn" class="mono" step="0.01" min="-180" max="180"></label>
       </div>
-      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°. Observer location drives the visibility readout. West longitudes are negative.</p>
+      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°. Preloading fetches a wider plate than you can see, so panning and small zoom steps cost nothing; drop to Fast on a slow field connection. Observer location drives the visibility readout. West longitudes are negative.</p>
     </div>
 
     <div class="card" style="padding-bottom:12px">
@@ -512,6 +525,19 @@ const SCOPES = [
   {name:'Samyang 85mm f/1.4',           short:'Samyang 85', ap:61,   fl:85},
   {name:'Sigma 105mm f/1.4 Art',        short:'Sigma 105',  ap:75,   fl:105},
   {name:'Canon EF 200mm f/2.8L',        short:'Canon 200',  ap:71,   fl:200},
+  /* 2026 expansion III, appended so existing share links keep working */
+  {name:'Sharpstar 50EDPH',             short:'50EDPH',     ap:50,   fl:275},
+  {name:'Sharpstar 50EDPH + 0.84× red.',short:'50EDPH red', ap:50,   fl:231},
+  {name:'Sharpstar 61EDPH II + 0.8× red.',short:'61EDPH red',ap:61,  fl:268},
+  {name:'Sharpstar 15028HNT',           short:'15028HNT',   ap:150,  fl:420},
+  {name:'ZWO FF65 APO',                 short:'FF65',       ap:65,   fl:416},
+  {name:'ZWO FF80 APO',                 short:'FF80',       ap:80,   fl:600},
+  {name:'ZWO FF107 APO',                short:'FF107',      ap:107,  fl:749},
+  {name:'Askar 151PHQ',                 short:'151PHQ',     ap:151,  fl:1057},
+  {name:'GSO / Apertura RC6',           short:'RC6',        ap:152,  fl:1370},
+  {name:'GSO / Apertura RC8',           short:'RC8',        ap:203,  fl:1624},
+  {name:'GSO / Apertura RC10',          short:'RC10',       ap:254,  fl:2000},
+  {name:'Sky-Watcher 250PDS',           short:'250PDS',     ap:254,  fl:1200},
 ];
 
 /* w/h = sensor size in mm, pw/ph = pixel count, px = pixel pitch in µm */
@@ -976,51 +1002,206 @@ function renderStats(){
   });
 }
 
-/* ================= SKY IMAGE ================= */
+/* ================= SKY IMAGE (oversized plate cache) ================= */
+/*
+   Rather than fetching exactly the visible field on every nudge, we fetch an
+   oversized "plate" covering several times the view. Panning and modest zooming
+   then happen purely as a CSS transform over pixels we already hold, with no
+   network round trip at all. Plate centres snap to a grid derived from the plate
+   size, so adjacent views resolve to the same plate, and idle time is spent
+   prefetching the neighbouring cells and the next zoom step.
+*/
 
-let loadToken=0, fetchTimer=null;
-let fetchedFov=state.fov, fetchedRA=state.ra, fetchedDec=state.dec;
+const PLATE_MODES = {
+  fast:     {factor:1.15, px:1265, prefetch:0, cache:8},
+  balanced: {factor:2.4,  px:2640, prefetch:4, cache:6},
+  generous: {factor:3.2,  px:3200, prefetch:6, cache:4},
+};
+let plateMode = 'balanced';
+try{ const m = localStorage.getItem('wvo-fov-plate'); if(m && PLATE_MODES[m]) plateMode = m; }catch(_){}
+const PM = () => PLATE_MODES[plateMode];
 
-function skyURL(host, p){
+const SHARP_TOL = 1.35;   /* how far a plate may be upscaled before we refetch */
+const EDGE_SAFE = 0.98;   /* usable fraction of the plate half-width */
+
+let plate = null;                 /* the plate currently on screen */
+let loadToken = 0, fetchTimer = null, prefetchTimer = null;
+let gestureActive = false;        /* true while a pointer gesture is in flight */
+const plateCache = new Map();
+
+function skyURL(host, p, px){
   return `https://${host}/hips-image-services/hips2fits`
     + `?hips=${encodeURIComponent(p.survey)}`
-    + `&width=${S}&height=${S}&fov=${p.fov}`
+    + `&width=${px}&height=${px}&fov=${p.fov}`
     + `&projection=TAN&coordsys=icrs`
     + `&ra=${p.ra}&dec=${p.dec}&format=jpg`;
 }
-function loadSky(){
-  clearTimeout(fetchTimer);
-  const t=++loadToken;
-  const p={ra:state.ra, dec:state.dec, fov:state.fov, survey:state.survey};
-  let hi=0;
-  $('loadingBox').classList.remove('hidden');
-  $('errBox').classList.add('hidden');
-  const img=$('skyImg');
-  const attempt=()=>{
-    img.onload=()=>{
-      if(t!==loadToken) return;
-      $('loadingBox').classList.add('hidden');
-      img.style.transform='';            /* the fetched image is correctly framed */
-      panX=0; panY=0;
-      fetchedFov=p.fov; fetchedRA=p.ra; fetchedDec=p.dec;
-    };
-    img.onerror=()=>{
-      if(t!==loadToken) return;
-      hi++;
-      if(hi<HOSTS.length) attempt();
-      else{ $('loadingBox').classList.add('hidden'); $('errBox').classList.remove('hidden'); }
-    };
-    img.src=skyURL(HOSTS[hi], p);
-  };
-  attempt();
-}
-function debounceFetch(){ clearTimeout(fetchTimer); fetchTimer=setTimeout(loadSky, 280); }
 
-/* live CSS transform during pan / zoom (rotation never touches the sky image) */
-function setImgTransform(){
-  const s = fetchedFov ? fetchedFov/state.fov : 1;
-  $('skyImg').style.transform = `translate(${panX}px,${panY}px) scale(${s})`;
+const raDelta = (a,b) => ((a-b+540)%360)-180;
+
+function snapFov(f){
+  const L = Math.round(Math.log2(f)*2)/2;            /* √2 ladder */
+  return Math.min(90, Math.max(FOV_MIN, Math.pow(2,L)));
 }
+function snapCentre(ra, dec, fovP){
+  const g = fovP/3;
+  const decS = Math.max(-89.5, Math.min(89.5, Math.round(dec/g)*g));
+  const cd = Math.max(0.05, Math.cos(rad(decS)));
+  const gRA = Math.min(180, g/cd);
+  return { ra: normRA(Math.round(ra/gRA)*gRA), dec: decS };
+}
+function planPlate(ra, dec, fov, survey){
+  const fovP = snapFov(Math.min(90, fov*PM().factor));
+  const c = snapCentre(ra, dec, fovP);
+  return { ra:c.ra, dec:c.dec, fov:fovP, survey };
+}
+function plateId(p){
+  return `${p.survey}|${p.ra.toFixed(4)}|${p.dec.toFixed(4)}|${p.fov.toFixed(5)}`;
+}
+
+/* Does this plate still cover the view, sharply enough to keep using? */
+function plateCovers(p, ra, dec, fov){
+  if(!p || !p.img || p.survey !== state.survey) return false;
+  const half = p.fov/2 * EDGE_SAFE;
+  const dx = Math.abs(raDelta(ra, p.ra)) * Math.cos(rad(p.dec));
+  const dy = Math.abs(dec - p.dec);
+  if(dx + fov/2 > half || dy + fov/2 > half) return false;
+  return (p.fov/fov) / (p.natural/S) <= SHARP_TOL;
+}
+
+function trimCache(){
+  const max = PM().cache;
+  if(plateCache.size <= max) return;
+  [...plateCache.entries()]
+    .filter(([id]) => !plate || id !== plate.id)
+    .sort((a,b) => a[1].t - b[1].t)
+    .slice(0, plateCache.size - max)
+    .forEach(([id]) => plateCache.delete(id));
+}
+
+function fetchPlate(p){
+  const id = plateId(p);
+  const hit = plateCache.get(id);
+  if(hit){ hit.t = Date.now(); return hit.ready; }
+
+  const px = PM().px;
+  const entry = { ...p, id, t:Date.now(), img:null, natural:px };
+  entry.ready = new Promise((resolve, reject) => {
+    let hi = 0;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    const attempt = () => {
+      img.onload = () => {
+        entry.img = img;
+        entry.natural = img.naturalWidth || px;
+        resolve(entry);
+      };
+      img.onerror = () => {
+        hi++;
+        if(hi < HOSTS.length) attempt();
+        else { plateCache.delete(id); reject(new Error('plate unavailable')); }
+      };
+      img.src = skyURL(HOSTS[hi], p, px);
+    };
+    attempt();
+  });
+  plateCache.set(id, entry);
+  trimCache();
+  return entry.ready;
+}
+
+function showPlate(entry){
+  plate = entry;
+  entry.t = Date.now();
+  const el = $('skyImg');
+  if(el.src !== entry.img.src) el.src = entry.img.src;
+  if(!gestureActive){ panX = 0; panY = 0; }   /* never yank the sky mid-drag */
+  applyTransform();
+  $('loadingBox').classList.add('hidden');
+  $('errBox').classList.add('hidden');
+}
+
+/* Guarantee a plate covering the current view; hit the network only if we must */
+function ensurePlate(force){
+  if(!force && plateCovers(plate, state.ra, state.dec, state.fov)){
+    applyTransform();
+    schedulePrefetch();
+    return;
+  }
+  const want = planPlate(state.ra, state.dec, state.fov, state.survey);
+  const cached = plateCache.get(plateId(want));
+  if(cached && cached.img){ showPlate(cached); schedulePrefetch(); return; }
+
+  const t = ++loadToken;
+  /* only veil the view when there is nothing usable to look at */
+  if(!plate || plate.survey !== state.survey) $('loadingBox').classList.remove('hidden');
+  $('errBox').classList.add('hidden');
+  $('sky').classList.add('loading');
+
+  fetchPlate(want).then(entry => {
+    if(t !== loadToken) return;
+    $('sky').classList.remove('loading');
+    showPlate(entry);
+    schedulePrefetch();
+  }).catch(() => {
+    if(t !== loadToken) return;
+    $('sky').classList.remove('loading');
+    $('loadingBox').classList.add('hidden');
+    if(!plate) $('errBox').classList.remove('hidden');
+  });
+}
+
+function loadSky(force){ clearTimeout(fetchTimer); ensurePlate(force); }
+function debounceFetch(){ clearTimeout(fetchTimer); fetchTimer = setTimeout(() => ensurePlate(false), 260); }
+
+/* ---- idle prefetch: neighbouring cells, then the next zoom step ---- */
+function slowLink(){
+  const c = navigator.connection;
+  return !!(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType||'')));
+}
+function schedulePrefetch(){
+  clearTimeout(prefetchTimer);
+  const n = PM().prefetch;
+  if(!n || !plate || slowLink()) return;
+  const base = plate;
+  const vRA = state.ra, vDec = state.dec;      /* zoom steps re-plan around the view */
+  prefetchTimer = setTimeout(() => {
+    if(plate !== base) return;
+    const g = base.fov/3;
+    const cd = Math.max(0.05, Math.cos(rad(base.dec)));
+    const jobs = [
+      {ra: base.ra + g/cd, dec: base.dec,     fov: base.fov},
+      {ra: base.ra - g/cd, dec: base.dec,     fov: base.fov},
+      {ra: base.ra,        dec: base.dec + g, fov: base.fov},
+      {ra: base.ra,        dec: base.dec - g, fov: base.fov},
+      {ra: vRA, dec: vDec, fov: snapFov(Math.min(90, base.fov*2))},
+      {ra: vRA, dec: vDec, fov: snapFov(base.fov/2)},
+    ].slice(0, n).map(j => {
+      /* snap through the same planner a real request uses, or the cache never hits:
+         the RA grid step scales with 1/cos(dec), so a N/S hop needs re-snapping */
+      const c = snapCentre(normRA(j.ra), Math.max(-89.5, Math.min(89.5, j.dec)), j.fov);
+      return { ra:c.ra, dec:c.dec, fov:j.fov, survey:base.survey };
+    });
+    jobs.forEach((j,i) => setTimeout(() => {
+      if(plate !== base) return;               /* view moved on; abandon the queue */
+      fetchPlate(j).catch(()=>{});
+    }, i*220));
+  }, 600);
+}
+
+/* ---- place the plate so the requested field fills the box ---- */
+function applyTransform(){
+  const el = $('skyImg');
+  if(!plate){ el.style.transform = `translate(${panX}px,${panY}px)`; return; }
+  const W = el.clientWidth || S;
+  const k = plate.fov / state.fov;
+  const perDeg = W / state.fov;
+  const tx = raDelta(state.ra, plate.ra) * Math.cos(rad(plate.dec)) * perDeg + panX;
+  const ty = (state.dec - plate.dec) * perDeg + panY;
+  el.style.transform = `translate(${tx}px,${ty}px) scale(${k})`;
+}
+const setImgTransform = applyTransform;   /* keep existing call sites working */
 
 /* ================= COORD PARSING ================= */
 
@@ -1141,7 +1322,17 @@ async function exportPNG(){
     canvas.width=S; canvas.height=S;
     const ctx=canvas.getContext('2d');
     ctx.fillStyle='#07080c'; ctx.fillRect(0,0,S,S);
-    ctx.drawImage(img,0,0,S,S);
+    if(plate && plate.img){
+      /* the plate is wider than the view: cut out exactly what is on screen */
+      const nat = plate.natural || img.naturalWidth;
+      const perPx = nat/plate.fov;
+      const src = nat * (state.fov/plate.fov);
+      const cx = nat/2 - raDelta(state.ra, plate.ra)*Math.cos(rad(plate.dec))*perPx;
+      const cy = nat/2 - (state.dec - plate.dec)*perPx;
+      ctx.drawImage(img, cx-src/2, cy-src/2, src, src, 0, 0, S, S);
+    }else{
+      ctx.drawImage(img,0,0,S,S);
+    }
     /* rasterize the SVG overlay on top */
     const sv=$('overlay').cloneNode(true);
     sv.setAttribute('width',S); sv.setAttribute('height',S);
@@ -1302,6 +1493,7 @@ function onDown(e){
 
   if(e.button===2){ startRotate(e.clientX,e.clientY); }
   else { startPan(e.clientX,e.clientY); }
+  gestureActive = true;
   $('sky').classList.add('busy');
 }
 function startPan(x,y){
@@ -1350,16 +1542,20 @@ function onUp(e){
   try{ $('sky').releasePointerCapture(e.pointerId); }catch(_){}
 
   if(mode==='pan'){
+    const moved = panX || panY;
     const c=centerFromPan(panX,panY);
     state.ra=c.ra; state.dec=c.dec;
-    if(panX||panY) loadSky();                    /* image reset happens on load */
-    mode=null; updateReadout(); syncHash();
+    panX=0; panY=0;                  /* the move now lives in state, not the offset */
+    mode=null;
+    if(moved) loadSky();             /* usually a no-op reframe of the cached plate */
+    else applyTransform();
+    updateReadout(); syncHash();
   }else if(mode==='rotate'){
     mode=null; syncHash();
   }else if(mode==='pinch'){
     if(pointers.size<2){ loadSky(); mode=null; pinchStart=null; }
   }
-  if(pointers.size===0) $('sky').classList.remove('busy');
+  if(pointers.size===0){ gestureActive=false; $('sky').classList.remove('busy'); }
 }
 
 /* ================= SHARE / PERSIST (URL hash) ================= */
@@ -1418,7 +1614,6 @@ function init(){
     state.rigs=[];
     defaultRigs().forEach(d=>state.rigs.push(newRig(d)));
   }
-  fetchedFov=state.fov; fetchedRA=state.ra; fetchedDec=state.dec;
 
   $('targetSel').value = TARGETS.some(t=>t.id===state.targetId) ? state.targetId : 'custom';
   $('customTarget').classList.toggle('hidden', $('targetSel').value!=='custom');
@@ -1463,6 +1658,14 @@ function init(){
     applyFit(false, true);
   });
   $('surveySel').addEventListener('change', e=>{ state.survey=e.target.value; loadSky(); syncHash(); });
+  $('plateSel').value = plateMode;
+  $('plateSel').addEventListener('change', e=>{
+    plateMode = e.target.value;
+    try{ localStorage.setItem('wvo-fov-plate', plateMode); }catch(_){}
+    plateCache.clear(); plate = null;      /* plate geometry changed; start clean */
+    loadSky(true);
+  });
+  window.addEventListener('resize', applyTransform);
 
   /* --- zoom / fit --- */
   $('zoomIn').addEventListener('click',  ()=>liveZoom(state.fov/ZOOM_STEP));
