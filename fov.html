@@ -3,128 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Field of View Viewer · Washington Valley Observatory</title>
+<title>Field of View Viewer — Washington Valley Observatory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* ---- Washington Valley Observatory shared palette ---- */
-    --bg-void:#07080c;
-    --bg-panel:#0c0e14;
-    --bg-card:#10131b;
-    --bg-card-hover:#161a25;
-    --text-star:#e8e4df;
-    --text-nebula:#9a958d;
-    --text-dim:#5a564f;
-    --accent-blue:#4a7cad;
-    --accent-gold:#c9a84c;
-    --accent-ember:#b35a3a;
-    --accent-teal:#3a8a7a;
-    --border-faint:rgba(255,255,255,0.04);
-    --border-glow:rgba(74,124,173,0.2);
-    --grain:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-
-    /* ---- instrument aliases: the tool CSS below reads these ---- */
-    --bg:var(--bg-void);
-    --panel:var(--bg-panel);
-    --panel-2:var(--bg-card);
-    --line:#1b1f29;
-    --text:var(--text-star);
-    --muted:var(--text-nebula);
-    --amber:var(--accent-gold);
-    --amber-dim:#a8883a;
-    --danger:var(--accent-ember);
-    --good:var(--accent-teal);
-    --fair:var(--accent-gold);
-    --poor:var(--accent-ember);
+    --bg:#0a0f1a;          /* zenith */
+    --panel:#101725;       /* panel */
+    --panel-2:#0d1320;
+    --line:#223047;
+    --text:#e8ecf4;        /* starlight */
+    --muted:#8a96ab;
+    --amber:#f2b33d;       /* sodium lamp */
+    --amber-dim:#c98f23;
+    --danger:#f87171;
     --radius:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow-x:hidden;overflow-x:clip}
-  img,svg,video{max-width:100%}
+  html,body{height:100%}
   body{
     background:var(--bg);
     color:var(--text);
-    font:15px/1.5 "DM Sans",system-ui,sans-serif;
+    font:15px/1.5 "Inter",system-ui,sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  body::before{ /* observatory film grain */
-    content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
-    background:var(--grain);
+  body::before{ /* faint static grain so the chrome isn't dead-flat */
+    content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;
+    background-image:radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:3px 3px;
   }
-  /* ---------- shared observatory chrome ---------- */
-  nav{
-    position:sticky;top:0;z-index:60;
-    display:flex;align-items:center;justify-content:space-between;gap:20px;
-    padding:1.05rem 1.9rem;
-    background:rgba(7,8,12,.82);
-    -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
-    border-bottom:1px solid var(--border-faint);
+  header{
+    display:flex;align-items:center;gap:16px;
+    padding:18px 26px;border-bottom:1px solid var(--line);
   }
-  .nav-brand{
-    font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
-    letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
-    text-decoration:none;min-width:0;
+  .wordmark h1{
+    font:700 22px/1.1 "Bricolage Grotesque",sans-serif;
+    letter-spacing:.2px;
   }
-  .nav-brand span{color:var(--accent-gold)}
-  .nav-brand .brand-long{color:var(--text-star)}
-  .nav-links{display:flex;gap:1.4rem;list-style:none;align-items:center}
-  .nav-links a{
-    font-size:.74rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
+  .wordmark p{
+    color:var(--muted);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px;
   }
-  .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
-  .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
-  .nav-links a.current::after,.nav-links a:hover::after{width:100%}
-  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
-  .nav-toggle:hover{background:none;border:none}
-  .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
-  #nightBtn{
-    font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.16em;
-    text-transform:uppercase;padding:.5rem .85rem;white-space:nowrap;
+  .home-link{
+    font:13px/1 "Inter",system-ui,sans-serif;color:var(--muted);text-decoration:none;
+    letter-spacing:.03em;white-space:nowrap;transition:color .15s;
   }
-  .tool-title{max-width:1500px;margin:0 auto;padding:2.2rem 1.9rem .2rem;position:relative;z-index:2}
-  .tool-title .eyebrow{
-    font-family:"JetBrains Mono",monospace;font-size:.64rem;font-weight:300;
-    letter-spacing:.3em;text-transform:uppercase;color:var(--accent-gold);margin-bottom:.55rem;
-  }
-  .tool-title h1{
-    font-family:"Cormorant Garamond",serif;font-weight:300;
-    font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.15;letter-spacing:-.01em;
-  }
-  .tool-title h1 em{font-style:italic;color:var(--accent-blue)}
-  .tool-title p{font-size:.9rem;font-weight:300;color:var(--text-nebula);max-width:640px;margin-top:.6rem;line-height:1.75}
-  footer{
-    border-top:1px solid var(--border-faint);padding:3rem 1.9rem 2.2rem;text-align:center;
-    background:var(--bg-panel);margin-top:2.5rem;position:relative;z-index:2;
-  }
-  .footer-brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;font-weight:300;letter-spacing:.1em;text-transform:uppercase}
-  .footer-links{display:flex;justify-content:center;gap:1.7rem;margin-top:1.3rem;flex-wrap:wrap}
-  .footer-links a{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-nebula);text-decoration:none;transition:color .3s}
-  .footer-links a:hover{color:var(--accent-gold)}
-  .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
-  @media (max-width:620px){
-    .brand-long{display:none}
-    .nav-brand{font-size:1rem;letter-spacing:.1em}
-    #nightBtn{padding:.45rem .6rem;font-size:.58rem}
-    main{padding:16px 14px 24px}
-    .tool-title{padding:1.3rem 1rem .2rem}
-    nav{padding:.85rem 1rem}
-    .nav-links.show{padding:.8rem 1rem 1.2rem}
-  }
-  @media (max-width:1300px){
-    nav{padding:.9rem 1.4rem}
-    .nav-toggle{display:block}
-    .nav-links{
-      display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
-      align-items:flex-start;gap:0;background:rgba(7,8,12,.97);
-      padding:.8rem 1.4rem 1.2rem;border-bottom:1px solid var(--border-faint);
-    }
-    .nav-links.show{display:flex}
-    .nav-links li{padding:.55rem 0}
-    .tool-title{padding:1.6rem 1.4rem .2rem}
-  }
+  .home-link:hover{color:var(--amber)}
+  .spacer{flex:1}
   button{
     font:inherit;color:var(--text);cursor:pointer;
     background:var(--panel);border:1px solid var(--line);border-radius:8px;
@@ -134,8 +59,8 @@
   button:focus-visible, select:focus-visible, input:focus-visible{
     outline:2px solid var(--amber);outline-offset:1px;
   }
-  button.primary{background:var(--amber);border-color:var(--amber);color:#0a0b0f;font-weight:600}
-  button.primary:hover{background:#d9b85e}
+  button.primary{background:var(--amber);border-color:var(--amber);color:#1a1304;font-weight:600}
+  button.primary:hover{background:#ffc44f}
   main{
     display:grid;grid-template-columns:370px minmax(0,1fr);
     gap:22px;padding:22px 26px 30px;max-width:1500px;margin:0 auto;
@@ -147,26 +72,22 @@
     padding:14px 14px 15px;
   }
   .card h2{
-    font:500 11px/1 "JetBrains Mono",monospace;color:var(--text-dim);
+    font:600 11.5px/1 "Inter",sans-serif;color:var(--muted);
     letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px;
   }
   label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px}
   select,input[type=number],input[type=text]{
-    width:100%;min-width:0;margin-top:4px;
+    width:100%;margin-top:4px;
     background:var(--panel-2);color:var(--text);
     border:1px solid var(--line);border-radius:7px;
     padding:7px 9px;font:inherit;font-size:14px;
   }
-  select:hover,input:hover{border-color:#2c3444}
-  .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  select:hover,input:hover{border-color:#33486b}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px}
-  .searchrow{display:flex;gap:8px;margin-top:4px}
-  .searchrow input{flex:1;margin-top:0}
-  .searchrow button{padding:7px 14px;flex-shrink:0}
-  #searchStatus{margin-top:7px;font-size:12.5px;line-height:1.45;display:none}
   .hidden{display:none !important}
-  .mono{font-family:"JetBrains Mono",monospace}
+  .mono{font-family:"IBM Plex Mono",monospace}
 
   /* ---------- rig cards ---------- */
   .rig{
@@ -175,23 +96,23 @@
   }
   .rig.dim{opacity:.45}
   .rig-top{display:flex;align-items:center;gap:8px}
-  .rig-title{font:600 13.5px "DM Sans",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rig-title{font:600 13.5px "Inter",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .icon{padding:3px 8px;font-size:13px;line-height:1.2;border-radius:6px}
   .icon.del:hover{border-color:var(--danger);color:var(--danger)}
   .rig label{margin:0}
   .rig .mini{
-    font:12px "JetBrains Mono",monospace;color:var(--muted);
+    font:12px "IBM Plex Mono",monospace;color:var(--muted);
     border-top:1px dashed var(--line);padding-top:8px;
   }
   #addRig{width:100%}
-  .side-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .side-actions button{width:100%}
+  .side-actions{display:flex;gap:8px}
+  .side-actions button{flex:1}
 
   /* ---------- viewport ---------- */
   .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
   .sky{
     position:relative;width:min(100%, 82vh);aspect-ratio:1/1;margin-inline:auto;
-    background:#07080c;border:1px solid var(--line);border-radius:var(--radius);
+    background:#05080f;border:1px solid var(--line);border-radius:var(--radius);
     overflow:hidden;cursor:grab;touch-action:none;user-select:none;
   }
   .sky.busy{cursor:grabbing}
@@ -200,7 +121,7 @@
     pointer-events:none;user-select:none;-webkit-user-drag:none;will-change:transform;
   }
   .sky svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-  /* viewfinder corner ticks: the instrument frame */
+  /* viewfinder corner ticks — the instrument frame */
   .sky::after{
     content:"";position:absolute;inset:10px;pointer-events:none;border-radius:4px;
     background:
@@ -218,14 +139,14 @@
   .skyctl{position:absolute;right:14px;bottom:14px;z-index:4;display:flex;flex-direction:column;gap:6px}
   .skyctl button{
     width:38px;height:38px;padding:0;font-size:19px;line-height:1;
-    background:rgba(12,14,20,.78);border:1px solid var(--line);color:var(--text);
+    background:rgba(13,19,32,.78);border:1px solid var(--line);color:var(--text);
     -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
   }
   .skyctl button:hover{border-color:var(--amber-dim)}
   .veil{
     position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;
-    align-items:center;justify-content:center;background:rgba(7,8,12,.82);
-    font-family:"JetBrains Mono",monospace;font-size:13.5px;color:var(--muted);
+    align-items:center;justify-content:center;background:rgba(5,8,15,.82);
+    font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--muted);
     text-align:center;padding:20px;z-index:5;
   }
   .veil .spin{
@@ -238,13 +159,13 @@
 
   .readout{
     display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
-    font:13px "JetBrains Mono",monospace;color:var(--muted);padding:0 4px;
+    font:13px "IBM Plex Mono",monospace;color:var(--muted);padding:0 4px;
   }
   .readout b{color:var(--text);font-weight:500}
   .gesture{font-size:12px;color:var(--muted);padding:0 4px;letter-spacing:.01em}
 
   /* ---------- stats ---------- */
-  table{width:100%;border-collapse:collapse;font:13px "JetBrains Mono",monospace}
+  table{width:100%;border-collapse:collapse;font:13px "IBM Plex Mono",monospace}
   th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
   th{color:var(--muted);font-weight:500;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase}
   td .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;vertical-align:1px}
@@ -256,47 +177,28 @@
   html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
 
   @media (max-width:1020px){
-    main{grid-template-columns:minmax(0,1fr)}
+    main{grid-template-columns:1fr}
     .sky{width:100%}
   }
 </style>
 </head>
 <body>
 
-<nav>
-  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+<header>
+  <a class="home-link" href="index.html" title="Back to Washington Valley Observatory">&larr; Observatory</a>
+  <div class="wordmark">
+    <h1>Field of View Viewer</h1>
+    <p>Washington Valley Observatory</p>
+  </div>
+  <div class="spacer"></div>
   <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="index.html#about">About</a></li>
-    <li><a href="index.html#gallery">Gallery</a></li>
-    <li><a href="fov.html" class="current">FOV Viewer</a></li>
-    <li><a href="sky.html">Sky Planner</a></li>
-    <li><a href="calc.html">Calculators</a></li>
-    <li><a href="sampling.html">Sampling</a></li>
-    <li><a href="index.html#rigs">Imaging Rigs</a></li>
-    <li><a href="index.html#contact">Contact</a></li>
-  </ul>
-  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
-</nav>
-
-<div class="tool-title">
-  <div class="eyebrow">Observatory Tools</div>
-  <h1>Field of <em>View</em> Viewer</h1>
-  <p>Frame any target over real survey imagery: resolve it by name, compare every rig side by side, then copy the coordinates straight into ASIAir or NINA.</p>
-</div>
+</header>
 
 <main>
   <aside>
     <div class="card">
       <h2>Sky</h2>
-      <label>Find any object
-        <div class="searchrow">
-          <input type="text" id="searchIn" class="mono" placeholder="e.g. NGC 891, Sh2-155, M101" autocomplete="off" spellcheck="false">
-          <button id="searchBtn" title="Resolve the name via the CDS Sesame service">Go</button>
-        </div>
-      </label>
-      <p class="mono" id="searchStatus"></p>
-      <label>Or browse common targets
+      <label>Target
         <select id="targetSel"></select>
       </label>
       <div id="customTarget" class="hidden">
@@ -309,11 +211,7 @@
       <label>Survey imagery
         <select id="surveySel"></select>
       </label>
-      <div class="row">
-        <label>Observer lat (°N) <input type="number" id="latIn" class="mono" step="0.01" min="-90" max="90"></label>
-        <label>Observer lon (°E) <input type="number" id="lonIn" class="mono" step="0.01" min="-180" max="180"></label>
-      </div>
-      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°. Observer location drives the visibility readout. West longitudes are negative.</p>
+      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°.</p>
     </div>
 
     <div class="card" style="padding-bottom:12px">
@@ -323,22 +221,17 @@
       <label style="margin-top:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
         <input type="checkbox" id="labelsChk" checked style="width:auto;margin:0"> Show frame labels
       </label>
-      <label style="margin-top:8px;display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="gridChk" style="width:auto;margin:0"> Show coordinate grid
-      </label>
     </div>
 
     <div class="side-actions">
-      <button id="framingBtn" title="Copy center coordinates, view width and rig rotations as text for ASIAir / NINA">Copy framing</button>
       <button id="shareBtn">Copy share link</button>
-      <button id="pngBtn" title="Save the current view, frames and overlays as a PNG image">Export PNG</button>
       <button id="resetBtn">Reset</button>
     </div>
   </aside>
 
   <section class="viewwrap">
     <div class="sky" id="sky">
-      <img id="skyImg" crossorigin="anonymous" draggable="false" alt="Sky survey imagery of the selected target">
+      <img id="skyImg" draggable="false" alt="Sky survey imagery of the selected target">
       <svg id="overlay" viewBox="0 0 1100 1100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
       <div class="skyctl" id="skyctl">
         <button id="zoomIn"  title="Zoom in"  aria-label="Zoom in">+</button>
@@ -363,10 +256,6 @@
       <span>ORIENTATION <b>N up · E left</b></span>
     </div>
 
-    <div class="readout">
-      <span>VISIBILITY <b id="visOut">—</b></span>
-    </div>
-
     <div class="card statscard">
       <h2>Rig data</h2>
       <table>
@@ -380,29 +269,16 @@
     <p class="credit">
       Sky imagery rendered on demand by the
       <a href="https://alasky.cds.unistra.fr/hips-image-services/hips2fits" target="_blank" rel="noopener">hips2fits</a>
-      service, CDS / Université de Strasbourg, drawing on the DSS2, Mellinger and Finkbeiner Hα surveys.
+      service, CDS / Université de Strasbourg — DSS2, Mellinger and Finkbeiner Hα surveys.
       Equipment data is defined at the top of this file and easy to edit.
     </p>
   </section>
 </main>
 
-<footer>
-  <div class="footer-brand">Washington Valley Observatory</div>
-  <div class="footer-links">
-    <a href="index.html">Home</a>
-    <a href="index.html#gallery">Gallery</a>
-    <a href="fov.html">FOV Viewer</a>
-    <a href="sky.html">Sky Planner</a>
-    <a href="sampling.html">Sampling Calc</a>
-    <a href="mailto:inquiries@myobservatory.org">Email</a>
-  </div>
-  <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
-</footer>
-
 <script>
 'use strict';
 
-/* ================= EQUIPMENT & TARGET DATA: edit freely ================= */
+/* ================= EQUIPMENT & TARGET DATA — edit freely ================= */
 
 const SCOPES = [
   {name:'Askar FMA135',            short:'FMA135',     ap:30,  fl:135},
@@ -436,7 +312,7 @@ const SCOPES = [
   {name:'Samyang 135mm f/2',       short:'Samyang 135',ap:67,  fl:135},
   {name:'Celestron RASA 8',        short:'RASA 8',     ap:203, fl:400},
   {name:'Celestron C8 / EdgeHD 8', short:'C8',         ap:203, fl:2032},
-  /* 2026 expansion, appended at the end so existing share links keep working */
+  /* 2026 expansion — appended at the end so existing share links keep working */
   {name:'Askar 65PHQ',             short:'65PHQ',      ap:65,  fl:416},
   {name:'Askar 71F',               short:'71F',        ap:71,  fl:490},
   {name:'Askar 80PHQ',             short:'80PHQ',      ap:80,  fl:600},
@@ -462,72 +338,51 @@ const SCOPES = [
   {name:'Celestron C11',           short:'C11',        ap:280, fl:2800},
   {name:'Celestron RASA 11',       short:'RASA 11',    ap:279, fl:620},
   {name:'Meade LX85 6" ACF',       short:'LX85 ACF',   ap:152, fl:1524},
-  /* 2026 expansion II, appended so existing share links keep working */
-  {name:'Askar SQA70',                  short:'SQA70',      ap:70,   fl:355},
-  {name:'Askar 103APO',                 short:'103APO',     ap:103,  fl:700},
-  {name:'Askar 120APO',                 short:'120APO',     ap:120,  fl:840},
-  {name:'Sharpstar 76EDPH',             short:'76EDPH',     ap:76,   fl:418},
-  {name:'Sharpstar 94EDPH',             short:'94EDPH',     ap:94,   fl:517},
-  {name:'WO RedCat 61',                 short:'RedCat 61',  ap:61,   fl:300},
-  {name:'WO RedCat 91',                 short:'RedCat 91',  ap:91,   fl:405},
-  {name:'WO GT102',                     short:'GT102',      ap:102,  fl:703},
-  {name:'Stellarvue SVX080T',           short:'SVX080T',    ap:80,   fl:480},
-  {name:'Stellarvue SV70T',             short:'SV70T',      ap:70,   fl:420},
-  {name:'Tele Vue NP101is',             short:'NP101is',    ap:101,  fl:540},
-  {name:'Tele Vue TV-85',               short:'TV-85',      ap:85,   fl:600},
-  {name:'Tele Vue TV-76',               short:'TV-76',      ap:76,   fl:480},
-  {name:'Takahashi FSQ-130ED',          short:'FSQ-130',    ap:130,  fl:650},
-  {name:'Takahashi TOA-130',            short:'TOA-130',    ap:130,  fl:1000},
-  {name:'Takahashi Epsilon-160ED',      short:'E-160ED',    ap:160,  fl:530},
-  {name:'Takahashi FC-100DZ',           short:'FC-100DZ',   ap:100,  fl:800},
-  {name:'Explore Scientific ED80',      short:'ES ED80',    ap:80,   fl:480},
-  {name:'Explore Scientific ED102',     short:'ES ED102',   ap:102,  fl:714},
-  {name:'Explore Scientific ED127',     short:'ES ED127',   ap:127,  fl:952},
-  {name:'Explore Scientific AR102',     short:'ES AR102',   ap:102,  fl:663},
-  {name:'Sky-Watcher Evostar 80ED',     short:'Evostar 80', ap:80,   fl:600},
-  {name:'Sky-Watcher Evostar 100ED',    short:'Evostar 100',ap:100,  fl:900},
-  {name:'Sky-Watcher Evostar 120ED',    short:'Evostar 120',ap:120,  fl:900},
-  {name:'Sky-Watcher Esprit 150',       short:'Esprit 150', ap:150,  fl:1050},
-  {name:'Sky-Watcher 150PDS',           short:'150PDS',     ap:150,  fl:750},
-  {name:'Sky-Watcher 200PDS',           short:'200PDS',     ap:200,  fl:1000},
-  {name:'Sky-Watcher Quattro 6',        short:'Quattro 6',  ap:150,  fl:600},
-  {name:'Sky-Watcher Quattro 10',       short:'Quattro 10', ap:250,  fl:1000},
-  {name:'Sky-Watcher Skymax 127 Mak',   short:'Skymax 127', ap:127,  fl:1500},
-  {name:'Sky-Watcher Skymax 150 Mak',   short:'Skymax 150', ap:150,  fl:1800},
-  {name:'Orion ED80T CF',               short:'ED80T CF',   ap:80,   fl:600},
-  {name:'Orion XT6 Dobsonian',          short:'XT6',        ap:150,  fl:1200},
-  {name:'Orion XT10 Dobsonian',         short:'XT10',       ap:254,  fl:1200},
-  {name:'Apertura AD8 Dobsonian',       short:'AD8',        ap:203,  fl:1200},
-  {name:'GSO 8\" f/4 Imaging Newt',     short:'GSO 8 f/4',  ap:203,  fl:800},
-  {name:'Vixen FL55SS',                 short:'FL55SS',     ap:55,   fl:300},
-  {name:'Borg 55FL',                    short:'Borg 55FL',  ap:55,   fl:250},
-  {name:'Celestron RASA 6',             short:'RASA 6',     ap:150,  fl:300},
-  {name:'Celestron C5',                 short:'C5',         ap:125,  fl:1250},
-  {name:'Meade 8\" ACF (LX90 / LX200)', short:'Meade 8 ACF',ap:203,  fl:2032},
-  {name:'Meade MTS-SC8 8\" SCT',        short:'MTS-SC8',    ap:203,  fl:2000},
-  {name:'ZWO Seestar S50',              short:'Seestar S50',ap:50,   fl:250},
-  {name:'ZWO Seestar S30',              short:'Seestar S30',ap:30,   fl:150},
-  {name:'Dwarflab Dwarf 3',             short:'Dwarf 3',    ap:35,   fl:150},
-  {name:'Unistellar eVscope 2',         short:'eVscope 2',  ap:114,  fl:450},
-  {name:'Samyang 85mm f/1.4',           short:'Samyang 85', ap:61,   fl:85},
-  {name:'Sigma 105mm f/1.4 Art',        short:'Sigma 105',  ap:75,   fl:105},
-  {name:'Canon EF 200mm f/2.8L',        short:'Canon 200',  ap:71,   fl:200},
+  /* 2026 expansion II — appended at the end so existing share links keep working */
+  /* Sharpstar */
+  {name:'Sharpstar 50EDPH',            short:'50EDPH',      ap:50,  fl:275},
+  {name:'Sharpstar 50EDPH + 0.84× red.',short:'50EDPH red', ap:50,  fl:231},
+  {name:'Sharpstar 61EDPH II + 0.8× red.',short:'61EDPH red',ap:61, fl:268},
+  {name:'Sharpstar 76EDPH',            short:'76EDPH',      ap:76,  fl:418},
+  {name:'Sharpstar 94EDPH',            short:'94EDPH',      ap:94,  fl:517},
+  {name:'Sharpstar 15028HNT',          short:'15028HNT',    ap:150, fl:420},
+  /* Refractors — small/medium */
+  {name:'WO RedCat 61',                short:'RedCat 61',   ap:61,  fl:300},
+  {name:'ZWO FF65 APO',                short:'FF65',        ap:65,  fl:416},
+  {name:'ZWO FF80 APO',                short:'FF80',        ap:80,  fl:600},
+  {name:'Askar 103APO',                short:'103APO',      ap:103, fl:700},
+  {name:'Vixen FL55SS',                short:'FL55SS',      ap:55,  fl:300},
+  {name:'Stellarvue SVX080T',          short:'SVX080T',     ap:80,  fl:480},
+  {name:'Explore Scientific ED102',    short:'ES ED102',    ap:102, fl:714},
+  {name:'Explore Scientific ED127',    short:'ES ED127',    ap:127, fl:952},
+  {name:'Explore Scientific AR102',    short:'AR102',       ap:102, fl:663},
+  /* Takahashi — larger */
+  {name:'Takahashi FSQ-130ED',         short:'FSQ-130',     ap:130, fl:650},
+  {name:'Takahashi Epsilon-160ED',     short:'E-160ED',     ap:160, fl:530},
+  {name:'Takahashi TOA-130',           short:'TOA-130',     ap:130, fl:1000},
+  /* Newtonians */
+  {name:'Sky-Watcher 150PDS',          short:'150PDS',      ap:150, fl:750},
+  {name:'Sky-Watcher 200PDS',          short:'200PDS',      ap:200, fl:1000},
+  {name:'Sky-Watcher Quattro 6',       short:'Quattro 6',   ap:150, fl:600},
+  /* Ritchey-Chrétien */
+  {name:'GSO / Apertura RC6',          short:'RC6',         ap:152, fl:1370},
+  {name:'GSO / Apertura RC8',          short:'RC8',         ap:203, fl:1624},
 ];
 
 /* w/h = sensor size in mm, pw/ph = pixel count, px = pixel pitch in µm */
 const SENSORS = [
-  {short:'IMX585',  name:'IMX585 · 1/1.2″ (ASI585, Uranus-C)',     w:11.13, h:6.26,  pw:3840, ph:2160, px:2.9},
-  {short:'IMX533',  name:'IMX533 · 1″ square (ASI533)',            w:11.31, h:11.31, pw:3008, ph:3008, px:3.76},
-  {short:'IMX183',  name:'IMX183 · 1″ (ASI183)',                   w:13.19, h:8.81,  pw:5496, ph:3672, px:2.4},
-  {short:'IMX294',  name:'IMX294 · 4/3″ (ASI294)',                 w:19.19, h:13.07, pw:4144, ph:2822, px:4.63},
-  {short:'IMX571',  name:'IMX571 · APS-C (ASI2600, 26C)',          w:23.49, h:15.70, pw:6248, ph:4176, px:3.76},
-  {short:'IMX455',  name:'IMX455 · full frame (ASI6200)',          w:36.0,  h:24.0,  pw:9576, ph:6388, px:3.76},
-  {short:'IMX410',  name:'IMX410 · full frame (ASI2400)',          w:36.07, h:24.01, pw:6072, ph:4042, px:5.94},
-  {short:'IMX678',  name:'IMX678 · 1/1.8″ (ASI678)',               w:7.68,  h:4.32,  pw:3840, ph:2160, px:2.0},
-  {short:'IMX662',  name:'IMX662 / IMX462 · 1/2.8″ (ASI662)',      w:5.57,  h:3.13,  pw:1920, ph:1080, px:2.9},
-  {short:'IMX174',  name:'IMX174 · 1/1.2″ (ASI174)',               w:11.34, h:7.13,  pw:1936, ph:1216, px:5.86},
-  {short:'A7R II',  name:'Sony A7R II · full frame, 42 MP',        w:35.9,  h:24.0,  pw:7952, ph:5304, px:4.51},
-  {short:'APS-C',   name:'Canon APS-C DSLR · 22.3 × 14.9 mm',      w:22.3,  h:14.9,  pw:6000, ph:4000, px:3.72},
+  {short:'IMX585',  name:'IMX585 — 1/1.2″ (ASI585, Uranus-C)',     w:11.13, h:6.26,  pw:3840, ph:2160, px:2.9},
+  {short:'IMX533',  name:'IMX533 — 1″ square (ASI533)',            w:11.31, h:11.31, pw:3008, ph:3008, px:3.76},
+  {short:'IMX183',  name:'IMX183 — 1″ (ASI183)',                   w:13.19, h:8.81,  pw:5496, ph:3672, px:2.4},
+  {short:'IMX294',  name:'IMX294 — 4/3″ (ASI294)',                 w:19.19, h:13.07, pw:4144, ph:2822, px:4.63},
+  {short:'IMX571',  name:'IMX571 — APS-C (ASI2600, 26C)',          w:23.49, h:15.70, pw:6248, ph:4176, px:3.76},
+  {short:'IMX455',  name:'IMX455 — full frame (ASI6200)',          w:36.0,  h:24.0,  pw:9576, ph:6388, px:3.76},
+  {short:'IMX410',  name:'IMX410 — full frame (ASI2400)',          w:36.07, h:24.01, pw:6072, ph:4042, px:5.94},
+  {short:'IMX678',  name:'IMX678 — 1/1.8″ (ASI678)',               w:7.68,  h:4.32,  pw:3840, ph:2160, px:2.0},
+  {short:'IMX662',  name:'IMX662 / IMX462 — 1/2.8″ (ASI662)',      w:5.57,  h:3.13,  pw:1920, ph:1080, px:2.9},
+  {short:'IMX174',  name:'IMX174 — 1/1.2″ (ASI174)',               w:11.34, h:7.13,  pw:1936, ph:1216, px:5.86},
+  {short:'A7R II',  name:'Sony A7R II — full frame, 42 MP',        w:35.9,  h:24.0,  pw:7952, ph:5304, px:4.51},
+  {short:'APS-C',   name:'Canon APS-C DSLR — 22.3 × 14.9 mm',      w:22.3,  h:14.9,  pw:6000, ph:4000, px:3.72},
 ];
 
 const REDUCERS = [
@@ -549,7 +404,7 @@ const REDUCERS = [
 
 /* ra/dec in decimal degrees (J2000) */
 const TARGETS = [
-  {grp:'Nebulae', id:'m42',        name:'M42 · Orion Nebula',                ra:83.82,  dec:-5.39},
+  {grp:'Nebulae', id:'m42',        name:'M42 — Orion Nebula',                ra:83.82,  dec:-5.39},
   {grp:'Nebulae', id:'horsehead',  name:'Horsehead & Flame',                 ra:85.2,   dec:-2.3},
   {grp:'Nebulae', id:'rosette',    name:'Rosette Nebula',                    ra:97.97,  dec:4.94},
   {grp:'Nebulae', id:'nan',        name:'North America & Pelican',           ra:313.7,  dec:44.3},
@@ -569,14 +424,14 @@ const TARGETS = [
   {grp:'Nebulae', id:'cone',       name:'Cone & Christmas Tree (NGC 2264)',  ra:100.25, dec:9.88},
   {grp:'Nebulae', id:'monkey',     name:'Monkey Head (NGC 2175)',            ra:92.4,   dec:20.5},
   {grp:'Nebulae', id:'jellyfish',  name:'Jellyfish Nebula (IC 443)',         ra:94.4,   dec:22.5},
-  {grp:'Galaxies', id:'m31',       name:'M31 · Andromeda Galaxy',            ra:10.68,  dec:41.27},
-  {grp:'Galaxies', id:'m33',       name:'M33 · Triangulum Galaxy',           ra:23.46,  dec:30.66},
+  {grp:'Galaxies', id:'m31',       name:'M31 — Andromeda Galaxy',            ra:10.68,  dec:41.27},
+  {grp:'Galaxies', id:'m33',       name:'M33 — Triangulum Galaxy',           ra:23.46,  dec:30.66},
   {grp:'Galaxies', id:'m81',       name:'M81 & M82',                         ra:148.93, dec:69.37},
-  {grp:'Galaxies', id:'m51',       name:'M51 · Whirlpool Galaxy',            ra:202.47, dec:47.20},
-  {grp:'Galaxies', id:'m101',      name:'M101 · Pinwheel Galaxy',            ra:210.80, dec:54.35},
+  {grp:'Galaxies', id:'m51',       name:'M51 — Whirlpool Galaxy',            ra:202.47, dec:47.20},
+  {grp:'Galaxies', id:'m101',      name:'M101 — Pinwheel Galaxy',            ra:210.80, dec:54.35},
   {grp:'Galaxies', id:'markarian', name:"Markarian's Chain",                 ra:187.2,  dec:13.6},
-  {grp:'Star clusters', id:'m45',  name:'M45 · Pleiades',                    ra:56.75,  dec:24.12},
-  {grp:'Star clusters', id:'m13',  name:'M13 · Hercules Cluster',            ra:250.42, dec:36.46},
+  {grp:'Star clusters', id:'m45',  name:'M45 — Pleiades',                    ra:56.75,  dec:24.12},
+  {grp:'Star clusters', id:'m13',  name:'M13 — Hercules Cluster',            ra:250.42, dec:36.46},
   {grp:'Star clusters', id:'dbl',  name:'Double Cluster',                    ra:35.6,   dec:57.14},
   {grp:'Wide field', id:'orionw',  name:"Orion & Barnard's Loop (wide)",     ra:84.5,   dec:-2.5},
   {grp:'Wide field', id:'rhooph',  name:'Rho Ophiuchi cloud complex',        ra:246.5,  dec:-24.3},
@@ -587,13 +442,9 @@ const SURVEYS = [
   {id:'CDS/P/DSS2/red',      name:'DSS2 red (mono)'},
   {id:'CDS/P/Mellinger/color',name:'Mellinger color (wide-field)'},
   {id:'CDS/P/Finkbeiner',    name:'Hα composite (Finkbeiner)'},
-  {id:'CDS/P/DSS2/blue',     name:'DSS2 blue (mono)'},
-  {id:'CDS/P/SDSS9/color',   name:'SDSS9 color (deep · partial sky)'},
-  {id:'CDS/P/2MASS/color',   name:'2MASS near-infrared'},
-  {id:'CDS/P/unWISE/color-W2-W1W2-W1', name:'unWISE mid-infrared'},
 ];
 
-const COLORS = ['#c9a84c','#4a7cad','#8a7cbf','#9cb04a','#c97a4a','#b35a7a','#3a8a7a','#d9b98a'];
+const COLORS = ['#fbbf24','#22d3ee','#f472b6','#a3e635','#fb923c','#c084fc','#34d399','#f87171'];
 const HOSTS = ['alasky.cds.unistra.fr','alasky.u-strasbg.fr'];
 const S = 1100;                 /* SVG viewBox + fetched image size */
 const NS = 'http://www.w3.org/2000/svg';
@@ -606,9 +457,7 @@ const FOV_MIN = 0.08, FOV_MAX = 60;
 const state = {
   targetId:'m42', ra:83.82, dec:-5.39, fov:4,
   survey:'CDS/P/DSS2/color',
-  showLabels:true, customName:null,
-  showGrid:false,
-  lat:40.797, lon:-74.482,          /* Morristown, NJ: WVO home turf */
+  showLabels:true,
   rigs:[], nextId:1,
 };
 
@@ -704,7 +553,7 @@ function fillScopeSelect(sel, val){
     .sort((a,b)=>a.s.name.localeCompare(b.s.name))
     .forEach(({s,i})=>{
       const o=document.createElement('option'); o.value=i;
-      o.textContent=`${s.name} · ${s.fl}mm f/${(s.fl/s.ap).toFixed(1).replace(/\.0$/,'')}`;
+      o.textContent=`${s.name} — ${s.fl}mm f/${(s.fl/s.ap).toFixed(1).replace(/\.0$/,'')}`;
       sel.appendChild(o);
     });
   const o=document.createElement('option'); o.value='custom'; o.textContent='Custom focal length…';
@@ -820,83 +669,9 @@ function svgEl(tag, attrs){
   return e;
 }
 
-/* --- RA/Dec graticule (gnomonic/TAN, matches hips2fits projection) --- */
-const GRID_RA_STEPS=[1/60,1/30,1/12,1/6,0.25,0.5,1,2,5,10,15,30,60,90];
-function gridDecStep(f){
-  if(f>=40) return 10; if(f>=20) return 5; if(f>=8) return 2; if(f>=3) return 1;
-  if(f>=1.2) return 0.5; if(f>=0.5) return 1/6; if(f>=0.15) return 1/12; return 1/60;
-}
-function projPx(raD, decD){
-  const de0=rad(state.dec), d=rad(decD), dA=rad(raD-state.ra);
-  const cosc=Math.sin(de0)*Math.sin(d)+Math.cos(de0)*Math.cos(d)*Math.cos(dA);
-  if(cosc<0.05) return null;                     /* behind the tangent plane */
-  const x=Math.cos(d)*Math.sin(dA)/cosc;
-  const y=(Math.cos(de0)*Math.sin(d)-Math.sin(de0)*Math.cos(d)*Math.cos(dA))/cosc;
-  const k=(S/2)/Math.tan(rad(state.fov)/2);
-  return {x:S/2 - x*k, y:S/2 - y*k};             /* N up, E left */
-}
-function fmtRALabel(r){
-  const h=norm360(r)/15;
-  let H=Math.floor(h+1e-6), M=Math.round((h-H)*60);
-  if(M===60){ M=0; H=(H+1)%24; }
-  return String(H).padStart(2,'0')+'h'+(M?String(M).padStart(2,'0')+'m':'');
-}
-function fmtDecLabel(d){
-  const sg=d<0?'\u2212':'+', a=Math.abs(d);
-  let D=Math.floor(a+1e-6), M=Math.round((a-D)*60);
-  if(M===60){ M=0; D+=1; }
-  return M ? sg+D+'°'+String(M).padStart(2,'0')+'\u2032' : sg+D+'°';
-}
-function drawGrid(svg){
-  if(!state.showGrid) return;
-  const step=gridDecStep(state.fov);
-  const cosd=Math.max(0.05, Math.cos(rad(state.dec)));
-  const raStep=GRID_RA_STEPS.find(v=>v>=step/cosd-1e-9)||90;
-  const half=state.fov*0.75;
-  const rr=Math.min(179, half/cosd*1.6);
-  const g=svgEl('g',{stroke:'#9a958d',['stroke-opacity']:.22,['stroke-width']:1,fill:'none'});
-  const labels=[];
-  const addLine=(samples, text, mode)=>{
-    let seg=[], best=null;
-    const flush=()=>{ if(seg.length>1) g.appendChild(svgEl('polyline',
-      {points:seg.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')})); seg=[]; };
-    for(const s of samples){
-      const p=projPx(s.ra, s.dec);
-      if(!p){ flush(); continue; }
-      seg.push(p);
-      if(p.x>=6 && p.x<=S-6 && p.y>=26 && p.y<=S-10){
-        if(mode==='dec' ? (!best||p.x<best.x) : (!best||p.y<best.y)) best=p;
-      }
-    }
-    flush();
-    if(best) labels.push({p:best, text, mode});
-  };
-  const dMin=Math.max(-89.9, state.dec-half), dMax=Math.min(89.9, state.dec+half);
-  for(let de=Math.ceil(dMin/step)*step; de<=dMax+1e-9; de+=step){
-    const N=56, s=[];
-    for(let i=0;i<=N;i++) s.push({ra:state.ra-rr+2*rr*i/N, dec:de});
-    addLine(s, fmtDecLabel(de), 'dec');
-  }
-  for(let a=Math.ceil((state.ra-rr)/raStep)*raStep; a<=state.ra+rr+1e-9; a+=raStep){
-    const N=56, s=[];
-    for(let i=0;i<=N;i++) s.push({ra:a, dec:dMin+(dMax-dMin)*i/N});
-    addLine(s, fmtRALabel(a), 'ra');
-  }
-  svg.appendChild(g);
-  labels.forEach(({p,text,mode})=>{
-    const t=svgEl('text',{x:p.x+5, y:mode==='dec'?p.y-6:p.y+18,
-      fill:'#9a958d',['fill-opacity']:.85,['font-size']:17,
-      ['font-family']:'JetBrains Mono, monospace'});
-    t.textContent=text;
-    svg.appendChild(t);
-  });
-}
-
 function drawOverlay(){
   const svg=$('overlay');
   svg.innerHTML='';
-
-  drawGrid(svg);
 
   /* center crosshair */
   const ch=18;
@@ -905,12 +680,12 @@ function drawOverlay(){
   });
 
   /* compass */
-  const comp=svgEl('text',{x:S-26,y:42,fill:'#e8e4df',['fill-opacity']:.8,
-    ['font-size']:24,['text-anchor']:'end',['font-family']:'JetBrains Mono, monospace'});
+  const comp=svgEl('text',{x:S-26,y:42,fill:'#e8ecf4',['fill-opacity']:.8,
+    ['font-size']:24,['text-anchor']:'end',['font-family']:'IBM Plex Mono, monospace'});
   comp.textContent='N ↑  E ←';
   svg.appendChild(comp);
 
-  /* scale bar: picks a round number that fits the current view */
+  /* scale bar — picks a round number that fits the current view */
   let barDeg, barLabel;
   if(state.fov >= 8){ barDeg=2; barLabel='2°'; }
   else if(state.fov >= 3){ barDeg=1; barLabel='1°'; }
@@ -919,11 +694,11 @@ function drawOverlay(){
   else{ barDeg=1/60; barLabel='1′'; }
   const barPx = 2*halfPx(barDeg);
   const bx=36, by=S-44;
-  svg.appendChild(svgEl('line',{x1:bx,y1:by,x2:bx+barPx,y2:by,stroke:'#e8e4df',['stroke-width']:2}));
+  svg.appendChild(svgEl('line',{x1:bx,y1:by,x2:bx+barPx,y2:by,stroke:'#e8ecf4',['stroke-width']:2}));
   [[bx],[bx+barPx]].forEach(([x])=>{
-    svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8e4df',['stroke-width']:2}));
+    svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8ecf4',['stroke-width']:2}));
   });
-  const bt=svgEl('text',{x:bx,y:by-14,fill:'#e8e4df',['font-size']:22,['font-family']:'JetBrains Mono, monospace'});
+  const bt=svgEl('text',{x:bx,y:by-14,fill:'#e8ecf4',['font-size']:22,['font-family']:'IBM Plex Mono, monospace'});
   bt.textContent=barLabel;
   svg.appendChild(bt);
 
@@ -939,7 +714,7 @@ function drawOverlay(){
     }));
     if(state.showLabels){
       const t=svgEl('text',{x:S/2-w/2+10, y:S/2-h/2+28, fill:r.color,
-        ['font-size']:22, ['font-family']:'JetBrains Mono, monospace'});
+        ['font-size']:22, ['font-family']:'IBM Plex Mono, monospace'});
       t.textContent=d.label;
       g.appendChild(t);
     }
@@ -1037,189 +812,6 @@ function parseAngle(str, isRA){
   return neg ? -val : val;
 }
 
-/* ================= NAME SEARCH (CDS Sesame) ================= */
-
-const SESAME_HOSTS=[
-  'https://cds.unistra.fr/cgi-bin/nph-sesame',
-  'https://vizier.cfa.harvard.edu/viz-bin/nph-sesame',
-];
-function parseSesame(text){
-  const m=text.match(/%J\s+([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)/);
-  if(!m) return null;
-  const ra=parseFloat(m[1]), dec=parseFloat(m[2]);
-  if(!Number.isFinite(ra)||!Number.isFinite(dec)||dec<-90||dec>90) return null;
-  const im=text.match(/%I\.0\s+(.+)/);
-  return {ra:normRA(ra), dec, name: im ? im[1].trim().replace(/\s+/g,' ') : null};
-}
-async function resolveObject(q){
-  let reached=false;
-  for(const h of SESAME_HOSTS){
-    try{
-      const res=await fetch(`${h}/-op/SNV?${encodeURIComponent(q)}`);
-      if(!res.ok) continue;
-      reached=true;
-      const hit=parseSesame(await res.text());
-      if(hit) return hit;
-      break;                       /* service answered: a miss is a genuine miss */
-    }catch(e){ /* network problem: try the mirror */ }
-  }
-  if(!reached) throw new Error('unreachable');
-  return null;
-}
-async function doSearch(){
-  const q=$('searchIn').value.trim();
-  if(!q) return;
-  const st=$('searchStatus');
-  st.style.display='block'; st.style.color='var(--muted)';
-  st.textContent='Resolving \u201c'+q+'\u201d\u2026';
-  $('searchBtn').disabled=true;
-  try{
-    const hit=await resolveObject(q);
-    if(!hit){
-      st.style.color='var(--danger)';
-      st.textContent='No match \u2014 try a catalog id like \u201cNGC 7000\u201d or \u201cSh2-155\u201d.';
-    }else{
-      state.targetId='custom';
-      state.ra=hit.ra; state.dec=clampDec(hit.dec);
-      state.customName=hit.name||q;
-      $('targetSel').value='custom';
-      $('customTarget').classList.remove('hidden');
-      $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3);
-      st.style.color='var(--amber)';
-      st.textContent='\u2713 '+state.customName+' \u00b7 RA '+fmtRA(state.ra)+' \u00b7 Dec '+fmtDec(state.dec);
-      applyFit(false, true);
-    }
-  }catch(e){
-    st.style.color='var(--danger)';
-    st.textContent='Name resolver unreachable \u2014 check your connection and retry.';
-  }
-  $('searchBtn').disabled=false;
-}
-
-/* ================= FRAMING EXPORT ================= */
-
-function raHMS(ra){
-  let t=Math.round(normRA(ra)/15*36000);      /* tenths of a second of time */
-  let H=Math.floor(t/36000); t-=H*36000;
-  const M=Math.floor(t/600); t-=M*600;
-  H%=24;
-  return String(H).padStart(2,'0')+'h '+String(M).padStart(2,'0')+'m '+(t/10).toFixed(1).padStart(4,'0')+'s';
-}
-function decDMS(dec){
-  const sg=dec<0?'-':'+';
-  let t=Math.round(Math.abs(dec)*3600);       /* arcseconds */
-  const D=Math.floor(t/3600); t-=D*3600;
-  const M=Math.floor(t/60);
-  return sg+String(D).padStart(2,'0')+'\u00b0 '+String(M).padStart(2,'0')+'\u2032 '+String(t-M*60).padStart(2,'0')+'\u2033';
-}
-function buildFramingText(){
-  const tName = state.targetId==='custom'
-    ? (state.customName || 'Custom position')
-    : (TARGETS.find(t=>t.id===state.targetId)||{}).name || 'Custom position';
-  const lines=[
-    'FOV Viewer framing \u2014 Washington Valley Observatory',
-    'Target: '+tName,
-    'Center: RA '+raHMS(state.ra)+' ('+state.ra.toFixed(4)+'\u00b0) \u00b7 Dec '+decDMS(state.dec)+' ('+state.dec.toFixed(4)+'\u00b0)',
-    'View width: '+fmtAngle(state.fov),
-  ];
-  state.rigs.filter(r=>r.vis).forEach(r=>{
-    const d=rigData(r); if(!d) return;
-    lines.push('Rig: '+d.label+' \u2014 frame '+fmtFovPair(d)+' \u2014 rotation '+Math.round(r.rot)+'\u00b0');
-  });
-  lines.push('Link: '+location.href);
-  return lines.join('\n');
-}
-
-/* ================= PNG EXPORT ================= */
-
-async function exportPNG(){
-  const btn=$('pngBtn');
-  try{
-    const img=$('skyImg');
-    if(!img.complete || !img.naturalWidth) throw new Error('image not loaded');
-    const canvas=document.createElement('canvas');
-    canvas.width=S; canvas.height=S;
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#07080c'; ctx.fillRect(0,0,S,S);
-    ctx.drawImage(img,0,0,S,S);
-    /* rasterize the SVG overlay on top */
-    const sv=$('overlay').cloneNode(true);
-    sv.setAttribute('width',S); sv.setAttribute('height',S);
-    const svgImg=new Image();
-    await new Promise((res,rej)=>{
-      svgImg.onload=res; svgImg.onerror=rej;
-      svgImg.src='data:image/svg+xml;charset=utf-8,'
-        + encodeURIComponent(new XMLSerializer().serializeToString(sv));
-    });
-    ctx.drawImage(svgImg,0,0,S,S);
-    /* caption */
-    const tName = state.targetId==='custom'
-      ? (state.customName||'Custom position')
-      : ((TARGETS.find(t=>t.id===state.targetId)||{}).name||'');
-    ctx.font='300 20px "JetBrains Mono", monospace';
-    ctx.fillStyle='rgba(7,8,12,0.55)';
-    ctx.fillRect(0,S-40,S,40);
-    ctx.fillStyle='rgba(232,228,223,0.9)';
-    ctx.fillText(tName+' · myobservatory.org', 16, S-14);
-    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
-    if(!blob) throw new Error('encode failed');
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='wvo-fov-'+((tName||'view').toLowerCase()
-      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'view')+'.png';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
-    btn.textContent='Saved!';
-  }catch(err){
-    btn.textContent='Export failed';
-    alert('PNG export needs the survey image fully loaded from the live site. Let the sky finish loading, then try again.');
-  }
-  setTimeout(()=>btn.textContent='Export PNG', 1800);
-}
-
-/* ================= VISIBILITY (observer-based) ================= */
-
-function julianDate(d){ return d.getTime()/86400000 + 2440587.5; }
-function gmstDeg(d){
-  const D=julianDate(d)-2451545.0, T=D/36525;
-  return norm360(280.46061837 + 360.98564736629*D + 0.000387933*T*T - T*T*T/38710000);
-}
-function lstDeg(d){ return norm360(gmstDeg(d) + state.lon); }
-/* altitude + azimuth (from N through E) of the current view center */
-function altAz(d){
-  const H=rad(norm360(lstDeg(d) - state.ra));
-  const la=rad(state.lat), de=rad(state.dec);
-  const alt=Math.asin(Math.sin(la)*Math.sin(de)+Math.cos(la)*Math.cos(de)*Math.cos(H))*180/Math.PI;
-  const az=Math.atan2(-Math.cos(de)*Math.sin(H),
-                       Math.cos(la)*Math.sin(de)-Math.sin(la)*Math.cos(de)*Math.cos(H))*180/Math.PI;
-  return {alt, az:norm360(az)};
-}
-const SIDEREAL_DAY_MS=86164090.5;
-function nextTransit(d){
-  const dLst=norm360(state.ra - lstDeg(d));
-  return new Date(d.getTime() + dLst/360*SIDEREAL_DAY_MS);
-}
-function compass8(az){ return ['N','NE','E','SE','S','SW','W','NW'][Math.round(az/45)%8]; }
-function fmtClock(d){ return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
-function visSummary(){
-  const now=new Date();
-  const maxAlt=90-Math.abs(state.lat-state.dec);
-  if(maxAlt<=0) return 'never rises from '+state.lat.toFixed(1)+'° latitude';
-  const tr=nextTransit(now);
-  const cosH0=-Math.tan(rad(state.lat))*Math.tan(rad(state.dec));
-  let span;
-  if(cosH0<=-1) span='circumpolar';
-  else if(cosH0>=1) span='never rises';
-  else{
-    const half=Math.acos(cosH0)*180/Math.PI/360*SIDEREAL_DAY_MS;
-    span='up '+fmtClock(new Date(tr.getTime()-half))+'–'+fmtClock(new Date(tr.getTime()+half));
-  }
-  const a=altAz(now);
-  const nowTxt=a.alt>0 ? 'now '+Math.round(a.alt)+'° up in the '+compass8(a.az) : 'below horizon now';
-  return 'transit '+fmtClock(tr)+' at '+Math.round(maxAlt)+'° · '+span+' · '+nowTxt;
-}
-function updateVisibility(){ $('visOut').textContent = visSummary(); }
-
 /* ================= VIEW: FIT + ZOOM ================= */
 
 /* width of the smallest square view that holds every visible frame, +10% */
@@ -1258,7 +850,6 @@ function liveZoom(targetFov){
 function updateReadout(){
   $('coordOut').textContent = `RA ${fmtRA(state.ra)} · Dec ${fmtDec(state.dec)}`;
   $('fovOut').textContent = `${fmtAngle(state.fov)} wide`;
-  updateVisibility();
 }
 
 /* ================= POINTER INTERACTION (pan / rotate / pinch) ================= */
@@ -1371,8 +962,6 @@ function syncHash(){
     const cfg={
       t:state.targetId, ra:+state.ra.toFixed(4), dec:+state.dec.toFixed(4),
       f:+state.fov.toFixed(4), s:state.survey, L:state.showLabels?1:0,
-      G:state.showGrid?1:0, la:+state.lat.toFixed(3), lo:+state.lon.toFixed(3),
-      n:state.customName||undefined,
       r:state.rigs.map(r=>({
         s:r.scope, cfl:r.cfl, cap:r.cap, x:r.red,
         c:r.cam, cw:r.cw, ch:r.ch, cp:r.cpx,
@@ -1393,10 +982,6 @@ function loadHash(){
     state.ra=ra; state.dec=dec;
     state.fov=clampFov(+cfg.f||4); state.survey=cfg.s||state.survey;
     state.showLabels=!!cfg.L;
-    if(typeof cfg.n==='string' && cfg.n.length<=120) state.customName=cfg.n;
-    state.showGrid=!!cfg.G;
-    if(Number.isFinite(+cfg.la) && Math.abs(+cfg.la)<=90) state.lat=+cfg.la;
-    if(Number.isFinite(+cfg.lo) && Math.abs(+cfg.lo)<=180) state.lon=+cfg.lo;
     cfg.r.forEach(x=>{
       state.rigs.push(newRig({
         scope:x.s, cfl:x.cfl, cap:x.cap, red:+x.x||1,
@@ -1425,20 +1010,10 @@ function init(){
   if($('targetSel').value==='custom'){ $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3); }
   $('surveySel').value=state.survey;
   $('labelsChk').checked=state.showLabels;
-  $('gridChk').checked=state.showGrid;
-  $('latIn').value=state.lat; $('lonIn').value=state.lon;
 
   state.rigs.forEach(buildRigCard);
 
   /* --- sky controls --- */
-  $('searchBtn').addEventListener('click', doSearch);
-  $('searchIn').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doSearch(); } });
-  $('framingBtn').addEventListener('click', async e=>{
-    const btn=e.currentTarget, txt=buildFramingText();
-    try{ await navigator.clipboard.writeText(txt); btn.textContent='Framing copied'; }
-    catch(err){ window.prompt('Copy this framing info:', txt); }
-    setTimeout(()=>btn.textContent='Copy framing', 1600);
-  });
   $('targetSel').addEventListener('change', e=>{
     const v=e.target.value;
     if(v==='custom'){
@@ -1449,7 +1024,7 @@ function init(){
     }
     $('customTarget').classList.add('hidden');
     const t=TARGETS.find(t=>t.id===v);
-    state.targetId=t.id; state.customName=null;
+    state.targetId=t.id;
     applyFit(true, true);                /* recenter on target + fit zoom */
   });
   $('goCustom').addEventListener('click', ()=>{
@@ -1459,7 +1034,7 @@ function init(){
       alert('Could not read those coordinates. RA accepts decimal degrees (83.82) or hours (5h35m17s); Dec accepts decimal degrees or D M S.');
       return;
     }
-    state.targetId='custom'; state.ra=ra; state.dec=dec; state.customName=null;
+    state.targetId='custom'; state.ra=ra; state.dec=dec;
     applyFit(false, true);
   });
   $('surveySel').addEventListener('change', e=>{ state.survey=e.target.value; loadSky(); syncHash(); });
@@ -1474,19 +1049,6 @@ function init(){
     const r=newRig(); state.rigs.push(r); buildRigCard(r); applyFit(false, true);
   });
   $('labelsChk').addEventListener('change', e=>{ state.showLabels=e.target.checked; drawOverlay(); syncHash(); });
-  $('gridChk').addEventListener('change', e=>{ state.showGrid=e.target.checked; drawOverlay(); syncHash(); });
-  $('latIn').addEventListener('change', e=>{
-    const v=parseFloat(e.target.value);
-    if(Number.isFinite(v)) state.lat=Math.min(90,Math.max(-90,v));
-    e.target.value=state.lat; updateReadout(); syncHash();
-  });
-  $('lonIn').addEventListener('change', e=>{
-    const v=parseFloat(e.target.value);
-    if(Number.isFinite(v)) state.lon=Math.min(180,Math.max(-180,v));
-    e.target.value=state.lon; updateReadout(); syncHash();
-  });
-  $('pngBtn').addEventListener('click', exportPNG);
-  setInterval(updateVisibility, 60000);          /* keep “now …” fresh */
 
   /* --- misc --- */
   $('retryBtn').addEventListener('click', loadSky);
