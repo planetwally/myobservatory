@@ -317,16 +317,16 @@
       </label>
       <label>Sky preloading
         <select id="plateSel">
-          <option value="fast">Fast · fetch only what is visible</option>
-          <option value="balanced">Balanced · 2.4× plate, preload neighbours</option>
-          <option value="generous">Generous · 3.2× plate, preload zoom steps</option>
+          <option value="fast">Fast · fetch only the visible field</option>
+          <option value="balanced">Balanced · widen in the background</option>
+          <option value="generous">Generous · widen further, preload neighbours</option>
         </select>
       </label>
       <div class="row">
         <label>Observer lat (°N) <input type="number" id="latIn" class="mono" step="0.01" min="-90" max="90"></label>
         <label>Observer lon (°E) <input type="number" id="lonIn" class="mono" step="0.01" min="-180" max="180"></label>
       </div>
-      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°. Preloading fetches a wider plate than you can see, so panning and small zoom steps cost nothing; drop to Fast on a slow field connection. Observer location drives the visibility readout. West longitudes are negative.</p>
+      <p class="hint">The view sizes itself to your largest frame. Switch to Mellinger for fields wider than ~8°. Preloading shows the visible field straight away, then quietly fetches a wider plate so panning and small zoom steps cost nothing; drop to Fast on a slow field connection. Observer location drives the visibility readout. West longitudes are negative.</p>
     </div>
 
     <div class="card" style="padding-bottom:12px">
@@ -1002,20 +1002,23 @@ function renderStats(){
   });
 }
 
-/* ================= SKY IMAGE (oversized plate cache) ================= */
+/* ================= SKY IMAGE (two-tier plate cache) ================= */
 /*
-   Rather than fetching exactly the visible field on every nudge, we fetch an
-   oversized "plate" covering several times the view. Panning and modest zooming
-   then happen purely as a CSS transform over pixels we already hold, with no
-   network round trip at all. Plate centres snap to a grid derived from the plate
-   size, so adjacent views resolve to the same plate, and idle time is spent
-   prefetching the neighbouring cells and the next zoom step.
+   Two tiers, because one plate size cannot be both fast and roomy:
+
+     quick  ~ the visible field, small and cheap. This is what you wait for, and
+              it costs about what the old single-fetch loader cost.
+     wide   ~ several times the field, fetched in the background once the view
+              settles, then swapped in silently. Once it lands, panning and
+              modest zooming are pure CSS transforms with no network at all.
+
+   Plate centres snap to a grid so neighbouring views reuse the same plate.
 */
 
 const PLATE_MODES = {
-  fast:     {factor:1.15, px:1265, prefetch:0, cache:8},
-  balanced: {factor:2.4,  px:2640, prefetch:4, cache:6},
-  generous: {factor:3.2,  px:3200, prefetch:6, cache:4},
+  fast:     {quick:{factor:1.25, px:1200}, wide:null,                    prefetch:0, cache:8},
+  balanced: {quick:{factor:1.25, px:1200}, wide:{factor:2.4, px:2100},   prefetch:0, cache:6},
+  generous: {quick:{factor:1.25, px:1200}, wide:{factor:3.0, px:2600},   prefetch:4, cache:5},
 };
 let plateMode = 'balanced';
 try{ const m = localStorage.getItem('wvo-fov-plate'); if(m && PLATE_MODES[m]) plateMode = m; }catch(_){}
@@ -1025,8 +1028,8 @@ const SHARP_TOL = 1.35;   /* how far a plate may be upscaled before we refetch *
 const EDGE_SAFE = 0.98;   /* usable fraction of the plate half-width */
 
 let plate = null;                 /* the plate currently on screen */
-let loadToken = 0, fetchTimer = null, prefetchTimer = null;
-let gestureActive = false;        /* true while a pointer gesture is in flight */
+let loadToken = 0, fetchTimer = null, idleTimer = null;
+let gestureActive = false;
 const plateCache = new Map();
 
 function skyURL(host, p, px){
@@ -1039,24 +1042,29 @@ function skyURL(host, p, px){
 
 const raDelta = (a,b) => ((a-b+540)%360)-180;
 
-function snapFov(f){
-  const L = Math.round(Math.log2(f)*2)/2;            /* √2 ladder */
-  return Math.min(90, Math.max(FOV_MIN, Math.pow(2,L)));
+/* The centre grid has to be small enough that a view sitting in the worst corner
+   of a cell is still fully inside the plate. Derived, not guessed, because the
+   quick tier is barely wider than the view and a fixed step does not cover it. */
+function gridStep(fovP, fov){
+  return Math.min(fovP/3, Math.max(fovP/12, 0.85*(EDGE_SAFE*fovP - fov)));
 }
-function snapCentre(ra, dec, fovP){
-  const g = fovP/3;
+function snapCentre(ra, dec, g){
   const decS = Math.max(-89.5, Math.min(89.5, Math.round(dec/g)*g));
   const cd = Math.max(0.05, Math.cos(rad(decS)));
   const gRA = Math.min(180, g/cd);
   return { ra: normRA(Math.round(ra/gRA)*gRA), dec: decS };
 }
-function planPlate(ra, dec, fov, survey){
-  const fovP = snapFov(Math.min(90, fov*PM().factor));
-  const c = snapCentre(ra, dec, fovP);
-  return { ra:c.ra, dec:c.dec, fov:fovP, survey };
+/* tier is the {factor, px} spec to build the plate from. The plate field is an
+   exact multiple of the view, never snapped to a ladder: ladder rounding could
+   inflate it by up to 41%, which pushed the image past its sharpness budget. */
+function planPlate(ra, dec, fov, survey, tier){
+  const fovP = Math.min(90, fov*tier.factor);
+  const g = gridStep(fovP, fov);
+  const c = snapCentre(ra, dec, g);
+  return { ra:c.ra, dec:c.dec, fov:fovP, survey, px:tier.px, g };
 }
 function plateId(p){
-  return `${p.survey}|${p.ra.toFixed(4)}|${p.dec.toFixed(4)}|${p.fov.toFixed(5)}`;
+  return `${p.survey}|${p.ra.toFixed(4)}|${p.dec.toFixed(4)}|${p.fov.toFixed(5)}|${p.px}`;
 }
 
 /* Does this plate still cover the view, sharply enough to keep using? */
@@ -1084,8 +1092,7 @@ function fetchPlate(p){
   const hit = plateCache.get(id);
   if(hit){ hit.t = Date.now(); return hit.ready; }
 
-  const px = PM().px;
-  const entry = { ...p, id, t:Date.now(), img:null, natural:px };
+  const entry = { ...p, id, t:Date.now(), img:null, natural:p.px };
   entry.ready = new Promise((resolve, reject) => {
     let hi = 0;
     const img = new Image();
@@ -1094,7 +1101,7 @@ function fetchPlate(p){
     const attempt = () => {
       img.onload = () => {
         entry.img = img;
-        entry.natural = img.naturalWidth || px;
+        entry.natural = img.naturalWidth || p.px;
         resolve(entry);
       };
       img.onerror = () => {
@@ -1102,7 +1109,7 @@ function fetchPlate(p){
         if(hi < HOSTS.length) attempt();
         else { plateCache.delete(id); reject(new Error('plate unavailable')); }
       };
-      img.src = skyURL(HOSTS[hi], p, px);
+      img.src = skyURL(HOSTS[hi], p, p.px);
     };
     attempt();
   });
@@ -1122,28 +1129,38 @@ function showPlate(entry){
   $('errBox').classList.add('hidden');
 }
 
-/* Guarantee a plate covering the current view; hit the network only if we must */
+/* Look for anything already cached that covers this view; prefer the roomiest */
+function cachedCover(ra, dec, fov){
+  let best = null;
+  for(const e of plateCache.values()){
+    if(!e.img || !plateCovers(e, ra, dec, fov)) continue;
+    if(!best || e.fov > best.fov) best = e;
+  }
+  return best;
+}
+
+/* Guarantee something on screen fast; upgrade quality afterwards */
 function ensurePlate(force){
   if(!force && plateCovers(plate, state.ra, state.dec, state.fov)){
     applyTransform();
-    schedulePrefetch();
+    scheduleUpgrade();
     return;
   }
-  const want = planPlate(state.ra, state.dec, state.fov, state.survey);
-  const cached = plateCache.get(plateId(want));
-  if(cached && cached.img){ showPlate(cached); schedulePrefetch(); return; }
+  const cached = cachedCover(state.ra, state.dec, state.fov);
+  if(cached){ showPlate(cached); scheduleUpgrade(); return; }
 
+  const quick = planPlate(state.ra, state.dec, state.fov, state.survey, PM().quick);
   const t = ++loadToken;
-  /* only veil the view when there is nothing usable to look at */
+  /* only veil when there is nothing usable to look at */
   if(!plate || plate.survey !== state.survey) $('loadingBox').classList.remove('hidden');
   $('errBox').classList.add('hidden');
   $('sky').classList.add('loading');
 
-  fetchPlate(want).then(entry => {
+  fetchPlate(quick).then(entry => {
     if(t !== loadToken) return;
     $('sky').classList.remove('loading');
     showPlate(entry);
-    schedulePrefetch();
+    scheduleUpgrade();
   }).catch(() => {
     if(t !== loadToken) return;
     $('sky').classList.remove('loading');
@@ -1155,39 +1172,52 @@ function ensurePlate(force){
 function loadSky(force){ clearTimeout(fetchTimer); ensurePlate(force); }
 function debounceFetch(){ clearTimeout(fetchTimer); fetchTimer = setTimeout(() => ensurePlate(false), 260); }
 
-/* ---- idle prefetch: neighbouring cells, then the next zoom step ---- */
+/* ---- background upgrade: wide plate first, then neighbours ---- */
 function slowLink(){
   const c = navigator.connection;
   return !!(c && (c.saveData || /(^|-)2g$/.test(c.effectiveType||'')));
 }
-function schedulePrefetch(){
-  clearTimeout(prefetchTimer);
-  const n = PM().prefetch;
-  if(!n || !plate || slowLink()) return;
-  const base = plate;
-  const vRA = state.ra, vDec = state.dec;      /* zoom steps re-plan around the view */
-  prefetchTimer = setTimeout(() => {
-    if(plate !== base) return;
-    const g = base.fov/3;
-    const cd = Math.max(0.05, Math.cos(rad(base.dec)));
-    const jobs = [
-      {ra: base.ra + g/cd, dec: base.dec,     fov: base.fov},
-      {ra: base.ra - g/cd, dec: base.dec,     fov: base.fov},
-      {ra: base.ra,        dec: base.dec + g, fov: base.fov},
-      {ra: base.ra,        dec: base.dec - g, fov: base.fov},
-      {ra: vRA, dec: vDec, fov: snapFov(Math.min(90, base.fov*2))},
-      {ra: vRA, dec: vDec, fov: snapFov(base.fov/2)},
-    ].slice(0, n).map(j => {
-      /* snap through the same planner a real request uses, or the cache never hits:
-         the RA grid step scales with 1/cos(dec), so a N/S hop needs re-snapping */
-      const c = snapCentre(normRA(j.ra), Math.max(-89.5, Math.min(89.5, j.dec)), j.fov);
-      return { ra:c.ra, dec:c.dec, fov:j.fov, survey:base.survey };
-    });
-    jobs.forEach((j,i) => setTimeout(() => {
-      if(plate !== base) return;               /* view moved on; abandon the queue */
-      fetchPlate(j).catch(()=>{});
-    }, i*220));
-  }, 600);
+function scheduleUpgrade(){
+  clearTimeout(idleTimer);
+  const mode = PM();
+  if(!mode.wide || slowLink()) return;
+  const ra = state.ra, dec = state.dec, fov = state.fov, survey = state.survey;
+  idleTimer = setTimeout(() => {
+    /* the view must still be where it was when we scheduled this */
+    if(state.ra!==ra || state.dec!==dec || state.fov!==fov || state.survey!==survey) return;
+    if(gestureActive) return;
+
+    const wide = planPlate(ra, dec, fov, survey, mode.wide);
+    if(plate && plate.id === plateId(wide)) return;      /* already on the wide one */
+
+    fetchPlate(wide).then(entry => {
+      /* only swap if it is still the right sky and still covers what we see */
+      if(state.survey!==survey || !plateCovers(entry, state.ra, state.dec, state.fov)) return;
+      if(plate && plate.fov >= entry.fov) return;        /* no downgrade */
+      showPlate(entry);
+      if(mode.prefetch) prefetchNeighbours(entry, mode.prefetch);
+    }).catch(()=>{});
+  }, 700);
+}
+
+function prefetchNeighbours(base, n){
+  const g = base.g || base.fov/3;
+  const cd = Math.max(0.05, Math.cos(rad(base.dec)));
+  const jobs = [
+    {ra: base.ra + g/cd, dec: base.dec},
+    {ra: base.ra - g/cd, dec: base.dec},
+    {ra: base.ra,        dec: base.dec + g},
+    {ra: base.ra,        dec: base.dec - g},
+  ].slice(0, n).map(j => {
+    /* snap through the same grid a real request uses, or the cache never hits:
+       the RA step scales with 1/cos(dec), so a N/S hop needs re-snapping */
+    const c = snapCentre(normRA(j.ra), Math.max(-89.5, Math.min(89.5, j.dec)), g);
+    return { ra:c.ra, dec:c.dec, fov:base.fov, survey:base.survey, px:base.px, g };
+  });
+  jobs.forEach((j,i) => setTimeout(() => {
+    if(plate !== base) return;                 /* view moved on; abandon the queue */
+    fetchPlate(j).catch(()=>{});
+  }, i*300));
 }
 
 /* ---- place the plate so the requested field fills the box ---- */
@@ -1485,6 +1515,11 @@ function veilUp(){
 function onDown(e){
   if(e.target.closest('.skyctl')) return;        /* let the buttons work */
   if(veilUp()) return;
+  /* a right-drag can lose its pointerup to the context menu; if we are between
+     gestures, any id still in the map is stale. Left behind, it makes the next
+     drag look like a second finger and starts a phantom pinch, which moves fov
+     and pulls new imagery on every rotate. */
+  if(mode===null && pointers.size) pointers.clear();
   $('sky').setPointerCapture(e.pointerId);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
 
@@ -1715,6 +1750,9 @@ function init(){
   sky.addEventListener('pointermove', onMove);
   sky.addEventListener('pointerup', onUp);
   sky.addEventListener('pointercancel', onUp);
+  sky.addEventListener('lostpointercapture', onUp);
+  window.addEventListener('pointerup', onUp);    /* release outside the box still ends the gesture */
+  window.addEventListener('blur', ()=>{ pointers.clear(); mode=null; gestureActive=false; $('sky').classList.remove('busy'); });
   sky.addEventListener('wheel', e=>{
     if(veilUp()) return;
     e.preventDefault();
