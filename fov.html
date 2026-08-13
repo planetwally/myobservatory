@@ -190,7 +190,7 @@
   /* ---------- viewport ---------- */
   .viewwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
   .sky{
-    position:relative;width:min(100%, 82vh);aspect-ratio:1/1;margin-inline:auto;
+    position:relative;width:min(100%, calc(74vh * 1.5));aspect-ratio:3/2;margin-inline:auto;
     background:#07080c;border:1px solid var(--line);border-radius:var(--radius);
     overflow:hidden;cursor:grab;touch-action:none;user-select:none;
   }
@@ -222,6 +222,25 @@
   }
   /* map-style controls, lower right */
   .skyctl{position:absolute;right:14px;bottom:14px;z-index:4;display:flex;flex-direction:column;gap:6px}
+  /* ---------- rotation bar ---------- */
+  .rotbar{display:flex;align-items:center;gap:10px;padding:8px 12px;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
+  .rotlbl{font-size:.62rem;letter-spacing:.16em;color:var(--dim);flex-shrink:0}
+  .rotval{font-size:.78rem;color:var(--amber);min-width:3.4em;text-align:right;flex-shrink:0}
+  .rotbar button{flex-shrink:0;padding:3px 8px;font-size:.7rem}
+  #rotSlider{
+    flex:1;min-width:0;-webkit-appearance:none;appearance:none;height:3px;
+    background:linear-gradient(to right,var(--line),var(--amber-dim),var(--line));
+    border-radius:2px;outline:none;cursor:ew-resize;
+  }
+  #rotSlider::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--amber);border:2px solid var(--bg);cursor:ew-resize;
+  }
+  #rotSlider::-moz-range-thumb{
+    width:15px;height:15px;border-radius:50%;background:var(--amber);
+    border:2px solid var(--bg);cursor:ew-resize;
+  }
   .skyctl button{
     width:38px;height:38px;padding:0;font-size:19px;line-height:1;
     background:rgba(12,14,20,.78);border:1px solid var(--line);color:var(--text);
@@ -352,7 +371,7 @@
   <section class="viewwrap">
     <div class="sky" id="sky">
       <img id="skyImg" crossorigin="anonymous" draggable="false" alt="Sky survey imagery of the selected target">
-      <svg id="overlay" viewBox="0 0 1100 1100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+      <svg id="overlay" viewBox="0 0 1650 1100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
       <div class="skyctl" id="skyctl">
         <button id="zoomIn"  title="Zoom in"  aria-label="Zoom in">+</button>
         <button id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
@@ -368,7 +387,15 @@
       </div>
     </div>
 
-    <p class="gesture">Drag to pan · right-drag (or two fingers) to rotate framing · scroll or +/− to zoom · ⤢ recenters.</p>
+    <div class="rotbar">
+      <span class="rotlbl">ROTATE</span>
+      <input type="range" id="rotSlider" min="0" max="359" step="1" value="0"
+             aria-label="Rotate all visible frames">
+      <span class="rotval mono" id="rotVal">0°</span>
+      <button id="rotZero" title="Reset rotation to 0°">0°</button>
+    </div>
+
+    <p class="gesture">Drag to pan · right-drag (or the bar above) to rotate framing · scroll or +/− to zoom · ⤢ recenters.</p>
 
     <div class="readout">
       <span>CENTER <b id="coordOut">—</b></span>
@@ -621,7 +648,10 @@ const SURVEYS = [
 
 const COLORS = ['#c9a84c','#4a7cad','#8a7cbf','#9cb04a','#c97a4a','#b35a7a','#3a8a7a','#d9b98a'];
 const HOSTS = ['alasky.cds.unistra.fr','alasky.u-strasbg.fr'];
-const S = 1100;                 /* SVG viewBox + fetched image size */
+const S = 1100;                 /* scale reference: fetched plate size, viewBox height */
+const AR = 1.5;                 /* view aspect (3:2). fov is the HORIZONTAL field */
+const SW = Math.round(S*AR);    /* viewBox width  */
+const SH = S;                   /* viewBox height */
 const NS = 'http://www.w3.org/2000/svg';
 const ZOOM_STEP = 1.2;          /* per click / wheel notch */
 const FIT_MARGIN = 1.10;        /* view = largest frame +10% */
@@ -816,7 +846,7 @@ function buildRigCard(r){
   });
   q('.rot').addEventListener('input', e=>{
     r.rot = norm360(+e.target.value||0);
-    drawOverlay(); syncHash();
+    syncRotUI(); drawOverlay(); syncHash();
   });
   q('.vis').addEventListener('click', ()=>{
     r.vis=!r.vis; card.classList.toggle('dim', !r.vis); applyFit(false, true);
@@ -838,7 +868,7 @@ function refreshAllCardMeta(){
 /* ================= OVERLAY ================= */
 
 function halfPx(deg){
-  return Math.tan(rad(deg)/2) / Math.tan(rad(state.fov)/2) * (S/2);
+  return Math.tan(rad(deg)/2) / Math.tan(rad(state.fov)/2) * (SW/2);
 }
 function svgEl(tag, attrs){
   const e=document.createElementNS(NS, tag);
@@ -858,8 +888,8 @@ function projPx(raD, decD){
   if(cosc<0.05) return null;                     /* behind the tangent plane */
   const x=Math.cos(d)*Math.sin(dA)/cosc;
   const y=(Math.cos(de0)*Math.sin(d)-Math.sin(de0)*Math.cos(d)*Math.cos(dA))/cosc;
-  const k=(S/2)/Math.tan(rad(state.fov)/2);
-  return {x:S/2 - x*k, y:S/2 - y*k};             /* N up, E left */
+  const k=(SW/2)/Math.tan(rad(state.fov)/2);
+  return {x:SW/2 - x*k, y:SH/2 - y*k};           /* N up, E left */
 }
 function fmtRALabel(r){
   const h=norm360(r)/15;
@@ -890,7 +920,7 @@ function drawGrid(svg){
       const p=projPx(s.ra, s.dec);
       if(!p){ flush(); continue; }
       seg.push(p);
-      if(p.x>=6 && p.x<=S-6 && p.y>=26 && p.y<=S-10){
+      if(p.x>=6 && p.x<=SW-6 && p.y>=26 && p.y<=SH-10){
         if(mode==='dec' ? (!best||p.x<best.x) : (!best||p.y<best.y)) best=p;
       }
     }
@@ -926,12 +956,12 @@ function drawOverlay(){
 
   /* center crosshair */
   const ch=18;
-  [[S/2-ch,S/2,S/2+ch,S/2],[S/2,S/2-ch,S/2,S/2+ch]].forEach(([x1,y1,x2,y2])=>{
+  [[SW/2-ch,SH/2,SW/2+ch,SH/2],[SW/2,SH/2-ch,SW/2,SH/2+ch]].forEach(([x1,y1,x2,y2])=>{
     svg.appendChild(svgEl('line',{x1,y1,x2,y2,stroke:'#ffffff',['stroke-opacity']:.35,['stroke-width']:1.2}));
   });
 
   /* compass */
-  const comp=svgEl('text',{x:S-26,y:42,fill:'#e8e4df',['fill-opacity']:.8,
+  const comp=svgEl('text',{x:SW-26,y:42,fill:'#e8e4df',['fill-opacity']:.8,
     ['font-size']:24,['text-anchor']:'end',['font-family']:'JetBrains Mono, monospace'});
   comp.textContent='N ↑  E ←';
   svg.appendChild(comp);
@@ -944,7 +974,7 @@ function drawOverlay(){
   else if(state.fov >= 0.4){ barDeg=1/6; barLabel='10′'; }
   else{ barDeg=1/60; barLabel='1′'; }
   const barPx = 2*halfPx(barDeg);
-  const bx=36, by=S-44;
+  const bx=36, by=SH-44;
   svg.appendChild(svgEl('line',{x1:bx,y1:by,x2:bx+barPx,y2:by,stroke:'#e8e4df',['stroke-width']:2}));
   [[bx],[bx+barPx]].forEach(([x])=>{
     svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8e4df',['stroke-width']:2}));
@@ -957,14 +987,14 @@ function drawOverlay(){
   state.rigs.filter(r=>r.vis).forEach(r=>{
     const d=rigData(r); if(!d) return;
     const w=2*halfPx(d.fovW), h=2*halfPx(d.fovH);
-    const g=svgEl('g',{transform:`rotate(${-r.rot} ${S/2} ${S/2})`});
+    const g=svgEl('g',{transform:`rotate(${-r.rot} ${SW/2} ${SH/2})`});
     g.appendChild(svgEl('rect',{
-      x:S/2-w/2, y:S/2-h/2, width:w, height:h,
+      x:SW/2-w/2, y:SH/2-h/2, width:w, height:h,
       fill:r.color, ['fill-opacity']:0.045,
       stroke:r.color, ['stroke-width']:2.5,
     }));
     if(state.showLabels){
-      const t=svgEl('text',{x:S/2-w/2+10, y:S/2-h/2+28, fill:r.color,
+      const t=svgEl('text',{x:SW/2-w/2+10, y:SH/2-h/2+28, fill:r.color,
         ['font-size']:22, ['font-family']:'JetBrains Mono, monospace'});
       t.textContent=d.label;
       g.appendChild(t);
@@ -1349,39 +1379,40 @@ async function exportPNG(){
     const img=$('skyImg');
     if(!img.complete || !img.naturalWidth) throw new Error('image not loaded');
     const canvas=document.createElement('canvas');
-    canvas.width=S; canvas.height=S;
+    canvas.width=SW; canvas.height=SH;
     const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#07080c'; ctx.fillRect(0,0,S,S);
+    ctx.fillStyle='#07080c'; ctx.fillRect(0,0,SW,SH);
     if(plate && plate.img){
-      /* the plate is wider than the view: cut out exactly what is on screen */
+      /* the plate is square and wider than the field: cut the 3:2 slice on screen */
       const nat = plate.natural || img.naturalWidth;
-      const perPx = nat/plate.fov;
-      const src = nat * (state.fov/plate.fov);
+      const perPx = nat/plate.fov;                 /* plate px per degree */
+      const srcW = nat * (state.fov/plate.fov);
+      const srcH = srcW / AR;
       const cx = nat/2 - raDelta(state.ra, plate.ra)*Math.cos(rad(plate.dec))*perPx;
       const cy = nat/2 - (state.dec - plate.dec)*perPx;
-      ctx.drawImage(img, cx-src/2, cy-src/2, src, src, 0, 0, S, S);
+      ctx.drawImage(img, cx-srcW/2, cy-srcH/2, srcW, srcH, 0, 0, SW, SH);
     }else{
-      ctx.drawImage(img,0,0,S,S);
+      ctx.drawImage(img,0,0,SW,SH);
     }
     /* rasterize the SVG overlay on top */
     const sv=$('overlay').cloneNode(true);
-    sv.setAttribute('width',S); sv.setAttribute('height',S);
+    sv.setAttribute('width',SW); sv.setAttribute('height',SH);
     const svgImg=new Image();
     await new Promise((res,rej)=>{
       svgImg.onload=res; svgImg.onerror=rej;
       svgImg.src='data:image/svg+xml;charset=utf-8,'
         + encodeURIComponent(new XMLSerializer().serializeToString(sv));
     });
-    ctx.drawImage(svgImg,0,0,S,S);
+    ctx.drawImage(svgImg,0,0,SW,SH);
     /* caption */
     const tName = state.targetId==='custom'
       ? (state.customName||'Custom position')
       : ((TARGETS.find(t=>t.id===state.targetId)||{}).name||'');
     ctx.font='300 20px "JetBrains Mono", monospace';
     ctx.fillStyle='rgba(7,8,12,0.55)';
-    ctx.fillRect(0,S-40,S,40);
+    ctx.fillRect(0,SH-40,SW,40);
     ctx.fillStyle='rgba(232,228,223,0.9)';
-    ctx.fillText(tName+' · myobservatory.org', 16, S-14);
+    ctx.fillText(tName+' · myobservatory.org', 16, SH-14);
     const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
     if(!blob) throw new Error('encode failed');
     const a=document.createElement('a');
@@ -1451,7 +1482,9 @@ function fitFov(){
     const th=rad(r.rot);                       /* rotated bounding box */
     const bw=Math.abs(d.fovW*Math.cos(th))+Math.abs(d.fovH*Math.sin(th));
     const bh=Math.abs(d.fovW*Math.sin(th))+Math.abs(d.fovH*Math.cos(th));
-    m=Math.max(m, bw, bh);
+    /* fov is the horizontal field; the visible vertical field is only fov/AR,
+       so a frame has to clear the short axis as well as the long one */
+    m=Math.max(m, bw, bh*AR);
   });
   return m ? clampFov(m*FIT_MARGIN) : null;
 }
@@ -1463,7 +1496,7 @@ function applyFit(recenter, immediate=true){
   }
   const f=fitFov();
   if(f!=null) state.fov=f;
-  refreshAllCardMeta(); renderStats(); drawOverlay(); updateReadout();
+  refreshAllCardMeta(); renderStats(); syncRotUI(); drawOverlay(); updateReadout();
   immediate ? loadSky() : debounceFetch();
   syncHash();
 }
@@ -1480,6 +1513,26 @@ function updateReadout(){
   $('coordOut').textContent = `RA ${fmtRA(state.ra)} · Dec ${fmtDec(state.dec)}`;
   $('fovOut').textContent = `${fmtAngle(state.fov)} wide`;
   updateVisibility();
+}
+
+/* ---- rotation bar: a relative dial, so rigs keep their offsets from each other ---- */
+let rotLast = 0;
+function syncRotUI(){
+  const v = state.rigs.find(r=>r.vis);
+  const a = v ? Math.round(norm360(v.rot)) : 0;
+  rotLast = a;
+  const sl=$('rotSlider'); if(sl) sl.value = a;
+  const out=$('rotVal');   if(out) out.textContent = a+'°';
+}
+function applyRotDelta(d){
+  if(!d) return;
+  state.rigs.forEach(r=>{
+    if(!r.vis) return;
+    r.rot = norm360(r.rot + d);
+    const card=document.querySelector(`.rig[data-id="${r.id}"]`);
+    if(card) card.querySelector('.rot').value = Math.round(r.rot);
+  });
+  drawOverlay(); syncHash();          /* rotation never touches the imagery */
 }
 
 /* ================= POINTER INTERACTION (pan / rotate / pinch) ================= */
@@ -1567,6 +1620,7 @@ function onMove(e){
       const card=document.querySelector(`.rig[data-id="${id}"]`);
       if(card) card.querySelector('.rot').value=Math.round(rig.rot);
     });
+    syncRotUI();
     drawOverlay();
   }
 }
@@ -1743,6 +1797,20 @@ function init(){
     location.reload();
   });
 
+  $('rotSlider').addEventListener('input', e=>{
+    const v=+e.target.value;
+    const d=((v - rotLast + 540)%360)-180;   /* shortest way round, so 359→0 is +1° */
+    rotLast=v;
+    $('rotVal').textContent=v+'°';
+    applyRotDelta(d);
+  });
+  $('rotZero').addEventListener('click', ()=>{
+    const v=state.rigs.find(r=>r.vis);
+    if(!v) return;
+    applyRotDelta(-norm360(v.rot));
+    syncRotUI();
+  });
+
   /* --- pointer + wheel on the sky --- */
   const sky=$('sky');
   sky.addEventListener('contextmenu', e=>e.preventDefault());
@@ -1750,9 +1818,10 @@ function init(){
   sky.addEventListener('pointermove', onMove);
   sky.addEventListener('pointerup', onUp);
   sky.addEventListener('pointercancel', onUp);
-  sky.addEventListener('lostpointercapture', onUp);
+  /* deliberately NOT bound to lostpointercapture: a right-button press releases
+     capture straight away in some browsers, which ended the rotate on the first
+     move. Stale pointers are swept in onDown instead. */
   window.addEventListener('pointerup', onUp);    /* release outside the box still ends the gesture */
-  window.addEventListener('blur', ()=>{ pointers.clear(); mode=null; gestureActive=false; $('sky').classList.remove('busy'); });
   sky.addEventListener('wheel', e=>{
     if(veilUp()) return;
     e.preventDefault();
@@ -1762,6 +1831,7 @@ function init(){
   /* --- first paint --- */
   refreshAllCardMeta();
   renderStats();
+  syncRotUI();
   if(!fromHash) applyFit(false, true);   /* size view to the default rig */
   else { drawOverlay(); updateReadout(); loadSky(); }
 }
