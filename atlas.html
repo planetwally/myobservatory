@@ -140,6 +140,8 @@
   #darkNote{font-size:.64rem;color:var(--text-dim);margin-top:7px}
   .note{font-size:.66rem;color:var(--text-dim);line-height:1.6;margin-top:8px}
   .counts{font-size:.64rem;color:var(--text-dim)}
+  .note.bad{color:var(--warn)}
+  .hidden{display:none}
 
   @media (max-width:900px){
     body{overflow:auto}
@@ -186,6 +188,7 @@
       <button id="zoomIn" title="Zoom in">+</button>
       <button id="zoomOut" title="Zoom out">−</button>
       <button id="resetView" title="Reset view">⤾</button>
+      <button id="compassBtn" title="Follow the phone's compass">⌖</button>
     </div>
   </div>
 
@@ -266,6 +269,14 @@
         <div class="field"><label>Longitude</label><input id="lonIn" type="number" step="0.01"></div>
       </div>
       <p class="note">West longitudes negative.</p>
+      <div id="compassRow" class="hidden" style="margin-top:10px">
+        <div class="field">
+          <label>Magnetic declination</label>
+          <input id="declIn" type="number" step="0.5" placeholder="e.g. −13">
+        </div>
+        <p class="note">Only needed when the heading comes from magnetic north. Around northern New Jersey it is roughly 12–13° west, so enter a negative value. Nudge it until a known bright star sits where the app draws it.</p>
+      </div>
+      <p class="note" id="compassNote"></p>
     </div>
 
     <div class="sec">
@@ -1576,6 +1587,133 @@ $('dsoCount').textContent = DSO.length.toLocaleString();
 syncTimeUI();
 resize();
 renderTonight();
+
+
+/* ================= DEVICE COMPASS =================
+   Point the back of the phone at the sky and the view follows. The pose comes
+   from DeviceOrientationEvent; the direction the phone's back faces is R·(0,0,-1)
+   in the world frame (X east, Y north, Z up).
+
+   Two platform wrinkles worth knowing:
+     · iOS needs an explicit permission grant, and it must be requested from
+       inside a user gesture. It also hands us webkitCompassHeading, which is
+       already referenced to TRUE north.
+     · Android exposes 'deviceorientationabsolute'; its alpha is generally
+       referenced to MAGNETIC north, so it needs a declination correction.
+   Plain relative 'deviceorientation' has an arbitrary zero and is useless for
+   pointing, so we say so rather than silently showing the wrong sky. */
+
+let compassOn = false, compassVec = null, compassSaw = false;
+let compassAbsolute = false, compassTrueNorth = false, compassListener = null;
+let compassOffset = 0;
+try{ const v = localStorage.getItem('wvo-atlas-decl'); if(v !== null) compassOffset = +v || 0; }catch(_){}
+
+function lookVector(a, b, g){
+  const A=rad(a), B=rad(b), G=rad(g);
+  const cA=Math.cos(A), sA=Math.sin(A), cB=Math.cos(B), sB=Math.sin(B), cG=Math.cos(G), sG=Math.sin(G);
+  return [ -(cA*sG + cG*sA*sB), -(sA*sG - cA*cG*sB), -(cB*cG) ];
+}
+
+function onOrient(e){
+  if(!compassOn) return;
+  let alpha = e.alpha;
+  if(typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)){
+    alpha = 360 - e.webkitCompassHeading;      /* iOS, already true north */
+    compassTrueNorth = true;
+  }
+  if(alpha == null || e.beta == null || e.gamma == null) return;
+  compassSaw = true;
+
+  const v = lookVector(alpha + (compassTrueNorth ? 0 : compassOffset), e.beta, e.gamma);
+  /* smooth as a vector, not as angles: no wrap discontinuity at due north */
+  if(!compassVec) compassVec = v;
+  else{
+    const k = 0.22;
+    compassVec = [ compassVec[0]+(v[0]-compassVec[0])*k,
+                   compassVec[1]+(v[1]-compassVec[1])*k,
+                   compassVec[2]+(v[2]-compassVec[2])*k ];
+  }
+  const n = Math.hypot(...compassVec) || 1;
+  const alt = deg(Math.asin(Math.max(-1, Math.min(1, compassVec[2]/n))));
+  const az = norm360(deg(Math.atan2(compassVec[0], compassVec[1])));
+  state.alt = Math.max(-89, Math.min(89, alt));
+  state.az = az;
+  state.mode = 'horizon';
+  requestRender();
+  clearTimeout(compassSurveyTimer);
+  compassSurveyTimer = setTimeout(maybeLoadSurvey, 500);
+}
+let compassSurveyTimer = null;
+
+function compassStatus(msg, cls){
+  const el = $('compassNote');
+  el.textContent = msg || '';
+  el.className = 'note' + (cls ? ' ' + cls : '');
+}
+
+async function enableCompass(){
+  if(!('DeviceOrientationEvent' in window)){
+    compassStatus('This browser exposes no orientation sensor.', 'bad'); return;
+  }
+  /* iOS 13+: must be asked for, from a user gesture, over HTTPS */
+  const DOE = window.DeviceOrientationEvent;
+  if(typeof DOE.requestPermission === 'function'){
+    let res;
+    try{ res = await DOE.requestPermission(); }
+    catch(err){
+      compassStatus('Permission request failed. Safari only allows it over HTTPS, from a tap.', 'bad');
+      return;
+    }
+    if(res !== 'granted'){
+      compassStatus('Permission denied. Settings ▸ Safari ▸ Motion & Orientation Access.', 'bad');
+      return;
+    }
+  }
+  compassAbsolute = 'ondeviceorientationabsolute' in window;
+  const evName = compassAbsolute ? 'deviceorientationabsolute' : 'deviceorientation';
+  compassListener = onOrient;
+  window.addEventListener(evName, compassListener, true);
+  compassOn = true; compassSaw = false; compassVec = null;
+  $('compassBtn').classList.add('on');
+  $('compassRow').classList.remove('hidden');
+  compassStatus('Waiting for the sensor…');
+
+  /* Desktop browsers define the event but never fire it, so time out honestly */
+  setTimeout(()=>{
+    if(!compassOn) return;
+    if(!compassSaw){
+      compassStatus('No sensor readings arrived — this device probably has no magnetometer.', 'bad');
+      disableCompass();
+    }else if(compassTrueNorth){
+      compassStatus('Following the phone. Heading is true north, no correction needed.');
+    }else if(compassAbsolute){
+      compassStatus('Following the phone. Heading is magnetic north — set declination below.');
+    }else{
+      compassStatus('This device only reports relative orientation, so the heading has an arbitrary zero. Tilt will track, but north will not.', 'bad');
+    }
+  }, 1600);
+}
+function disableCompass(){
+  if(compassListener){
+    window.removeEventListener('deviceorientationabsolute', compassListener, true);
+    window.removeEventListener('deviceorientation', compassListener, true);
+    compassListener = null;
+  }
+  compassOn = false; compassVec = null;
+  $('compassBtn').classList.remove('on');
+}
+$('compassBtn').addEventListener('click', ()=>{
+  if(compassOn){ disableCompass(); compassStatus(''); $('compassRow').classList.add('hidden'); }
+  else enableCompass();
+});
+$('declIn').value = compassOffset;
+$('declIn').addEventListener('change', e=>{
+  compassOffset = +e.target.value || 0;
+  try{ localStorage.setItem('wvo-atlas-decl', String(compassOffset)); }catch(_){}
+  compassVec = null;                  /* drop the smoothed state so it snaps */
+});
+/* taking manual control releases the compass */
+cv.addEventListener('pointerdown', ()=>{ if(compassOn){ disableCompass(); compassStatus('Released — tap the compass to follow the phone again.'); } });
 
 </script>
 </body>
