@@ -586,11 +586,16 @@ for(let i=0;i<NSTAR;i++){
 
 /* ---------- rig definitions (mirrors the FOV viewer) ---------- */
 const RIGS = [
-  { name:'RedCat 51',        fl:250, scopeIdx:8,   sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
-  { name:'Sharpstar 50EDPH', fl:231, scopeIdx:106, sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
-  { name:'AT60EDP',          fl:300, scopeIdx:14,  sensor:'IMX571', sIdx:4, w:23.49, h:15.70 },
-  { name:'FS-60CB',          fl:355, scopeIdx:19,  sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
-  { name:'FMA180',           fl:180, scopeIdx:1,   sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  /* scopeIdx / sIdx point into the FOV viewer's SCOPES and SENSORS arrays so the
+     hand-off link opens with the same glass and sensor selected. */
+  { name:'Sharpstar 76EDPH',    fl:342, scopeIdx:117, sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  { name:'Sharpstar 61EDPH II', fl:275, scopeIdx:107, sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  { name:'Sharpstar 50EDPH',    fl:231, scopeIdx:106, sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  { name:'Askar 65PHQ',         fl:416, scopeIdx:31,  sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  { name:'WhiteCat 51',         fl:250, scopeIdx:8,   sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  { name:'AT60EDP',             fl:300, scopeIdx:14,  sensor:'IMX571', sIdx:4, w:23.49, h:15.70 },
+  { name:'FS-60CB',             fl:355, scopeIdx:19,  sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
+  { name:'FMA180',              fl:180, scopeIdx:1,   sensor:'IMX585', sIdx:0, w:11.13, h:6.26 },
 ];
 RIGS.forEach(r=>{
   r.fovW = 2*deg(Math.atan(r.w/2/r.fl));
