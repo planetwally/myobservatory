@@ -268,6 +268,7 @@
         <label class="chk"><input type="checkbox" id="dsoChk" checked> Deep sky</label>
         <label class="chk"><input type="checkbox" id="gridChk"> Grid</label>
         <label class="chk"><input type="checkbox" id="surveyChk" checked> Survey</label>
+        <label class="chk"><input type="checkbox" id="mwChk" checked> Milky Way</label>
       </div>
       <div class="poirow">
         <label class="chk"><input type="checkbox" id="poiChk" checked> Points of interest</label>
@@ -644,6 +645,7 @@ const state = {
   mode: 'horizon',         /* 'horizon' | 'equatorial' */
   showLines: true, showNames: true, showDSO: true, showGrid: false,
   showPOI: true, poiScope: 'notable',
+  showMW: true,
   showSurvey: true, showRig: false, rigIdx: 0,
   magLimit: 6.5,
   selected: null,
@@ -878,6 +880,7 @@ function render(){
   paintBackground(twilight);
   LABEL_BOXES.length = 0;
   if(state.fov <= SURVEY_THRESHOLD) drawSurvey();
+  if(state.showMW) drawMilkyWay(twilight);
   if(state.showGrid) drawGrid();
   if(state.showLines) drawConstellations();
   drawStars();
@@ -886,6 +889,7 @@ function render(){
   if(state.showPOI) poiSelect(); else { POI_SCREEN.length = 0; POI_MARKED.clear(); }
   if(state.showDSO) drawDSO();
   if(state.showPOI) drawPOI();
+  if(state.showMW) drawGalacticTicks();
   drawSolarSystem();
   drawHorizon(twilight);
   if(state.showRig) drawRigFrame();
@@ -1312,6 +1316,196 @@ function label(p, text, color, r){
   ctx.font='11px "JetBrains Mono", monospace';
   ctx.fillStyle=color; ctx.globalAlpha=0.9; ctx.textBaseline='middle';
   ctx.fillText(text, p.x + r + 6, p.y);
+  ctx.restore();
+}
+
+/* ================= MILKY WAY =================
+   Where the galaxy runs through the view. Two things are drawn: a soft glow for
+   the disk and central bulge, and the galactic equator with its centre,
+   anticentre and poles marked. The glow is a schematic — an analytic disk that
+   widens and brightens toward Sagittarius, with a bulge on top — not a photo of
+   the real band, which has the Great Rift, the Cygnus and Carina star clouds and
+   plenty of other structure. It answers "which way is the plane, and where is
+   the core" without pretending to more. The equator, centre and poles are
+   exact (IAU J2000 galactic frame).
+
+   The glow is computed by sampling every few screen pixels back onto the sky —
+   the inverse stereographic is cheap — into a small offscreen canvas, which is
+   then stretched over the view with the browser's bilinear filter doing the
+   smoothing for free. */
+
+const GAL = (()=>{
+  const v = (ra, dec)=>{ const r=rad(ra), d=rad(dec), c=Math.cos(d);
+                         return [c*Math.cos(r), c*Math.sin(r), Math.sin(d)]; };
+  const Z = v(192.85948, 27.12825);          /* north galactic pole */
+  const X = v(266.40499, -28.93617);         /* galactic centre, l = 0 */
+  const Y = [ Z[1]*X[2]-Z[2]*X[1], Z[2]*X[0]-Z[0]*X[2], Z[0]*X[1]-Z[1]*X[0] ];
+  return { X, Y, Z };
+})();
+
+/* galactic axes rotated into the current horizontal frame, once per frame */
+let GALH = null;
+function buildGalacticFrame(){
+  const rot = a => [ HROT.n[0]*a[0]+HROT.n[1]*a[1]+HROT.n[2]*a[2],
+                     HROT.e[0]*a[0]+HROT.e[1]*a[1]+HROT.e[2]*a[2],
+                     HROT.z[0]*a[0]+HROT.z[1]*a[1]+HROT.z[2]*a[2] ];
+  GALH = { X: rot(GAL.X), Y: rot(GAL.Y), Z: rot(GAL.Z) };
+}
+/* galactic (l, b) -> horizontal unit vector */
+function galVec(l, b){
+  const cl = Math.cos(rad(l))*Math.cos(rad(b)), sl = Math.sin(rad(l))*Math.cos(rad(b)), sb = Math.sin(rad(b));
+  const { X, Y, Z } = GALH;
+  return [ X[0]*cl + Y[0]*sl + Z[0]*sb, X[1]*cl + Y[1]*sl + Z[1]*sb, X[2]*cl + Y[2]*sl + Z[2]*sb ];
+}
+const projGal = (l, b) => projVec(galVec(l, b));
+
+/* Surface brightness model, 0..1. l is longitude wrapped to ±180. */
+function mwIntensity(L, b){
+  const l2 = L*L;
+  /* the disk: widest and brightest toward the centre, thin and faint toward
+     Auriga at the anticentre */
+  const halfWidth = 7 + 8*Math.exp(-l2/2500);            /* degrees, 15 -> 7 */
+  const along = 0.30 + 0.70*Math.exp(-l2/8100);          /* 1.0 -> 0.31 */
+  const disk = along * Math.exp(-(b*b)/(halfWidth*halfWidth));
+  /* the bulge: a broad oval over Sagittarius and Scorpius */
+  const bulge = 0.9 * Math.exp(-l2/225 - (b*b)/81);
+  return Math.min(1, disk + bulge);
+}
+
+let mwCanvas = null, mwCtx = null;
+function drawMilkyWay(sunAlt){
+  /* fade with twilight, exactly as the background brightens, and fade out as
+     the field narrows — a 5° view is all one patch of it, and survey imagery
+     takes over below that anyway */
+  const twilight = Math.max(0, Math.min(1, (sunAlt + 18)/18));
+  const zoomFade = Math.max(0, Math.min(1, (state.fov - 5)/12));
+  const gain = 0.32 * (1 - twilight) * zoomFade;
+  buildGalacticFrame();
+  /* the line and markers stay even when the glow has faded: in twilight or at
+     a narrow field "which way is the plane" is still the question */
+  if(gain >= 0.005) drawMilkyWayGlow(gain);
+  drawGalacticEquator();
+}
+
+function drawMilkyWayGlow(gain){
+  const CELL = 6;
+  const gw = Math.ceil(W/CELL), gh = Math.ceil(H/CELL);
+  if(!mwCanvas){ mwCanvas = document.createElement('canvas'); mwCtx = mwCanvas.getContext('2d'); }
+  if(mwCanvas.width !== gw || mwCanvas.height !== gh){ mwCanvas.width = gw; mwCanvas.height = gh; }
+  const img = mwCtx.createImageData(gw, gh);
+  const px = img.data;
+
+  const { f, rgt, up, k, cx, cy } = VIEW;
+  const { X, Y, Z } = GALH;
+  const inv2k = 1/(2*k);
+  let i = 0;
+  for(let gy=0; gy<gh; gy++){
+    const sy = (gy + 0.5)*CELL;
+    const Yv = -(sy - cy)*inv2k;
+    for(let gx=0; gx<gw; gx++, i+=4){
+      const sx = (gx + 0.5)*CELL;
+      const Xv = -(sx - cx)*inv2k;
+      /* inverse stereographic, as in unproject(), minus the trig we don't need */
+      const s = Xv*Xv + Yv*Yv;
+      const d = (1 - s)/(1 + s), m = 1 + d;
+      const v0 = f[0]*d + rgt[0]*Xv*m + up[0]*Yv*m;
+      const v1 = f[1]*d + rgt[1]*Xv*m + up[1]*Yv*m;
+      const v2 = f[2]*d + rgt[2]*Xv*m + up[2]*Yv*m;
+      const sb = v0*Z[0] + v1*Z[1] + v2*Z[2];
+      if(sb > 0.5 || sb < -0.5) continue;                   /* |b| > 30°: nothing there */
+      const b = deg(Math.asin(sb));
+      const l = deg(Math.atan2(v0*Y[0] + v1*Y[1] + v2*Y[2], v0*X[0] + v1*X[1] + v2*X[2]));
+      let I = mwIntensity(l, b);
+      if(I < 0.01) continue;
+      /* below the horizon it is ground, not sky: let it die away quickly */
+      if(v2 < 0) I *= Math.max(0, 1 + v2*4);
+      /* colour: cool white along the disk, warming toward the bulge */
+      const warm = Math.min(1, 1.2*Math.exp(-(l*l)/400 - (b*b)/144));
+      px[i]   = Math.round(205 + 30*warm);
+      px[i+1] = Math.round(210 + 10*warm);
+      px[i+2] = Math.round(235 - 45*warm);
+      px[i+3] = Math.round(255 * gain * I);
+    }
+  }
+  mwCtx.putImageData(img, 0, 0);
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(mwCanvas, 0, 0, gw, gh, 0, 0, W, H);
+  ctx.restore();
+}
+
+/* The equator as a dashed great circle, plus the four points that orient you:
+   centre, anticentre, and the poles where galaxy hunting is best. */
+function drawGalacticEquator(){
+  ctx.save();
+  ctx.strokeStyle = 'rgba(232,228,223,0.28)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5,5]);
+  ctx.beginPath();
+  let pen = false;
+  for(let l=0; l<=360; l+=2){
+    const p = projGal(l, 0);
+    if(!p || p.d < -0.2){ pen = false; continue; }
+    if(!pen){ ctx.moveTo(p.x, p.y); pen = true; } else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textBaseline = 'middle';
+  const marks = [
+    { l:0,   b:0,   name:'Galactic centre',     key:true },
+    { l:180, b:0,   name:'Galactic anticentre', key:false },
+    { l:0,   b:90,  name:'North galactic pole', key:false },
+    { l:0,   b:-90, name:'South galactic pole', key:false },
+  ];
+  for(const m of marks){
+    const p = projGal(m.l, m.b);
+    if(!p || p.d < -0.2 || p.x < 0 || p.x > W || p.y < 0 || p.y > H) continue;
+    ctx.strokeStyle = m.key ? 'rgba(201,168,76,0.9)' : 'rgba(232,228,223,0.6)';
+    ctx.lineWidth = m.key ? 1.4 : 1;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 6.283185); ctx.stroke();
+    if(m.key){
+      /* a small cross inside the ring: the centre gets the strongest glyph */
+      ctx.beginPath();
+      ctx.moveTo(p.x-3, p.y); ctx.lineTo(p.x+3, p.y);
+      ctx.moveTo(p.x, p.y-3); ctx.lineTo(p.x, p.y+3);
+      ctx.stroke();
+    }
+    ctx.fillStyle = m.key ? 'rgba(201,168,76,0.95)' : 'rgba(232,228,223,0.75)';
+    const w = ctx.measureText(m.name).width;
+    ctx.fillText(m.name, p.x + 9, p.y);
+    labelClaim(p.x + 9, p.y, w);
+  }
+  ctx.restore();
+}
+
+/* Longitude ticks along the equator. Drawn late so they yield to every other
+   label — a Bayer letter is worth more than "l = 60°". */
+function drawGalacticTicks(){
+  if(state.fov > 100 || state.fov < 5) return;
+  const step = state.fov > 40 ? 30 : 10;
+  ctx.save();
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textBaseline = 'middle';
+  ctx.strokeStyle = 'rgba(232,228,223,0.35)';
+  ctx.fillStyle = 'rgba(154,149,141,0.7)';
+  ctx.lineWidth = 1;
+  for(let l=0; l<360; l+=step){
+    if(l === 0 || l === 180) continue;                    /* those two have names */
+    const p = projGal(l, 0);
+    if(!p || p.d < -0.2 || p.x < 0 || p.x > W || p.y < 0 || p.y > H) continue;
+    /* tick perpendicular to the plane: toward +b */
+    const q = projGal(l, 2);
+    if(!q) continue;
+    const dx = q.x - p.x, dy = q.y - p.y, n = Math.hypot(dx, dy) || 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x - dx/n*4, p.y - dy/n*4); ctx.lineTo(p.x + dx/n*4, p.y + dy/n*4);
+    ctx.stroke();
+    const text = 'l ' + l + '°';
+    const w = ctx.measureText(text).width;
+    if(labelRoom(p.x + 6, p.y + 10, w)) ctx.fillText(text, p.x + 6, p.y + 10);
+  }
   ctx.restore();
 }
 
@@ -1790,7 +1984,8 @@ $('modeSel').addEventListener('change', e=>{
   requestRender();
 });
 [['linesChk','showLines'],['namesChk','showNames'],['dsoChk','showDSO'],
- ['gridChk','showGrid'],['surveyChk','showSurvey'],['rigChk','showRig']].forEach(([id,key])=>{
+ ['gridChk','showGrid'],['surveyChk','showSurvey'],['rigChk','showRig'],
+ ['mwChk','showMW']].forEach(([id,key])=>{
   $(id).addEventListener('change', e=>{ state[key]=e.target.checked; requestRender(); maybeLoadSurvey(); });
 });
 $('poiChk').addEventListener('change', e=>{
