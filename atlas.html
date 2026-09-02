@@ -128,6 +128,12 @@
     color:var(--text-dim);margin-bottom:3px}
   .field input,.field select{width:100%;font-size:.78rem}
   .toggles{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .poirow{margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+  .poirow label.chk{color:var(--text)}
+  #poiOpts{margin-top:7px;display:flex;gap:6px;align-items:center}
+  #poiOpts.hidden{display:none}
+  #poiScope{flex:1;min-width:0;font-size:.72rem;padding:4px 6px}
+  #poiCount{font-size:.62rem;color:var(--text-dim);white-space:nowrap}
   #magIn{width:100%;accent-color:var(--amber)}
   #magOut{font-size:.7rem;color:var(--amber)}
   .tgt{display:grid;grid-template-columns:1fr auto;grid-template-areas:"n a" "m a";
@@ -262,6 +268,19 @@
         <label class="chk"><input type="checkbox" id="dsoChk" checked> Deep sky</label>
         <label class="chk"><input type="checkbox" id="gridChk"> Grid</label>
         <label class="chk"><input type="checkbox" id="surveyChk" checked> Survey</label>
+      </div>
+      <div class="poirow">
+        <label class="chk"><input type="checkbox" id="poiChk" checked> Points of interest</label>
+        <div id="poiOpts">
+          <select id="poiScope" title="Which objects earn a marker">
+            <option value="notable">Notable objects</option>
+            <option value="neb">Nebulae only</option>
+            <option value="messier">Messier only</option>
+            <option value="named">Named objects only</option>
+          </select>
+          <span id="poiCount">—</span>
+        </div>
+        <p class="note">Marks famous targets with a fixed-size diamond so small ones — the Ring, the Cat's Eye, the Blue Snowball — stay findable at wide field. The marker fades out as the object grows big enough to outline itself.</p>
       </div>
       <div style="margin-top:11px">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
@@ -624,6 +643,7 @@ const state = {
   fov: 90,                 /* vertical field, degrees */
   mode: 'horizon',         /* 'horizon' | 'equatorial' */
   showLines: true, showNames: true, showDSO: true, showGrid: false,
+  showPOI: true, poiScope: 'notable',
   showSurvey: true, showRig: false, rigIdx: 0,
   magLimit: 6.5,
   selected: null,
@@ -856,11 +876,16 @@ function render(){
   buildStarRotation();
   const twilight = sunAltAt(state.date, state.lat, state.lon);
   paintBackground(twilight);
+  LABEL_BOXES.length = 0;
   if(state.fov <= SURVEY_THRESHOLD) drawSurvey();
   if(state.showGrid) drawGrid();
   if(state.showLines) drawConstellations();
   drawStars();
+  /* choose the markers before the outlines draw, so the outline layer knows
+     which objects are about to be labelled better by the layer above it */
+  if(state.showPOI) poiSelect(); else { POI_SCREEN.length = 0; POI_MARKED.clear(); }
   if(state.showDSO) drawDSO();
+  if(state.showPOI) drawPOI();
   drawSolarSystem();
   drawHorizon(twilight);
   if(state.showRig) drawRigFrame();
@@ -882,6 +907,20 @@ function paintBackground(sunAlt){
   ctx.fillStyle = g;
   ctx.fillRect(0,0,W,H);
 }
+
+/* Shared label registry. Each layer records the text it printed so later layers
+   can step around it; reset once per frame. Order matters — stars claim first,
+   then deep-sky outlines, then points of interest, which is also the order of
+   how much the reader can infer without the label. */
+const LABEL_BOXES = [];
+function labelRoom(x, y, w, h){
+  h = h || 12;
+  for(const b of LABEL_BOXES)
+    if(Math.abs(b.y - y) < (h + b.h)/2 && x < b.x + b.w + 6 && b.x < x + w + 6) return false;
+  LABEL_BOXES.push({ x, y, w, h });
+  return true;
+}
+function labelClaim(x, y, w, h){ LABEL_BOXES.push({ x, y, w, h: h || 12 }); }
 
 function starPixelRadius(mag, limit){
   const r = 0.55 * Math.pow(1.32, (limit - mag));
@@ -941,11 +980,7 @@ function drawStarLabels(limit){
   ctx.font = '11px "JetBrains Mono", monospace';
   ctx.fillStyle = 'rgba(232,228,223,0.72)';
   ctx.textBaseline = 'middle';
-  const placed = [];
-  const room = (x,y,w)=>{
-    for(const p of placed) if(Math.abs(p.y-y)<13 && x < p.x+p.w+6 && p.x < x+w+6) return false;
-    placed.push({x,y,w}); return true;
-  };
+  const room = (x,y,w)=> labelRoom(x, y, w, 13);
   const wantBayer = state.fov < 45;
   for(const [i, name] of NAMED){
     if(STAR_MAG[i] > Math.min(limit, 4.6)) continue;
@@ -1020,11 +1055,202 @@ function drawDSO(){
     else if(st.s === 'ellipse'){ ctx.ellipse(p.x,p.y,pr,pr*0.55,0,0,6.283185); }
     else { ctx.arc(p.x,p.y,pr,0,6.283185); }
     ctx.stroke(); ctx.setLineDash([]);
-    if(labels && pr > 3){
+    /* if the marker layer is about to label this object it will use the better
+       of the two names, so don't print a second one underneath it */
+    if(labels && pr > 3 && !POI_MARKED.has(o.i)){
       ctx.globalAlpha = 0.75; ctx.fillStyle = st.c;
       const lab = o.n || o.i;
       ctx.fillText(lab, p.x+pr+4, p.y);
+      labelClaim(p.x+pr+4, p.y, ctx.measureText(lab).width);
     }
+  }
+  ctx.restore();
+}
+
+/* ================= POINTS OF INTEREST =================
+   The outline layer above draws everything at its true angular size, which is
+   what you want when framing a shot and useless when you are panning at 60° of
+   field: the Ring is 1.3′ across and lands on a single pixel, and anything
+   fainter than mag 8 is culled outright before it gets that far. This layer is
+   the opposite idea. Objects worth stopping for get a diamond at a fixed screen
+   size however small or faint they are, thinned by standing so the sky never
+   turns into a wall of labels, and faded out once the object is big enough on
+   screen to speak for itself. */
+
+const POI_MIN_SCORE = 38;
+
+/* OpenNGC has no "fame" column, so a short table supplies names it leaves blank
+   and nudges targets famous out of proportion to their brightness. `neb` marks
+   objects catalogued as clusters that observers think of as nebulae, so the
+   nebula filter still finds them. */
+const POI_EXTRA = {
+  'M 42':     { neb:true, bump:40 },
+  'M 43':     { neb:true },
+  'M 78':     { neb:true },
+  'M 74':     { name:'Phantom Galaxy' },
+  'M 101':    { name:'Pinwheel Galaxy' },
+  /* The catalogue calls IC 434 the Flame. IC 434 is the emission ridge the
+     Horsehead is silhouetted against; the Flame is NGC 2024, which this build of
+     OpenNGC does not carry at all. */
+  'IC 434':   { name:'Horsehead Nebula', neb:true, bump:34 },
+  'IC 1805':  { name:'Heart Nebula',  neb:true, bump:30 },
+  'IC 1848':  { name:'Soul Nebula',   neb:true, bump:30 },
+  'NGC 7380': { name:'Wizard Nebula', neb:true, bump:26 },
+  'IC 5146':  { neb:true, bump:10 },
+  'NGC 2264': { neb:true, bump:10 },
+  'NGC 246':  { name:'Skull Nebula',        bump:22 },
+  'NGC 1360': { name:"Robin's Egg Nebula",  bump:20 },
+  'NGC 1514': { name:'Crystal Ball Nebula', bump:20 },
+  'NGC 6210': { name:'Turtle Nebula',       bump:20 },
+  'NGC 6572': { name:'Emerald Nebula',      bump:20 },
+  'NGC 7008': { name:'Fetus Nebula',        bump:20 },
+  'IC 418':   { name:'Spirograph Nebula',   bump:20 },
+  'IC 4406':  { name:'Retina Nebula',       bump:20 },
+  'NGC 5189': { name:'Spiral Planetary',    bump:18 },
+  'NGC 7027': { bump:18 },
+  'NGC 2440': { bump:14 },
+  'NGC 2438': { bump:14 },
+  'NGC 6781': { bump:14 },
+};
+const POI_NEB_TYPE = { PN:1, EN:1, RN:1, SNR:1 };
+
+/* widest field at which a marker of this standing still earns its place */
+function poiGate(s){
+  return s >= 120 ? 999 : s >= 100 ? 120 : s >= 82 ? 75 : s >= 62 ? 35 : s >= 45 ? 15 : 6;
+}
+
+const POI_ALL = (()=>{
+  const out = [];
+  for(const o of DSO){
+    const x = POI_EXTRA[o.i];
+    const messier = o.i.startsWith('M ');
+    const neb = !!(POI_NEB_TYPE[o.t] || (x && x.neb));
+    const mag = o.m == null ? 13 : o.m;
+    let s = 0;
+    if(messier) s += 70;                       /* the list everyone works through */
+    if(o.n) s += 45;                           /* a common name means people ask for it */
+    if(x) s += 20 + (x.bump || 0);
+    if(neb) s += 26;                           /* nebulae are the case this layer exists for */
+    if(o.t === 'GC') s += 8;
+    s += Math.max(0, 13 - mag) * 3.2;
+    if(o.s && o.s < 4) s += 6;                 /* small is the whole problem */
+    if(s < POI_MIN_SCORE) continue;
+    out.push({ o, s, neb, messier, gate: poiGate(s),
+               label: (x && x.name) || o.n || o.i,
+               named: !!((x && x.name) || o.n) });
+  }
+  out.sort((a,b)=> b.s - a.s);
+  return out;
+})();
+
+let POI_CACHE = { scope:null, list:null };
+function poiList(){
+  if(POI_CACHE.scope === state.poiScope) return POI_CACHE.list;
+  const sc = state.poiScope;
+  const list = POI_ALL.filter(p =>
+    sc === 'neb'     ? p.neb :
+    sc === 'messier' ? p.messier :
+    sc === 'named'   ? p.named : true);
+  POI_CACHE = { scope: sc, list };
+  const el = $('poiCount');
+  if(el) el.textContent = list.length + ' marked';
+  return list;
+}
+
+/* what reached the canvas last frame, for hover, picking and label avoidance */
+const POI_SCREEN = [];
+const POI_MARKED = new Set();
+let poiHover = null;
+
+/* Selection runs before the outline layer draws, so that layer can hold back a
+   duplicate label — "Wizard Nebula" reads better than "NGC 7380" and there is no
+   reason to print both on the same diamond. */
+function poiSelect(){
+  const list = poiList();
+  const fov = state.fov;
+  /* the narrower filters have far less competition, so they can reach deeper */
+  const gateMul = state.poiScope === 'notable' ? 1 : 3;
+  const maxMarks = fov > 90 ? 46 : fov > 40 ? 78 : 130;
+  POI_SCREEN.length = 0;
+  POI_MARKED.clear();
+
+  for(const p of list){
+    if(POI_SCREEN.length >= maxMarks) break;
+    const o = p.o;
+    const hovered = poiHover === o.i;
+    if(!hovered && fov > p.gate * gateMul) continue;
+    const q = projEq(o.r, o.d);
+    if(!q || q.x < 8 || q.x > W-8 || q.y < 8 || q.y > H-8) continue;
+
+    /* how big the object actually is on screen: once it draws its own
+       recognisable outline the marker has done its job and gets out of the way */
+    const pr = Math.max(1, Math.min(220, (o.s||2)/60 / fov * H * 0.5));
+    if(pr > 15 && !hovered) continue;
+
+    /* keep markers from piling up in the crowded parts of the sky */
+    let clash = false;
+    for(const m of POI_SCREEN)
+      if(Math.abs(m.x-q.x) < 22 && Math.abs(m.y-q.y) < 22){ clash = true; break; }
+    if(clash && !hovered) continue;
+
+    POI_SCREEN.push({ p, x:q.x, y:q.y,
+      r: Math.max(6.5, Math.min(13, pr + 5)),
+      fade: pr <= 8 ? 1 : (15 - pr)/7,
+      hovered });
+    POI_MARKED.add(o.i);
+  }
+}
+
+function drawPOI(){
+  const fov = state.fov;
+  const maxLabels = fov > 90 ? 14 : fov > 40 ? 22 : 36;
+  let labels = 0;
+  ctx.save();
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+
+  for(const m of POI_SCREEN){
+    const { p, x, y, r, fade, hovered } = m;
+    const st = DSO_STYLE[p.o.t] || DSO_STYLE.St;
+    ctx.globalAlpha = (hovered ? 1 : 0.82) * fade;
+    ctx.strokeStyle = st.c;
+    ctx.lineWidth = hovered ? 1.8 : 1.1;
+    ctx.beginPath();
+    ctx.moveTo(x, y-r); ctx.lineTo(x+r, y);
+    ctx.lineTo(x, y+r); ctx.lineTo(x-r, y);
+    ctx.closePath(); ctx.stroke();
+    /* the diamond says look here, the pip says exactly where */
+    ctx.fillStyle = st.c;
+    ctx.fillRect(x-0.75, y-0.75, 1.5, 1.5);
+
+    /* labels are scarcer than markers: a diamond alone still says worth a look.
+       Crowded fields are exactly where these names matter most, so try all four
+       sides of the marker before giving up — off Alnitak the choice is between
+       printing "Horsehead Nebula" somewhere and not printing it at all. */
+    if(labels >= maxLabels && !hovered) continue;
+    const tw = ctx.measureText(p.label).width;
+    const spots = [
+      [x + r + 5, y],
+      [x - r - 5 - tw, y],
+      [x - tw/2, y - r - 8],
+      [x - tw/2, y + r + 8],
+    ];
+    let lx = null, ly = 0;
+    for(const [sx, sy] of spots){
+      if(sx < 2 || sx + tw > W - 2) continue;
+      if(labelRoom(sx, sy, tw)){ lx = sx; ly = sy; break; }
+    }
+    if(lx === null){
+      if(!hovered) continue;
+      lx = spots[0][0]; ly = spots[0][1];        /* hover always gets its name */
+    }
+    ctx.globalAlpha = (hovered ? 1 : 0.9) * fade;
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 3;
+    ctx.fillStyle = st.c;
+    ctx.fillText(p.label, lx, ly);
+    ctx.shadowBlur = 0;
+    labels++;
   }
   ctx.restore();
 }
@@ -1217,6 +1443,28 @@ cv.addEventListener('pointermove', e=>{
   state.mode = 'horizon';
   requestRender(); maybeLoadSurvey();
 });
+/* hovering a marker brings its label up even when the declutter pass dropped it,
+   which is what makes a dense field browsable rather than just decorated */
+cv.addEventListener('pointermove', e=>{
+  if(drag || pinch || !state.showPOI) return;
+  const r = cv.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  let hit = null, bd = 15;
+  for(const m of POI_SCREEN){
+    const d = Math.hypot(m.x-px, m.y-py);
+    if(d < bd){ bd = d; hit = m; }
+  }
+  const id = hit ? hit.p.o.i : null;
+  if(id !== poiHover){
+    poiHover = id;
+    cv.style.cursor = id ? 'pointer' : '';
+    requestRender();
+  }
+});
+cv.addEventListener('pointerleave', ()=>{
+  if(poiHover){ poiHover = null; cv.style.cursor = ''; requestRender(); }
+});
+
 function endDrag(e){
   if(!drag) return;
   if(drag.moved < 4) pick(e.clientX, e.clientY);
@@ -1272,7 +1520,18 @@ function pick(clientX, clientY){
     const d = Math.hypot(p.x-px, p.y-py);
     if(d < bestD){ bestD = d; best = obj; }
   };
-  /* deep sky first: they are what you usually mean to click */
+  /* a marker you can see is a marker you can click, so points of interest come
+     first and with a nudge — several of them sit below the magnitude cut below */
+  for(const m of POI_SCREEN){
+    const o = m.p.o;
+    const d = Math.hypot(m.x-px, m.y-py) - 6;
+    if(d < bestD){
+      bestD = d;
+      best = { kind:'dso', name:m.p.label, sub: m.p.label !== o.i ? o.i : (o.a||''),
+               ra:o.r, dec:o.d, mag:o.m, type:o.t, size:o.s };
+    }
+  }
+  /* deep sky next: they are what you usually mean to click */
   for(const o of DSO){
     if(o.m != null && o.m > 12) continue;
     consider(projEq(o.r, o.d), {
@@ -1534,6 +1793,13 @@ $('modeSel').addEventListener('change', e=>{
  ['gridChk','showGrid'],['surveyChk','showSurvey'],['rigChk','showRig']].forEach(([id,key])=>{
   $(id).addEventListener('change', e=>{ state[key]=e.target.checked; requestRender(); maybeLoadSurvey(); });
 });
+$('poiChk').addEventListener('change', e=>{
+  state.showPOI = e.target.checked;
+  $('poiOpts').classList.toggle('hidden', !state.showPOI);
+  if(!state.showPOI){ poiHover = null; cv.style.cursor = ''; }
+  requestRender();
+});
+$('poiScope').addEventListener('change', e=>{ state.poiScope = e.target.value; requestRender(); });
 $('rigSel').addEventListener('change', e=>{ state.rigIdx=+e.target.value; requestRender(); });
 $('magIn').addEventListener('input', e=>{
   state.magLimit = +e.target.value;
@@ -1598,6 +1864,10 @@ $('rigSel').innerHTML = RIGS.map((r,i)=>
 $('magIn').value = state.magLimit;
 $('magOut').textContent = 'mag ' + state.magLimit.toFixed(1);
 $('latIn').value = state.lat; $('lonIn').value = state.lon;
+$('poiChk').checked = state.showPOI;
+$('poiScope').value = state.poiScope;
+$('poiOpts').classList.toggle('hidden', !state.showPOI);
+poiList();                                   /* fills the count under the toggle */
 $('starCount').textContent = NSTAR.toLocaleString();
 $('dsoCount').textContent = DSO.length.toLocaleString();
 syncTimeUI();

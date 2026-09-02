@@ -408,6 +408,18 @@
       <span>VISIBILITY <b id="visOut">—</b></span>
     </div>
 
+    <div class="card statscard" id="solCard" hidden>
+      <h2 id="solTitle">Moon framing</h2>
+      <p class="mono" id="solSummary" style="font-size:.78rem;color:var(--muted);margin:0 0 10px"></p>
+      <table>
+        <thead>
+          <tr><th>Rig</th><th>Disc across frame</th><th>Disc in pixels</th><th>Frame fill</th><th>Verdict</th></tr>
+        </thead>
+        <tbody id="solBody"></tbody>
+      </table>
+      <p class="hint" id="solNote"></p>
+    </div>
+
     <div class="card statscard">
       <h2>Rig data</h2>
       <table>
@@ -584,6 +596,10 @@ const SENSORS = [
   {short:'IMX174',  name:'IMX174 · 1/1.2″ (ASI174)',               w:11.34, h:7.13,  pw:1936, ph:1216, px:5.86},
   {short:'A7R II',  name:'Sony A7R II · full frame, 42 MP',        w:35.9,  h:24.0,  pw:7952, ph:5304, px:4.51},
   {short:'APS-C',   name:'Canon APS-C DSLR · 22.3 × 14.9 mm',      w:22.3,  h:14.9,  pw:6000, ph:4000, px:3.72},
+  /* Appended rather than slotted in beside the other small Sonys: a share link
+     stores the camera as an index into this array, so inserting anywhere but the
+     end would silently repoint every link ever posted. */
+  {short:'IMX290',  name:'IMX290 · 1/2.8″ (ASI290MM/MC)',          w:5.62,  h:3.18,  pw:1936, ph:1096, px:2.9},
 ];
 
 const REDUCERS = [
@@ -603,8 +619,11 @@ const REDUCERS = [
   {v:0.6,  l:'0.60× reducer'},
 ];
 
-/* ra/dec in decimal degrees (J2000) */
+/* ra/dec in decimal degrees (J2000). Solar-system entries carry no coordinates:
+   they are computed for the current moment every time they are selected. */
 const TARGETS = [
+  {grp:'Solar system', id:'moon', name:'Moon · live position & size', sol:'moon'},
+  {grp:'Solar system', id:'sun',  name:'Sun · live position & size',  sol:'sun'},
   {grp:'Nebulae', id:'m42',        name:'M42 · Orion Nebula',                ra:83.82,  dec:-5.39},
   {grp:'Nebulae', id:'horsehead',  name:'Horsehead & Flame',                 ra:85.2,   dec:-2.3},
   {grp:'Nebulae', id:'rosette',    name:'Rosette Nebula',                    ra:97.97,  dec:4.94},
@@ -725,6 +744,191 @@ function rigData(r){
     mp,
     label: `${scopeShort}${r.red!==1 ? ' ×'+r.red : ''} · ${camShort}`,
   };
+}
+
+/* ================= SOLAR SYSTEM BODIES =================
+   The Moon is the reference every imager already owns: "will it fit" is answered
+   faster by a half-degree disc sitting inside your frame than by any table. Both
+   discs are drawn from a live ephemeris rather than a fixed 0.5°, because the
+   Moon's apparent diameter swings about 12% between apogee and perigee — enough
+   to decide whether a given rig frames it whole.
+
+   Positions follow Meeus (sun: ch.25, moon: ch.47 principal terms), the same
+   routines the Sky Atlas uses. They are apparent coordinates of date, not J2000,
+   and geocentric: an observer on the surface sees the Moon up to about 1° away
+   from the geocentric position and up to ~1.7% larger overhead. Neither matters
+   for framing, and both are called out in the panel. */
+
+const AU_KM = 1.495978707e8;
+const degOf = r => r*180/Math.PI;
+const jdCent = jd => (jd - 2451545.0)/36525;
+
+function sunPos(jd){
+  const T = jdCent(jd);
+  const L0 = norm360(280.46646 + 36000.76983*T + 0.0003032*T*T);
+  const M = norm360(357.52911 + 35999.05029*T - 0.0001537*T*T);
+  const Mr = rad(M);
+  const C = (1.914602 - 0.004817*T - 0.000014*T*T)*Math.sin(Mr)
+          + (0.019993 - 0.000101*T)*Math.sin(2*Mr)
+          + 0.000289*Math.sin(3*Mr);
+  const om = 125.04 - 1934.136*T;
+  const lam = L0 + C - 0.00569 - 0.00478*Math.sin(rad(om));
+  const eps = 23.439291 - 0.0130042*T - 1.64e-7*T*T + 5.04e-7*T*T*T
+            + 0.00256*Math.cos(rad(om));
+  const lr = rad(lam), er = rad(eps);
+  const ra = norm360(degOf(Math.atan2(Math.cos(er)*Math.sin(lr), Math.cos(lr))));
+  const dec = degOf(Math.asin(Math.sin(er)*Math.sin(lr)));
+  const R = 1.000001018*(1 - 0.016708634*Math.cos(Mr) - 0.000139589*Math.cos(2*Mr));
+  return {ra, dec, lam, R};
+}
+
+function moonPos(jd){
+  const T = jdCent(jd);
+  const Lp = norm360(218.3164477 + 481267.88123421*T - 0.0015786*T*T + T*T*T/538841);
+  const D  = norm360(297.8501921 + 445267.1114034*T - 0.0018819*T*T + T*T*T/545868);
+  const M  = norm360(357.5291092 + 35999.0502909*T - 0.0001536*T*T);
+  const Mp = norm360(134.9633964 + 477198.8675055*T + 0.0087414*T*T + T*T*T/69699);
+  const F  = norm360(93.2720950 + 483202.0175233*T - 0.0036539*T*T);
+  const d=rad(D), m=rad(M), mp=rad(Mp), f=rad(F);
+
+  const lon = Lp
+    + 6.288774*Math.sin(mp) + 1.274027*Math.sin(2*d - mp) + 0.658314*Math.sin(2*d)
+    + 0.213618*Math.sin(2*mp) - 0.185116*Math.sin(m) - 0.114332*Math.sin(2*f)
+    + 0.058793*Math.sin(2*d - 2*mp) + 0.057066*Math.sin(2*d - m - mp)
+    + 0.053322*Math.sin(2*d + mp) + 0.045758*Math.sin(2*d - m)
+    - 0.040923*Math.sin(m - mp) - 0.034720*Math.sin(d) - 0.030383*Math.sin(m + mp);
+  const lat = 5.128122*Math.sin(f) + 0.280602*Math.sin(mp + f) + 0.277693*Math.sin(mp - f)
+    + 0.173237*Math.sin(2*d - f) + 0.055413*Math.sin(2*d - mp + f)
+    + 0.046271*Math.sin(2*d - mp - f) + 0.032573*Math.sin(2*d + f);
+  const distKm = 385000.56 - 20905.355*Math.cos(mp) - 3699.111*Math.cos(2*d - mp)
+    - 2955.968*Math.cos(2*d) - 569.925*Math.cos(2*mp);
+
+  const eps = rad(23.439291 - 0.0130042*T);
+  const l = rad(lon), b = rad(lat);
+  const ra = norm360(degOf(Math.atan2(Math.sin(l)*Math.cos(eps) - Math.tan(b)*Math.sin(eps), Math.cos(l))));
+  const dec = degOf(Math.asin(Math.sin(b)*Math.cos(eps) + Math.cos(b)*Math.sin(eps)*Math.sin(l)));
+
+  /* illuminated fraction from the Sun-Moon elongation */
+  const s = sunPos(jd);
+  const psi = Math.acos(Math.max(-1, Math.min(1,
+      Math.sin(rad(s.dec))*Math.sin(rad(dec))
+    + Math.cos(rad(s.dec))*Math.cos(rad(dec))*Math.cos(rad(s.ra - ra)))));
+  const i = Math.atan2(s.R*AU_KM*Math.sin(psi), distKm - s.R*AU_KM*Math.cos(psi));
+  const illum = (1 + Math.cos(i))/2;
+  /* waxing while the Moon leads the Sun in ecliptic longitude, which also puts
+     the bright limb to the west — screen right, since the view is E-left */
+  const waxing = norm360(lon - s.lam) < 180;
+  return {ra, dec, illum, waxing, distKm, angDiam: 2*degOf(Math.atan(1737.4/distKm))};
+}
+
+/* one place that knows what a body looks like right now */
+function bodyNow(kind, when){
+  const jd = julianDate(when || new Date());
+  if(kind === 'sun'){
+    const s = sunPos(jd);
+    const distKm = s.R*AU_KM;
+    return {kind:'sun', name:'Sun', ra:s.ra, dec:s.dec, distKm,
+            angDiam: 2*degOf(Math.atan(696000/distKm)), illum:1, waxing:true};
+  }
+  const m = moonPos(jd);
+  return {kind:'moon', name:'Moon', ...m};
+}
+
+let SOL = null;               /* the body being framed, or null for deep sky */
+let solTimer = null;
+
+/* Recompute the body and, unless the user has panned off it, keep it centred. */
+function refreshBody(recentre){
+  const t = TARGETS.find(t=>t.id===state.targetId);
+  if(!t || !t.sol){
+    SOL = null;
+    if(solTimer){ clearInterval(solTimer); solTimer = null; }
+    return;
+  }
+  const prev = SOL;
+  SOL = bodyNow(t.sol);
+  const held = recentre || !prev || prev.kind !== SOL.kind
+    || (Math.abs(state.ra - prev.ra) < 1e-6 && Math.abs(state.dec - prev.dec) < 1e-6);
+  if(held){ state.ra = SOL.ra; state.dec = clampDec(SOL.dec); }
+  if(!solTimer){
+    /* the Moon moves its own diameter in about an hour; a minute is plenty */
+    solTimer = setInterval(()=>{
+      if(!SOL) return;
+      refreshBody(false);
+      drawOverlay(); renderSolCard(); updateReadout();
+    }, 60000);
+  }
+}
+
+function moonLitPath(cx, cy, r, k, litRight){
+  /* Lit region = the half-disc on the sunward limb, closed by the terminator:
+     an ellipse of the same height whose width tracks the distance from half
+     phase. Below half it leans toward the lit limb and we get a crescent; above
+     half it leans across into the dark side and we get a gibbous.
+
+     Each half is drawn as two quarter arcs through an explicit waypoint. One
+     arc per half would be the obvious way, but its chord is exactly twice the
+     radius, and at that point rounding decides whether the radius is big enough
+     — renderers that think it isn't quietly scale it up, and the lit limb ends
+     up bulging outside the disc. Quarter arcs keep every chord well short. */
+  const s = litRight ? 1 : -1;                  /* +x is west, screen right */
+  const w = Math.abs(1 - 2*k) * r;
+  const lean = (k > 0.5 ? -1 : 1) * s;          /* which side the terminator leans to */
+  const T = `${cx} ${cy-r}`, B = `${cx} ${cy+r}`;
+  const outerSweep = litRight ? 1 : 0;
+  const limb = `A ${r} ${r} 0 0 ${outerSweep} ${cx + s*r} ${cy}`
+             + ` A ${r} ${r} 0 0 ${outerSweep} ${B}`;
+  if(w < r*0.005) return `M ${T} ${limb} Z`;    /* half phase: straight terminator */
+  const termSweep = lean < 0 ? 1 : 0;
+  const mid = (cx + lean*w).toFixed(2);
+  const term = `A ${w.toFixed(2)} ${r} 0 0 ${termSweep} ${mid} ${cy}`
+             + ` A ${w.toFixed(2)} ${r} 0 0 ${termSweep} ${T}`;
+  return `M ${T} ${limb} ${term} Z`;
+}
+
+function drawBody(svg){
+  if(!SOL) return;
+  const p = projPx(SOL.ra, SOL.dec);
+  if(!p) return;
+  const r = halfPx(SOL.angDiam/2);
+  if(r < 0.4) return;
+
+  const defs = svgEl('defs', {});
+  const grad = svgEl('radialGradient', {id:'bodyFill', cx:'42%', cy:'38%', r:'75%'});
+  const stops = SOL.kind === 'sun'
+    ? [['0%','#fff8e6'],['58%','#f2c65c'],['100%','#c8842c']]
+    : [['0%','#e6e2d8'],['62%','#cbc6ba'],['100%','#8e8a80']];
+  stops.forEach(([o,c])=> grad.appendChild(svgEl('stop',{offset:o,['stop-color']:c})));
+  defs.appendChild(grad);
+
+  if(SOL.kind === 'sun'){
+    /* a soft falloff so the disc does not read as a flat sticker. A flat circle
+       at low opacity just draws a grey ring, so the glow needs its own gradient */
+    const glow = svgEl('radialGradient', {id:'bodyGlow', cx:'50%', cy:'50%', r:'50%'});
+    [['0%','#f2c65c','0.32'],['74%','#f2c65c','0.22'],['100%','#f2c65c','0']]
+      .forEach(([o,c,op])=> glow.appendChild(svgEl('stop',
+        {offset:o, ['stop-color']:c, ['stop-opacity']:op})));
+    defs.appendChild(glow);
+  }
+  svg.appendChild(defs);
+  if(SOL.kind === 'sun')
+    svg.appendChild(svgEl('circle',{cx:p.x, cy:p.y, r:r*1.6, fill:'url(#bodyGlow)'}));
+  /* the unlit disc: always drawn, so a thin crescent still shows the whole limb */
+  svg.appendChild(svgEl('circle',{cx:p.x, cy:p.y, r,
+    fill:'#0d1016', ['fill-opacity']:SOL.kind==='sun'?0:0.82,
+    stroke:'#e8e4df', ['stroke-opacity']:0.30, ['stroke-width']:1.5}));
+
+  if(SOL.illum > 0.995){
+    svg.appendChild(svgEl('circle',{cx:p.x, cy:p.y, r, fill:'url(#bodyFill)'}));
+  }else if(SOL.illum > 0.005){
+    svg.appendChild(svgEl('path',{d:moonLitPath(p.x, p.y, r, SOL.illum, SOL.waxing),
+      fill:'url(#bodyFill)'}));
+  }
+  /* diameter caption, kept clear of the disc */
+  const t = svgEl('text',haloText({x:p.x, y:p.y - r - 14, fill:'#e8e4df', ['fill-opacity']:0.85,
+    ['font-size']:22, ['text-anchor']:'middle', ['font-family']:'JetBrains Mono, monospace'}));
+  t.textContent = `${SOL.name} · ${(SOL.angDiam*60).toFixed(1)}′`;
+  svg.appendChild(t);
 }
 
 /* ================= FORMATTING ================= */
@@ -951,10 +1155,19 @@ function drawGrid(svg){
   });
 }
 
+/* Overlay text is sized for a dark sky. A lit disc is the one background that
+   defeats it, so while a body is framed every label gets a dark outline. */
+function haloText(attrs){
+  return SOL ? Object.assign({stroke:'#07080c', ['stroke-width']:2.5,
+                              ['paint-order']:'stroke', ['stroke-linejoin']:'round'}, attrs)
+             : attrs;
+}
+
 function drawOverlay(){
   const svg=$('overlay');
   svg.innerHTML='';
 
+  drawBody(svg);
   drawGrid(svg);
 
   /* center crosshair */
@@ -964,8 +1177,8 @@ function drawOverlay(){
   });
 
   /* compass */
-  const comp=svgEl('text',{x:SW-26,y:42,fill:'#e8e4df',['fill-opacity']:.8,
-    ['font-size']:24,['text-anchor']:'end',['font-family']:'JetBrains Mono, monospace'});
+  const comp=svgEl('text',haloText({x:SW-26,y:42,fill:'#e8e4df',['fill-opacity']:.8,
+    ['font-size']:24,['text-anchor']:'end',['font-family']:'JetBrains Mono, monospace'}));
   comp.textContent='N ↑  E ←';
   svg.appendChild(comp);
 
@@ -982,7 +1195,7 @@ function drawOverlay(){
   [[bx],[bx+barPx]].forEach(([x])=>{
     svg.appendChild(svgEl('line',{x1:x,y1:by-7,x2:x,y2:by+7,stroke:'#e8e4df',['stroke-width']:2}));
   });
-  const bt=svgEl('text',{x:bx,y:by-14,fill:'#e8e4df',['font-size']:22,['font-family']:'JetBrains Mono, monospace'});
+  const bt=svgEl('text',haloText({x:bx,y:by-14,fill:'#e8e4df',['font-size']:22,['font-family']:'JetBrains Mono, monospace'}));
   bt.textContent=barLabel;
   svg.appendChild(bt);
 
@@ -997,8 +1210,8 @@ function drawOverlay(){
       stroke:r.color, ['stroke-width']:2.5,
     }));
     if(state.showLabels){
-      const t=svgEl('text',{x:SW/2-w/2+10, y:SH/2-h/2+28, fill:r.color,
-        ['font-size']:22, ['font-family']:'JetBrains Mono, monospace'});
+      const t=svgEl('text',haloText({x:SW/2-w/2+10, y:SH/2-h/2+28, fill:r.color,
+        ['font-size']:22, ['font-family']:'JetBrains Mono, monospace'}));
       t.textContent=d.label;
       g.appendChild(t);
     }
@@ -1033,6 +1246,72 @@ function renderStats(){
     }
     tb.appendChild(tr);
   });
+}
+
+/* ---- Moon / Sun framing: the question is always "does it fit, and how big" ---- */
+function altOfBody(b){
+  const d = new Date();
+  const H = rad(norm360(lstDeg(d) - b.ra));
+  const la = rad(state.lat), de = rad(b.dec);
+  const alt = Math.asin(Math.sin(la)*Math.sin(de) + Math.cos(la)*Math.cos(de)*Math.cos(H));
+  const az = Math.atan2(-Math.cos(de)*Math.sin(H),
+                        Math.sin(de)*Math.cos(la) - Math.cos(de)*Math.sin(la)*Math.cos(H));
+  return {alt: degOf(alt), az: norm360(degOf(az))};
+}
+
+function renderSolCard(){
+  const card = $('solCard');
+  if(!SOL){ card.hidden = true; return; }
+  card.hidden = false;
+  $('solTitle').textContent = SOL.name + ' framing';
+
+  const arcmin = SOL.angDiam*60;
+  const h = altOfBody(SOL);
+  const bits = [
+    `apparent diameter ${arcmin.toFixed(1)}′ (${SOL.angDiam.toFixed(3)}°)`,
+    SOL.kind === 'moon'
+      ? `${(SOL.illum*100).toFixed(0)}% lit, ${SOL.waxing?'waxing':'waning'}`
+      : null,
+    `${Math.round(SOL.distKm).toLocaleString()} km`,
+    `altitude now ${h.alt.toFixed(0)}° ${compass8(h.az)}${h.alt<0?' — below the horizon':''}`,
+  ].filter(Boolean);
+  $('solSummary').textContent = bits.join(' · ');
+
+  const tb = $('solBody');
+  tb.innerHTML = '';
+  const vis = state.rigs.filter(r=>r.vis);
+  if(!vis.length){
+    tb.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Add or unhide a rig to size it against the disc.</td></tr>';
+  }
+  vis.forEach(r=>{
+    const d = rigData(r);
+    const tr = document.createElement('tr');
+    if(!d){
+      tr.innerHTML = `<td><span class="dot" style="background:${r.color}"></span>Incomplete rig</td><td colspan="4" style="color:var(--muted)">missing data</td>`;
+      tb.appendChild(tr); return;
+    }
+    const fillW = SOL.angDiam/d.fovW*100, fillH = SOL.angDiam/d.fovH*100;
+    const px = d.scale ? SOL.angDiam*3600/d.scale : null;
+    const short = Math.min(d.fovW, d.fovH);
+    /* a disc that only just clears the short side leaves nothing for pointing
+       error, drift or libration, so "tight" is its own answer */
+    const ratio = SOL.angDiam/short;
+    const verdict = ratio > 1 ? ['overflows the frame','var(--danger)']
+                  : ratio > 0.85 ? ['fits — tight','var(--amber)']
+                  : ratio > 0.25 ? ['fits comfortably','var(--good)']
+                  : ['small in frame','var(--muted)'];
+    tr.innerHTML = `
+      <td><span class="dot" style="background:${r.color}"></span>${d.label}</td>
+      <td>${(SOL.angDiam*60).toFixed(1)}′ of ${fmtFovPair(d)}</td>
+      <td>${px ? Math.round(px).toLocaleString()+' px' : '—'}</td>
+      <td>${fillW.toFixed(0)}% × ${fillH.toFixed(0)}%</td>
+      <td style="color:${verdict[1]}">${verdict[0]}</td>`;
+    tb.appendChild(tr);
+  });
+
+  $('solNote').textContent = SOL.kind === 'sun'
+    ? 'Never point an unfiltered telescope, finder or camera at the Sun — a certified full-aperture solar filter goes on the front, and stays on. Positions are geocentric and of date; the disc swings between about 31.5′ and 32.5′ over the year.'
+    : 'Positions are geocentric and of date. From the surface the Moon sits up to about a degree off this position and looks up to 1.7% larger overhead, and its diameter swings roughly 29.4′–33.5′ between apogee and perigee — worth a check on the night, not just in the abstract.';
 }
 
 /* ================= SKY IMAGE (two-tier plate cache) ================= */
@@ -1174,6 +1453,16 @@ function cachedCover(ra, dec, fov){
 
 /* Guarantee something on screen fast; upgrade quality afterwards */
 function ensurePlate(force){
+  /* Neither body appears in a sky survey — they move through it. Framing them
+     means the drawn disc and nothing else, so the fetcher stands down. */
+  if(SOL){
+    $('sky').classList.remove('loading');
+    $('loadingBox').classList.add('hidden');
+    $('errBox').classList.add('hidden');
+    $('skyImg').style.visibility = 'hidden';
+    return;
+  }
+  $('skyImg').style.visibility = '';
   if(!force && plateCovers(plate, state.ra, state.dec, state.fov)){
     applyTransform();
     scheduleUpgrade();
@@ -1310,10 +1599,42 @@ async function resolveObject(q){
   if(!reached) throw new Error('unreachable');
   return null;
 }
+/* One route into a catalogue target, used by the dropdown and by search. */
+function selectTarget(id){
+  const t=TARGETS.find(t=>t.id===id);
+  if(!t) return false;
+  $('customTarget').classList.add('hidden');
+  state.targetId=t.id; state.customName=null;
+  $('targetSel').value=t.id;
+  /* the survey picker means nothing while a drawn disc is the subject */
+  $('surveySel').disabled=!!t.sol;
+  applyFit(true, true);                /* recentre on target + fit zoom */
+  return true;
+}
+
+/* "moon" and "sun" never reach the name resolver: Sesame does not do bodies that
+   move, and typing them is the most natural way to ask for this view. */
+const SOL_ALIASES = {
+  moon:'moon', themoon:'moon', luna:'moon', lune:'moon', mond:'moon', luen:'moon',
+  sun:'sun', thesun:'sun', sol:'sun', sole:'sun', sonne:'sun',
+};
+function solAlias(q){
+  return SOL_ALIASES[q.toLowerCase().replace(/[^a-z]/g,'')] || null;
+}
+
 async function doSearch(){
   const q=$('searchIn').value.trim();
   if(!q) return;
   const st=$('searchStatus');
+  const sol=solAlias(q);
+  if(sol){
+    selectTarget(sol);
+    const b=SOL;
+    st.style.display='block'; st.style.color='var(--amber)';
+    st.textContent='\u2713 '+b.name+' \u00b7 '+(b.angDiam*60).toFixed(1)+'\u2032 across'
+      + (b.kind==='moon' ? ' \u00b7 '+(b.illum*100).toFixed(0)+'% lit' : '');
+    return;
+  }
   st.style.display='block'; st.style.color='var(--muted)';
   st.textContent='Resolving \u201c'+q+'\u201d\u2026';
   $('searchBtn').disabled=true;
@@ -1327,6 +1648,7 @@ async function doSearch(){
       state.ra=hit.ra; state.dec=clampDec(hit.dec);
       state.customName=hit.name||q;
       $('targetSel').value='custom';
+      $('surveySel').disabled=false;
       $('customTarget').classList.remove('hidden');
       $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3);
       st.style.color='var(--amber)';
@@ -1366,6 +1688,12 @@ function buildFramingText(){
     'Center: RA '+raHMS(state.ra)+' ('+state.ra.toFixed(4)+'\u00b0) \u00b7 Dec '+decDMS(state.dec)+' ('+state.dec.toFixed(4)+'\u00b0)',
     'View width: '+fmtAngle(state.fov),
   ];
+  if(SOL){
+    lines.splice(3, 0,
+      'Apparent diameter: '+(SOL.angDiam*60).toFixed(1)+'\u2032'
+        + (SOL.kind==='moon' ? ' \u00b7 '+(SOL.illum*100).toFixed(0)+'% lit, '+(SOL.waxing?'waxing':'waning') : ''),
+      'Position is apparent-of-date and geocentric, valid for '+new Date().toLocaleString()+' \u2014 re-check before you slew.');
+  }
   state.rigs.filter(r=>r.vis).forEach(r=>{
     const d=rigData(r); if(!d) return;
     lines.push('Rig: '+d.label+' \u2014 frame '+fmtFovPair(d)+' \u2014 rotation '+Math.round(r.rot)+'\u00b0');
@@ -1380,12 +1708,14 @@ async function exportPNG(){
   const btn=$('pngBtn');
   try{
     const img=$('skyImg');
-    if(!img.complete || !img.naturalWidth) throw new Error('image not loaded');
+    if(!SOL && (!img.complete || !img.naturalWidth)) throw new Error('image not loaded');
     const canvas=document.createElement('canvas');
     canvas.width=SW; canvas.height=SH;
     const ctx=canvas.getContext('2d');
     ctx.fillStyle='#07080c'; ctx.fillRect(0,0,SW,SH);
-    if(plate && plate.img){
+    if(SOL){
+      /* nothing to composite: the disc lives in the overlay */
+    }else if(plate && plate.img){
       /* the plate is square and wider than the field: cut the 3:2 slice on screen */
       const nat = plate.natural || img.naturalWidth;
       const perPx = nat/plate.fov;                 /* plate px per degree */
@@ -1458,6 +1788,15 @@ function compass8(az){ return ['N','NE','E','SE','S','SW','W','NW'][Math.round(a
 function fmtClock(d){ return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
 function visSummary(){
   const now=new Date();
+  /* The Moon shifts about 13° east a day, so the fixed-RA transit maths below
+     would quietly lie by the better part of an hour. Report what is true right
+     now instead, and leave the rise/set arithmetic to the planner. */
+  if(SOL){
+    const h=altOfBody(SOL);
+    const where=h.alt>0 ? Math.round(h.alt)+'° up in the '+compass8(h.az)
+                        : Math.round(-h.alt)+'° below the horizon';
+    return SOL.name+' is '+where+' right now · position of date, recomputed each minute';
+  }
   const maxAlt=90-Math.abs(state.lat-state.dec);
   if(maxAlt<=0) return 'never rises from '+state.lat.toFixed(1)+'° latitude';
   const tr=nextTransit(now);
@@ -1493,13 +1832,14 @@ function fitFov(){
 }
 /* the workhorse: refit zoom (and optionally recenter on the catalog target) */
 function applyFit(recenter, immediate=true){
-  if(recenter){
+  refreshBody(recenter);
+  if(recenter && !SOL){
     const t=TARGETS.find(t=>t.id===state.targetId);
-    if(t){ state.ra=t.ra; state.dec=t.dec; }
+    if(t && t.ra!=null){ state.ra=t.ra; state.dec=t.dec; }
   }
   const f=fitFov();
   if(f!=null) state.fov=f;
-  refreshAllCardMeta(); renderStats(); syncRotUI(); drawOverlay(); updateReadout();
+  refreshAllCardMeta(); renderStats(); renderSolCard(); syncRotUI(); drawOverlay(); updateReadout();
   immediate ? loadSky() : debounceFetch();
   syncHash();
 }
@@ -1710,6 +2050,10 @@ function init(){
   $('targetSel').value = TARGETS.some(t=>t.id===state.targetId) ? state.targetId : 'custom';
   $('customTarget').classList.toggle('hidden', $('targetSel').value!=='custom');
   if($('targetSel').value==='custom'){ $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3); }
+  /* a shared link may name the Moon or the Sun: those coordinates went stale the
+     moment it was copied, so recompute rather than trusting the hash */
+  refreshBody(true);
+  $('surveySel').disabled = !!SOL;
   $('surveySel').value=state.survey;
   $('labelsChk').checked=state.showLabels;
   $('gridChk').checked=state.showGrid;
@@ -1731,13 +2075,11 @@ function init(){
     if(v==='custom'){
       $('customTarget').classList.remove('hidden');
       $('raIn').value=state.ra.toFixed(3); $('decIn').value=state.dec.toFixed(3);
-      state.targetId='custom'; syncHash();
+      state.targetId='custom'; refreshBody(false); renderSolCard();
+      $('surveySel').disabled=false; syncHash();
       return;
     }
-    $('customTarget').classList.add('hidden');
-    const t=TARGETS.find(t=>t.id===v);
-    state.targetId=t.id; state.customName=null;
-    applyFit(true, true);                /* recenter on target + fit zoom */
+    selectTarget(v);
   });
   $('goCustom').addEventListener('click', ()=>{
     const ra=parseAngle($('raIn').value, true);
@@ -1834,6 +2176,7 @@ function init(){
   /* --- first paint --- */
   refreshAllCardMeta();
   renderStats();
+  renderSolCard();
   syncRotUI();
   if(!fromHash) applyFit(false, true);   /* size view to the default rig */
   else { drawOverlay(); updateReadout(); loadSky(); }
