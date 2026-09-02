@@ -890,7 +890,10 @@ function drawBody(svg){
   if(!SOL) return;
   const p = projPx(SOL.ra, SOL.dec);
   if(!p) return;
-  const r = halfPx(SOL.angDiam/2);
+  /* halfPx returns HALF the screen extent of an angle — every other caller
+     doubles it to get a width. Half the extent of the full diameter is exactly
+     the radius, so the diameter goes in unhalved. */
+  const r = halfPx(SOL.angDiam);
   if(r < 0.4) return;
 
   const defs = svgEl('defs', {});
