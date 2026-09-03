@@ -290,7 +290,7 @@
         </div>
         <input id="magIn" type="range" min="3" max="8" step="0.5">
       </div>
-      <p class="note">Survey imagery loads below 5° of field. Drag to look around, scroll to zoom, click anything to identify it.</p>
+      <p class="note">Deep-sky targets appear as photographic cutouts once they're big enough on screen; below 5° of field the full survey backdrop loads. Drag to look around, scroll to zoom, click anything to identify it.</p>
     </div>
 
     <div class="sec">
@@ -784,18 +784,18 @@ function maybeLoadSurvey(){
       img.onload = ()=>{
         if(t !== surveyToken) return;
         meta.ok = true; surveyImg = img; surveyMeta = meta;
-        $('surveyPip').classList.remove('on');
+        pipSurvey = false; setPip();
         requestRender();
       };
       img.onerror = ()=>{
         if(t !== surveyToken) return;
         hi++;
         if(hi < HOSTS.length) attempt();
-        else $('surveyPip').classList.remove('on');
+        else { pipSurvey = false; setPip(); }
       };
       img.src = surveyURL(HOSTS[hi], c.ra, c.dec, fov, 1400);
     };
-    $('surveyPip').classList.add('on');
+    pipSurvey = true; setPip();
     attempt();
   }, 400);
 }
@@ -808,11 +808,19 @@ function angSep(ra1,d1,ra2,d2){
    stay honest at the edges rather than stretching one flat quad. */
 function drawSurvey(){
   if(!surveyImg || !surveyMeta || !surveyMeta.ok) return;
-  const N = 8, m = surveyMeta;   /* the field is small here; a fine mesh buys nothing */
-  const half = Math.tan(rad(m.fov)/2);
-  const cd = Math.cos(rad(m.dec)), sd = Math.sin(rad(m.dec));
   ctx.save();
   ctx.globalAlpha = 0.92;
+  /* the field is small here; a fine mesh buys nothing */
+  drawPlateMesh(surveyImg, surveyMeta.ra, surveyMeta.dec, surveyMeta.fov, 8);
+  ctx.restore();
+}
+/* Map a north-up TAN plate centred on (ra0,dec0) onto the view as an N×N mesh,
+   inverse-projecting each mesh corner so the plate follows the sky rather than
+   being stretched as one flat quad. */
+function drawPlateMesh(img, ra0, dec0, fovDeg, N){
+  const half = Math.tan(rad(fovDeg)/2);
+  const cd = Math.cos(rad(dec0)), sd = Math.sin(rad(dec0));
+  const iw = img.width, ih = img.height;
   for(let iy=0; iy<N; iy++){
     for(let ix=0; ix<N; ix++){
       const corners = [];
@@ -823,23 +831,20 @@ function drawSurvey(){
         /* inverse TAN about the plate centre */
         const r = Math.hypot(u,v), c = Math.atan(r);
         let ra, dec;
-        if(r < 1e-12){ ra = m.ra; dec = m.dec; }
+        if(r < 1e-12){ ra = ra0; dec = dec0; }
         else{
           const sc = Math.sin(c), cc = Math.cos(c);
           dec = deg(Math.asin(cc*sd + (v*sc*cd)/r));
-          ra = m.ra + deg(Math.atan2(-u*sc, r*cd*cc - v*sd*sc));
+          ra = ra0 + deg(Math.atan2(-u*sc, r*cd*cc - v*sd*sc));
         }
         const p = projEq(norm360(ra), dec);
         if(!p){ ok = false; break; }
         corners.push(p);
       }
       if(!ok) continue;
-      const sx = ix/N*surveyImg.width, sy = iy/N*surveyImg.height;
-      const sw = surveyImg.width/N, sh = surveyImg.height/N;
-      drawTexQuad(surveyImg, sx, sy, sw, sh, corners);
+      drawTexQuad(img, ix/N*iw, iy/N*ih, iw/N, ih/N, corners);
     }
   }
-  ctx.restore();
 }
 /* affine-map one image tile onto a quad (split into two triangles) */
 function drawTexQuad(img, sx, sy, sw, sh, q){
@@ -865,6 +870,108 @@ function drawTexTri(img, sx, sy, sw, sh, t0, t1, t2, p0, p1, p2){
   ctx.restore();
 }
 
+/* ---------- per-target imagery ----------
+   The close-in survey above only lights up below 5° of field. This layer keeps
+   the chart photographic at every other zoom: any deep-sky object big enough to
+   cover a patch of screen gets its own small DSS2 cutout, softened at the edges
+   and screened onto the sky at its true position and scale — so panning around
+   shows the targets themselves, not just their outlines. Cutouts are fetched
+   lazily as objects scroll into view and cached for the session. */
+const IMG_MIN_PX = 11;          /* on-screen radius before a cutout earns a fetch */
+const IMG_TARGETS = DSO.filter(o => (o.s||0) >= 4);   /* ≥4′ across */
+const IMG_CACHE = new Map();    /* id -> { state:'loading'|'ok'|'fail', cv, fov } */
+const IMG_QUEUE = [];
+const IMG_MAX_INFLIGHT = 4, IMG_CACHE_MAX = 170;
+let imgInFlight = 0, imgPumpTimer = null;
+
+let pipSurvey = false;
+function setPip(){ $('surveyPip').classList.toggle('on', pipSurvey || imgInFlight > 0); }
+
+/* soft circular vignette so the plate's square edge never shows on the chart */
+function imgVignette(img){
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  const r = Math.min(c.width, c.height)/2;
+  const grad = g.createRadialGradient(c.width/2, c.height/2, r*0.62, c.width/2, c.height/2, r);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,1)');
+  g.globalCompositeOperation = 'destination-out';
+  g.fillStyle = grad;
+  g.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+
+function imgFetch(o){
+  const fov = Math.max(0.07, o.s/60 * 1.5);   /* plate covers 1.5× the major axis */
+  const ent = { state:'loading', cv:null, fov };
+  IMG_CACHE.set(o.i, ent);
+  const px = Math.max(96, Math.min(512, Math.round(fov*130)));
+  let hi = 0;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  const attempt = ()=>{
+    img.onload = ()=>{
+      ent.cv = imgVignette(img); ent.state = 'ok';
+      imgSettled(); requestRender();
+    };
+    img.onerror = ()=>{
+      hi++;
+      if(hi < HOSTS.length) attempt();
+      else { ent.state = 'fail'; imgSettled(); }
+    };
+    img.src = surveyURL(HOSTS[hi], o.r, o.d, fov, px);
+  };
+  imgInFlight++; setPip();
+  attempt();
+}
+function imgSettled(){ imgInFlight--; setPip(); imgPump(); }
+function imgPump(){
+  while(imgInFlight < IMG_MAX_INFLIGHT && IMG_QUEUE.length){
+    const o = IMG_QUEUE.shift();
+    if(!IMG_CACHE.has(o.i)) imgFetch(o);
+  }
+}
+
+function drawTargetImagery(){
+  /* once the close-in survey plate is up it covers the whole field anyway */
+  if(surveyImg && surveyMeta && surveyMeta.ok) return;
+  IMG_QUEUE.length = 0;
+  const wanted = [];
+  for(const o of IMG_TARGETS){
+    const pr = (o.s/60)/state.fov * H * 0.5;
+    if(pr < IMG_MIN_PX) continue;
+    const p = projEq(o.r, o.d);
+    const pad = pr*2 + 40;
+    if(!p || p.x < -pad || p.x > W+pad || p.y < -pad || p.y > H+pad) continue;
+    wanted.push({ o, pr });
+  }
+  wanted.sort((a,b)=> b.pr - a.pr);          /* biggest on screen load first */
+  if(wanted.length > 60) wanted.length = 60;
+  ctx.save();
+  /* screen-blend: the cutout's dark sky vanishes into the painted background */
+  ctx.globalCompositeOperation = 'screen';
+  ctx.globalAlpha = 0.95;
+  for(const { o } of wanted){
+    const ent = IMG_CACHE.get(o.i);
+    if(!ent){ IMG_QUEUE.push(o); continue; }
+    if(ent.state === 'ok')
+      drawPlateMesh(ent.cv, o.r, o.d, ent.fov, ent.fov > 2 ? 6 : 3);
+  }
+  ctx.restore();
+  /* hold fetches until the view settles so a fast pan doesn't spray requests */
+  clearTimeout(imgPumpTimer);
+  imgPumpTimer = setTimeout(imgPump, 180);
+  if(IMG_CACHE.size > IMG_CACHE_MAX){
+    const keep = new Set(wanted.map(w => w.o.i));
+    for(const [k, e] of IMG_CACHE){
+      if(IMG_CACHE.size <= IMG_CACHE_MAX) break;
+      if(!keep.has(k) && e.state !== 'loading') IMG_CACHE.delete(k);
+    }
+  }
+}
+
 /* ---------- rendering ---------- */
 let renderQueued = false;
 function requestRender(){
@@ -879,6 +986,7 @@ function render(){
   const twilight = sunAltAt(state.date, state.lat, state.lon);
   paintBackground(twilight);
   LABEL_BOXES.length = 0;
+  if(state.showSurvey) drawTargetImagery();
   if(state.fov <= SURVEY_THRESHOLD) drawSurvey();
   if(state.showMW) drawMilkyWay(twilight);
   if(state.showGrid) drawGrid();
