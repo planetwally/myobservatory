@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Not Found · Washington Valley Observatory</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="That page is not here. Links back to the gallery and the observatory toolkit.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07080c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400&family=DM+Sans:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #07080c;
+    --text-star: #e8e4df;
+    --text-nebula: #9a958d;
+    --text-dim: #8a857c;
+    --accent-gold: #c9a84c;
+    --accent-blue: #4a7cad;
+    --border-faint: rgba(255,255,255,0.06);
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif; background: var(--bg-void); color: var(--text-star);
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; padding: 3rem 1.5rem; line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--accent-gold); margin-bottom: 1.6rem;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 300; line-height: 1.15;
+    font-size: clamp(2.2rem, 6vw, 3.6rem); max-width: 18ch;
+  }
+  h1 em { font-style: italic; color: var(--accent-blue); }
+  p { color: var(--text-nebula); font-weight: 300; max-width: 46ch; margin-top: 1.4rem; }
+  .divider {
+    width: 1px; height: 64px; margin: 2.6rem 0 2rem;
+    background: linear-gradient(to bottom, transparent, var(--accent-gold), transparent);
+  }
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem 1.8rem; }
+  .links a {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-dim); text-decoration: none;
+    border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color .3s, border-color .3s;
+  }
+  .links a:hover, .links a:focus-visible { color: var(--accent-gold); border-color: rgba(201,168,76,0.4); }
+  .home { margin-top: 2.4rem; }
+  .home a {
+    display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--bg-void);
+    background: var(--accent-gold); text-decoration: none; padding: 0.8rem 1.5rem;
+    border-radius: 6px; transition: background .3s, transform .3s;
+  }
+  .home a:hover, .home a:focus-visible { background: #dab84f; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+  <div class="eyebrow">Error 404</div>
+  <h1>Nothing resolves at <em>these coordinates</em></h1>
+  <p>The page you asked for is not on this site. It may have been renamed, or the link that brought you here may have been typed from memory.</p>
+  <div class="divider"></div>
+  <div class="links">
+    <a href="/#gallery">Gallery</a>
+    <a href="/atlas.html">Sky Atlas</a>
+    <a href="/fov.html">FOV Viewer</a>
+    <a href="/sky.html">Sky Planner</a>
+    <a href="/calc.html">Calculators</a>
+    <a href="/sampling.html">Sampling</a>
+  </div>
+  <div class="home"><a href="/">Back to the observatory</a></div>
+</body>
+</html>

@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sampling Calculator &middot; Washington Valley Observatory</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="https://www.myobservatory.org/sampling.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Washington Valley Observatory">
+<meta property="og:title" content="Sampling Calculator">
+<meta property="og:description" content="Match a camera to a telescope. Calculates image scale in arcseconds per pixel and shows how a star actually lands on the sensor.">
+<meta property="og:url" content="https://www.myobservatory.org/sampling.html">
+<meta property="og:image" content="https://www.myobservatory.org/images/social/og-tools.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Sampling Calculator — Washington Valley Observatory">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080c">
 <meta name="description" content="Match a camera to a telescope. Calculates image scale in arcseconds per pixel and shows how a star actually lands on the sensor.">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -676,8 +691,13 @@ function render() {
   // headline number
   $('resValue').textContent = d.res.toFixed(2);
 
-  // focal length hint
-  const fr = activeScope ? (activeScope.fr * d.mult) : null;
+  // focal length hint.
+  // Aperture is the fixed quantity, so derive it once from the catalogue entry
+  // and let the f-ratio follow whatever is in the focal length box. Scaling the
+  // catalogue f-ratio instead would keep reporting f/4.9 after someone typed a
+  // different focal length over the RedCat's 250mm.
+  const aperture = activeScope ? activeScope.fl / activeScope.fr : null;
+  const fr = aperture ? d.flEff / aperture : null;
   $('flHint').textContent = d.mult === 1
     ? `Effective focal length: ${Math.round(d.flEff)} mm` + (fr ? ` at f/${fr.toFixed(1)}` : '')
     : `Effective focal length: ${Math.round(d.flEff)} mm` + (fr ? ` at f/${fr.toFixed(1)}` : '') + ` (${d.mult}\u00d7)`;

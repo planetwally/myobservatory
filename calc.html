@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Astro Calculators · Washington Valley Observatory</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="Seven calculators for the questions that come up at the scope: sub-exposure length, backfocus, critical focus zone, NPF, planetary f-ratio, moon interference and polar alignment.">
+<link rel="canonical" href="https://www.myobservatory.org/calc.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Washington Valley Observatory">
+<meta property="og:title" content="Astro Calculators">
+<meta property="og:description" content="Seven calculators for the questions that come up at the scope: sub-exposure length, backfocus, critical focus zone, NPF, planetary f-ratio, moon interference and polar alignment.">
+<meta property="og:url" content="https://www.myobservatory.org/calc.html">
+<meta property="og:image" content="https://www.myobservatory.org/images/social/og-tools.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Astro Calculators — Washington Valley Observatory">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -331,11 +347,11 @@
         <label>Pixel size (µm) <input type="number" id="npf-p" class="mono" value="4.51" step="0.01"></label>
       </div>
       <div class="grid2">
-        <label>Crop factor <input type="number" id="npf-crop" class="mono" value="1" step="0.1" min="0.5"></label>
+        <label>Crop factor <span class="hint">(500 rule only)</span> <input type="number" id="npf-crop" class="mono" value="1" step="0.1" min="0.5"></label>
         <label>Target declination (°), 0 is worst case <input type="number" id="npf-dec" class="mono" value="0" step="1" min="-89" max="89"></label>
       </div>
       <div class="result" id="npf-out"></div>
-      <p class="hint">NPF t = (35·N + 30·p)/FL, stretched by 1/cos(dec) away from the celestial equator. Defaults are the Samyang 135 f/2 on the A7R II.</p>
+      <p class="hint">NPF t = (35·N + 30·p)/FL, stretched by 1/cos(dec) away from the celestial equator, using the true focal length &mdash; pixel pitch already accounts for how finely the sensor samples, so crop factor would double-count it. The 500 rule has no pixel term, so it needs the crop factor to mean anything. Defaults are the Samyang 135 f/2 on the A7R II.</p>
     </div>
 
     <!-- ============ PLANETARY ============ -->
@@ -709,7 +725,10 @@ function calcCfz(){
 
 /* ---- NPF ---- */
 function calcNpf(){
-  const t=npfSec(num('npf-n'), num('npf-p'), num('npf-fl')*num('npf-crop'), num('npf-dec'));
+  /* NPF takes the real focal length, not an equivalent one: sensor sampling is
+     already carried by the pixel pitch, so folding crop factor in here would
+     count it twice. Crop belongs to the 500 rule alone, which has no pixel term. */
+  const t=npfSec(num('npf-n'), num('npf-p'), num('npf-fl'), num('npf-dec'));
   const r5=rule500(num('npf-fl'), num('npf-crop'));
   $('npf-out').innerHTML='<div class="big">'+t.toFixed(1)+' s <span style="font-size:14px;color:var(--muted)">NPF (sharp)</span></div>'+
     '<div class="kv"><span>old 500 rule <b>'+r5.toFixed(1)+' s</b> \u2014 visibly trailed on modern sensors</span></div>';

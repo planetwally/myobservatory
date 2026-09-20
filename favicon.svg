@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="13" fill="#07080c"/>
+  <!-- A diffraction-spike star, sized to fill the tile. Everything else that
+       read nicely at 128px (an orbit ring, field stars) collapsed into noise at
+       16px, so the icon is this shape and a glow and nothing else. -->
+  <circle cx="32" cy="32" r="12" fill="#c9a84c" opacity=".14"/>
+  <path d="M32 3 L34.6 29.4 L61 32 L34.6 34.6 L32 61 L29.4 34.6 L3 32 L29.4 29.4 Z" fill="#c9a84c"/>
+  <circle cx="32" cy="32" r="4.6" fill="#f2ede4"/>
+</svg>
