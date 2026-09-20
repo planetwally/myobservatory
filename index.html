@@ -20,6 +20,7 @@
 <meta property="og:image:alt" content="The Cygnus Wall in H-alpha and OIII — Washington Valley Observatory">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#07080c">
+<script src="wvo-store.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -44,6 +45,8 @@
   html { scroll-behavior: smooth; overflow-x: hidden; overflow-x: clip; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg-void); color: var(--text-star); line-height: 1.7; overflow-x: hidden; overflow-x: clip; -webkit-font-smoothing: antialiased; }
   body::after { content: ''; position: fixed; inset: 0; background: var(--grain); pointer-events: none; z-index: 9999; opacity: 0.5; }
+  /* red-light mode, carried over from the tools by wvo-store.js */
+  html.night body { filter: sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(0.72) contrast(1.06); }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 3rem; display: flex; align-items: center; justify-content: space-between; background: rgba(7,8,12,0.7); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border-bottom: 1px solid var(--border-faint); }
   .nav-brand { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.15rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-star); text-decoration: none; }
   .nav-brand span { color: var(--accent-gold); }
@@ -252,6 +255,7 @@
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
     <li><a href="sampling.html">Sampling</a></li>
+    <li><a href="gear.html">My Gear</a></li>
     <li><a href="#rigs">Imaging Rigs</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
@@ -811,6 +815,7 @@
     <a href="sky.html">Sky Planner</a>
     <a href="calc.html">Calculators</a>
     <a href="sampling.html">Sampling Calc</a>
+    <a href="gear.html">My Gear</a>
     <a href="#rigs">Rigs</a>
   </div>
   <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>

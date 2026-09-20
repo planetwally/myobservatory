@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>My Gear · Washington Valley Observatory</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="Save your telescopes, cameras and reducers once, combine them into rigs, and every Observatory tool picks them up — framing, sampling, exposure and focus.">
+<link rel="canonical" href="https://www.myobservatory.org/gear.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Washington Valley Observatory">
+<meta property="og:title" content="My Gear">
+<meta property="og:description" content="Save your telescopes, cameras and reducers once, combine them into rigs, and every Observatory tool picks them up — framing, sampling, exposure and focus.">
+<meta property="og:url" content="https://www.myobservatory.org/gear.html">
+<meta property="og:image" content="https://www.myobservatory.org/images/social/og-tools.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="My Gear — Washington Valley Observatory">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="wvo-store.js"></script>
+<style>
+  :root{
+    --bg-void:#07080c; --bg-panel:#0c0e14; --bg-card:#10131b; --bg-card-hover:#161a25;
+    --text-star:#e8e4df; --text-nebula:#9a958d; --text-dim:#5a564f;
+    --accent-blue:#4a7cad; --accent-gold:#c9a84c; --accent-ember:#b35a3a; --accent-teal:#3a8a7a;
+    --border-faint:rgba(255,255,255,0.06); --border-glow:rgba(74,124,173,0.2);
+    --radius:10px;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html{overflow-x:hidden}
+  html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
+  body{
+    font-family:'DM Sans',sans-serif;background:var(--bg-void);color:var(--text-star);
+    min-height:100dvh;-webkit-font-smoothing:antialiased;line-height:1.6;
+  }
+  button,input,select{font-family:inherit;font-size:.85rem;color:var(--text-star)}
+  input,select{
+    width:100%;padding:.5rem .65rem;background:var(--bg-card);
+    border:1px solid var(--border-faint);border-radius:7px;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--border-glow)}
+  button{
+    background:var(--bg-card);border:1px solid var(--border-faint);
+    border-radius:7px;padding:.5rem .85rem;cursor:pointer;transition:background .2s,border-color .2s;
+  }
+  button:active{transform:scale(.97)}
+  button.primary{background:var(--accent-gold);color:var(--bg-void);border-color:var(--accent-gold);font-weight:600}
+  button.ghost{background:transparent;color:var(--text-nebula)}
+  button.danger{color:var(--accent-ember);border-color:rgba(179,90,58,.3);background:transparent}
+
+  /* ---------- shared observatory chrome ---------- */
+  nav{
+    position:sticky;top:0;z-index:60;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:1.05rem 1.9rem;
+    background:rgba(7,8,12,.82);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid var(--border-faint);
+  }
+  .nav-brand{
+    font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
+    text-decoration:none;min-width:0;
+  }
+  .nav-brand span{color:var(--accent-gold)}
+  .nav-brand .brand-long{color:var(--text-star)}
+  .nav-links{display:flex;gap:1.4rem;list-style:none;align-items:center}
+  .nav-links a{
+    font-size:.74rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
+  }
+  .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
+  .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
+  .nav-links a.current::after,.nav-links a:hover::after{width:100%}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
+  .nav-toggle:hover{background:none;border:none}
+  .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
+  #nightBtn{
+    font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;padding:.5rem .85rem;white-space:nowrap;
+  }
+
+  .tool-title{max-width:820px;margin:0 auto;
+    padding:2rem calc(1.4rem + env(safe-area-inset-right,0px)) .4rem calc(1.4rem + env(safe-area-inset-left,0px))}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.3em;text-transform:uppercase;color:var(--accent-gold);margin-bottom:.5rem}
+  .tool-title h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(1.9rem,7vw,2.6rem);line-height:1.15}
+  .tool-title h1 em{font-style:italic;color:var(--accent-blue)}
+  .tool-title p{font-size:.88rem;font-weight:300;color:var(--text-nebula);margin-top:.6rem;max-width:60ch}
+
+  main{max-width:820px;margin:0 auto;
+    padding:1.4rem calc(1.4rem + env(safe-area-inset-right,0px)) calc(4rem + env(safe-area-inset-bottom,0px)) calc(1.4rem + env(safe-area-inset-left,0px))}
+  .card{background:var(--bg-card);border:1px solid var(--border-faint);border-radius:var(--radius);padding:1.1rem 1.2rem;margin-bottom:1.1rem}
+  .card > h2{
+    font-family:'JetBrains Mono',monospace;font-size:.63rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--text-dim);font-weight:400;margin-bottom:.9rem;
+  }
+
+  /* ---- active rig ---- */
+  .active-card{background:linear-gradient(135deg,rgba(201,168,76,.09),rgba(74,124,173,.07));border-color:var(--border-glow)}
+  .active-name{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:400;line-height:1.2}
+  .active-sub{font-size:.78rem;color:var(--text-nebula);margin-top:.2rem}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;margin-top:1rem}
+  @media (min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
+  @media (max-width:620px){
+    .brand-long{display:none}
+    .nav-brand{font-size:1rem;letter-spacing:.1em}
+    #nightBtn{padding:.45rem .6rem;font-size:.58rem}
+    nav{padding:.85rem 1rem}
+    .nav-links.show{padding:.8rem 1rem 1.2rem}
+  }
+  @media (max-width:1300px){
+    nav{padding:.9rem 1.4rem}
+    .nav-toggle{display:block}
+    .nav-links{
+      display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+      align-items:flex-start;gap:0;background:rgba(7,8,12,.97);
+      padding:.8rem 1.4rem 1.2rem;border-bottom:1px solid var(--border-faint);
+    }
+    .nav-links.show{display:flex}
+    .nav-links li{padding:.55rem 0}
+    .tool-title{padding:1.6rem 1.4rem .2rem}
+  }
+  .stat{background:rgba(7,8,12,.4);border:1px solid var(--border-faint);border-radius:8px;padding:.55rem .6rem;text-align:center}
+  .stat b{display:block;font-family:'JetBrains Mono',monospace;font-size:.92rem;color:var(--accent-gold);font-weight:500}
+  .stat span{display:block;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-top:.15rem}
+
+  /* ---- lists ---- */
+  .row{
+    display:flex;align-items:center;gap:.8rem;padding:.7rem 0;border-bottom:1px solid var(--border-faint);
+  }
+  .row:last-of-type{border-bottom:none}
+  .row-body{flex:1;min-width:0}
+  .row-name{font-size:.9rem;line-height:1.3}
+  .row-meta{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--text-dim);margin-top:.15rem}
+  .row-acts{flex-shrink:0;display:flex;gap:.35rem}
+  .row-acts button{padding:.35rem .55rem;font-size:.68rem}
+  .row.is-active{background:rgba(201,168,76,.06);margin:0 -1.2rem;padding-left:1.2rem;padding-right:1.2rem;border-left:2px solid var(--accent-gold)}
+  .pill-active{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-gold);border:1px solid rgba(201,168,76,.35);border-radius:20px;padding:.1rem .45rem;margin-left:.4rem;vertical-align:1px}
+  .pill-cat{font-family:'JetBrains Mono',monospace;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-blue);border:1px solid rgba(74,124,173,.35);border-radius:20px;padding:.1rem .45rem;margin-left:.4rem;vertical-align:1px;white-space:nowrap}
+  .cat-head{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent-blue);margin:.9rem 0 .2rem;opacity:.85}
+  .cat-head:first-child{margin-top:0}
+  .empty{font-size:.82rem;color:var(--text-dim);font-style:italic;padding:.4rem 0}
+
+  /* ---- forms ---- */
+  .form{display:none;margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border-faint)}
+  .form.open{display:block}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+  .fgrid.one{grid-template-columns:1fr}
+  .f label{display:block;font-size:.7rem;color:var(--text-nebula);margin-bottom:.25rem}
+  .f{margin-bottom:.7rem}
+  .form-acts{display:flex;gap:.5rem;margin-top:.9rem}
+  .hint{font-size:.7rem;color:var(--text-dim);margin-top:.5rem;line-height:1.5}
+  .derived{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent-blue);margin-top:.5rem;min-height:1em}
+  .addbtn{width:100%;margin-top:.9rem;border-style:dashed;color:var(--text-nebula)}
+  .danger-zone{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="atlas.html">Sky Atlas</a></li>
+    <li><a href="fov.html">FOV Viewer</a></li>
+    <li><a href="sky.html">Sky Planner</a></li>
+    <li><a href="calc.html">Calculators</a></li>
+    <li><a href="sampling.html">Sampling</a></li>
+    <li><a href="gear.html" class="current">My Gear</a></li>
+    <li><a href="index.html#rigs">Imaging Rigs</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="tool-title">
+  <div class="eyebrow">Observatory Tools</div>
+  <h1>My <em>Gear</em></h1>
+  <p>Save your telescopes, cameras and reducers once, combine them into rigs, then pick a rig in any tool instead of re-entering focal lengths and pixel sizes all night.</p>
+</div>
+
+<main>
+  <!-- ===== active rig ===== -->
+  <div class="card active-card">
+    <h2>Active rig</h2>
+    <div id="activeBox"></div>
+    <div class="f" style="margin-top:1rem;margin-bottom:0">
+      <label for="activeSel">Use this rig across the app</label>
+      <select id="activeSel"></select>
+    </div>
+  </div>
+
+  <!-- ===== rigs ===== -->
+  <div class="card">
+    <h2>Rigs · scope + camera + reducer</h2>
+    <div id="rigList"></div>
+    <button class="addbtn" id="rigAdd">+ Add a rig</button>
+    <div class="form" id="rigForm">
+      <div class="f"><label for="rigName">Rig name</label><input id="rigName" placeholder="e.g. Widefield narrowband"></div>
+      <div class="f"><label for="rigScope">Telescope</label><select id="rigScope"></select></div>
+      <div class="f"><label for="rigCam">Camera</label><select id="rigCam"></select></div>
+      <div class="f"><label for="rigRed">Reducer / extender</label><select id="rigRed"></select></div>
+      <div class="f"><label for="rigCat">Category</label><select id="rigCat"></select></div>
+      <div class="derived" id="rigDerived"></div>
+      <div class="form-acts">
+        <button class="primary" id="rigSave">Save rig</button>
+        <button class="ghost" id="rigCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== scopes ===== -->
+  <div class="card">
+    <h2>Telescopes</h2>
+    <div id="scopeList"></div>
+    <button class="addbtn" id="scopeAdd">+ Add a telescope</button>
+    <div class="form" id="scopeForm">
+      <div class="f"><label for="scopeName">Name</label><input id="scopeName" placeholder="e.g. Askar 65PHQ"></div>
+      <div class="fgrid">
+        <div class="f"><label for="scopeAp">Aperture (mm)</label><input id="scopeAp" type="number" inputmode="decimal" step="any" placeholder="65"></div>
+        <div class="f"><label for="scopeFl">Focal length (mm)</label><input id="scopeFl" type="number" inputmode="decimal" step="any" placeholder="416"></div>
+      </div>
+      <div class="derived" id="scopeDerived"></div>
+      <p class="hint">Enter the telescope's <em>native</em> focal length. Reducers and extenders are applied separately, so one scope can serve several rigs.</p>
+      <div class="form-acts">
+        <button class="primary" id="scopeSave">Save telescope</button>
+        <button class="ghost" id="scopeCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== cameras ===== -->
+  <div class="card">
+    <h2>Cameras</h2>
+    <div id="camList"></div>
+    <button class="addbtn" id="camAdd">+ Add a camera</button>
+    <div class="form" id="camForm">
+      <div class="f"><label for="camName">Name</label><input id="camName" placeholder="e.g. ZWO ASI585MC Air"></div>
+      <div class="f"><label for="camPx">Pixel size (µm)</label><input id="camPx" type="number" inputmode="decimal" step="any" placeholder="2.9"></div>
+      <div class="fgrid">
+        <div class="f"><label for="camPw">Width (pixels)</label><input id="camPw" type="number" inputmode="numeric" step="1" placeholder="3840"></div>
+        <div class="f"><label for="camPh">Height (pixels)</label><input id="camPh" type="number" inputmode="numeric" step="1" placeholder="2160"></div>
+      </div>
+      <div class="derived" id="camDerived"></div>
+      <p class="hint">Sensor size in millimetres is calculated from pixel size and pixel count, so it can never disagree with your image scale.</p>
+      <div class="form-acts">
+        <button class="primary" id="camSave">Save camera</button>
+        <button class="ghost" id="camCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== reducers ===== -->
+  <div class="card">
+    <h2>Reducers &amp; extenders</h2>
+    <div id="redList"></div>
+    <button class="addbtn" id="redAdd">+ Add a reducer or extender</button>
+    <div class="form" id="redForm">
+      <div class="f"><label for="redName">Name</label><input id="redName" placeholder="e.g. 0.8× reducer"></div>
+      <div class="f"><label for="redV">Multiplier</label><input id="redV" type="number" inputmode="decimal" step="any" placeholder="0.8"></div>
+      <p class="hint">Below 1 shortens focal length (reducer); above 1 lengthens it (Barlow or extender).</p>
+      <div class="form-acts">
+        <button class="primary" id="redSave">Save</button>
+        <button class="ghost" id="redCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Reset</h2>
+    <div class="danger-zone">
+      <span class="hint" style="margin:0;flex:1;min-width:180px">Restore the starting gear library. This deletes every change you've made here.</span>
+      <button class="danger" id="resetBtn">Reset gear</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const G = WVO.gear;
+
+/* which item is being edited in each section, null = adding new */
+const editing = { rig:null, scope:null, cam:null, red:null };
+/* once the category is set by hand, changing the scope stops overwriting it */
+let catTouched = false;
+
+const fmt = (n, d=0) => Number(n).toFixed(d).replace(/\.0+$/,'');
+const fRatio = r => r.fratio ? 'f/' + fmt(r.fratio,1) : '';
+
+/* ---------- active rig ---------- */
+function renderActive(){
+  const r = G.active();
+  const box = $('activeBox');
+  if(!r){
+    box.innerHTML = '<div class="empty">No rigs yet — add a telescope and a camera, then combine them into a rig.</div>';
+  } else {
+    box.innerHTML = `
+      <div class="active-name">${esc(r.name)}</div>
+      <div class="active-sub">${esc(r.scope.name)} · ${esc(r.camera.name)}${r.red!==1 ? ' · '+esc(r.reducer.name) : ''}<span class="pill-cat">${esc(r.categoryName)}</span></div>
+      <div class="stats">
+        <div class="stat"><b>${fmt(r.fl)}mm</b><span>Focal length</span></div>
+        <div class="stat"><b>${fRatio(r)}</b><span>Focal ratio</span></div>
+        <div class="stat"><b>${fmt(r.scale,2)}″</b><span>Per pixel</span></div>
+        <div class="stat"><b>${fmt(r.fovW,2)}°×${fmt(r.fovH,2)}°</b><span>Field of view</span></div>
+      </div>`;
+  }
+
+  const sel = $('activeSel');
+  sel.innerHTML = '';
+  const groups = G.byCategory();
+  if(!groups.length){
+    const o = document.createElement('option');
+    o.textContent = 'No rigs saved yet'; o.value = '';
+    sel.appendChild(o); sel.disabled = true;
+  } else {
+    sel.disabled = false;
+    groups.forEach(gp=>{
+      const og = document.createElement('optgroup');
+      og.label = gp.name;
+      gp.rigs.forEach(x=>{
+        const o = document.createElement('option');
+        o.value = x.id; o.textContent = G.label(x);
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    if(r) sel.value = r.id;
+  }
+}
+
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+/* ---------- generic list rendering ---------- */
+function renderRigs(){
+  const g = G.all(), host = $('rigList');
+  host.innerHTML = '';
+  if(!g.rigs.length){ host.innerHTML = '<div class="empty">No rigs yet.</div>'; return; }
+  const activeId = (G.active()||{}).id;
+
+  const rowFor = rig => {
+    const r = G.resolve(rig);
+    const div = document.createElement('div');
+    div.className = 'row' + (r && r.id===activeId ? ' is-active' : '');
+    const meta = r
+      ? `${fmt(r.fl)}mm ${fRatio(r)} · ${fmt(r.scale,2)}″/px · ${fmt(r.fovW,2)}°×${fmt(r.fovH,2)}°`
+      : 'missing component — edit to fix';
+    div.innerHTML = `
+      <div class="row-body">
+        <div class="row-name">${esc(rig.name||'Untitled rig')}${r && r.id===activeId ? '<span class="pill-active">Active</span>' : ''}</div>
+        <div class="row-meta">${esc(meta)}</div>
+      </div>
+      <div class="row-acts">
+        <button data-act="use">Use</button>
+        <button data-act="edit">Edit</button>
+        <button class="danger" data-act="del">✕</button>
+      </div>`;
+    div.querySelector('[data-act=use]').onclick = ()=>{ G.setActive(rig.id); renderAll(); };
+    div.querySelector('[data-act=edit]').onclick = ()=> openRigForm(rig);
+    div.querySelector('[data-act=del]').onclick = ()=>{
+      if(!confirm('Delete "'+(rig.name||'this rig')+'"?')) return;
+      const gg = G.all();
+      gg.rigs = gg.rigs.filter(x=>x.id!==rig.id);
+      if(gg.activeRigId===rig.id) gg.activeRigId = gg.rigs.length ? gg.rigs[0].id : null;
+      G.save(gg); renderAll();
+    };
+    return div;
+  };
+
+  /* group under category headings, in the canonical category order */
+  const shown = new Set();
+  G.categories.forEach(cat=>{
+    const inCat = g.rigs.filter(rig=>{
+      const r = G.resolve(rig);
+      return r ? r.category===cat.id : (rig.category||'other')===cat.id;
+    });
+    if(!inCat.length) return;
+    const h = document.createElement('div');
+    h.className = 'cat-head'; h.textContent = cat.name;
+    host.appendChild(h);
+    inCat.forEach(rig=>{ shown.add(rig.id); host.appendChild(rowFor(rig)); });
+  });
+  /* anything with an unrecognised category still has to appear somewhere */
+  const rest = g.rigs.filter(rig=>!shown.has(rig.id));
+  if(rest.length){
+    const h = document.createElement('div');
+    h.className = 'cat-head'; h.textContent = 'Other';
+    host.appendChild(h);
+    rest.forEach(rig=> host.appendChild(rowFor(rig)));
+  }
+}
+
+function renderComponents(){
+  /* telescopes */
+  const g = G.all();
+  let host = $('scopeList'); host.innerHTML = '';
+  if(!g.scopes.length) host.innerHTML = '<div class="empty">No telescopes yet.</div>';
+  g.scopes.forEach(s=>{
+    const div = document.createElement('div');
+    div.className = 'row';
+    const fr = s.ap>0 ? ' f/'+fmt(s.fl/s.ap,1) : '';
+    div.innerHTML = `
+      <div class="row-body">
+        <div class="row-name">${esc(s.name)}</div>
+        <div class="row-meta">${fmt(s.ap)}mm aperture · ${fmt(s.fl)}mm${fr}</div>
+      </div>
+      <div class="row-acts">
+        <button data-act="edit">Edit</button>
+        <button class="danger" data-act="del">✕</button>
+      </div>`;
+    div.querySelector('[data-act=edit]').onclick = ()=> openScopeForm(s);
+    div.querySelector('[data-act=del]').onclick = ()=> delComponent('scopes','scopeId',s,'telescope');
+    host.appendChild(div);
+  });
+
+  /* cameras */
+  host = $('camList'); host.innerHTML = '';
+  if(!g.cameras.length) host.innerHTML = '<div class="empty">No cameras yet.</div>';
+  g.cameras.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'row';
+    const w = (c.pw*c.px/1000), h = (c.ph*c.px/1000);
+    const mp = (c.pw*c.ph/1e6);
+    div.innerHTML = `
+      <div class="row-body">
+        <div class="row-name">${esc(c.name)}</div>
+        <div class="row-meta">${fmt(c.px,2)}µm · ${fmt(w,2)}×${fmt(h,2)}mm · ${fmt(mp,1)}MP</div>
+      </div>
+      <div class="row-acts">
+        <button data-act="edit">Edit</button>
+        <button class="danger" data-act="del">✕</button>
+      </div>`;
+    div.querySelector('[data-act=edit]').onclick = ()=> openCamForm(c);
+    div.querySelector('[data-act=del]').onclick = ()=> delComponent('cameras','cameraId',c,'camera');
+    host.appendChild(div);
+  });
+
+  /* reducers */
+  host = $('redList'); host.innerHTML = '';
+  if(!g.reducers.length) host.innerHTML = '<div class="empty">None yet.</div>';
+  g.reducers.forEach(rd=>{
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.innerHTML = `
+      <div class="row-body">
+        <div class="row-name">${esc(rd.name)}</div>
+        <div class="row-meta">${fmt(rd.v,2)}× focal length</div>
+      </div>
+      <div class="row-acts">
+        <button data-act="edit">Edit</button>
+        <button class="danger" data-act="del">✕</button>
+      </div>`;
+    div.querySelector('[data-act=edit]').onclick = ()=> openRedForm(rd);
+    div.querySelector('[data-act=del]').onclick = ()=> delComponent('reducers','reducerId',rd,'reducer');
+    host.appendChild(div);
+  });
+}
+
+/* a component in use by a rig can't vanish silently -- warn first */
+function delComponent(listKey, rigKey, item, label){
+  const g = G.all();
+  const used = g.rigs.filter(r=>r[rigKey]===item.id);
+  let msg = 'Delete "'+item.name+'"?';
+  if(used.length) msg += '\n\n'+used.length+' rig'+(used.length>1?'s':'')+' use this '+label+' and will stop working until you edit '+(used.length>1?'them':'it')+'.';
+  if(!confirm(msg)) return;
+  g[listKey] = g[listKey].filter(x=>x.id!==item.id);
+  G.save(g); renderAll();
+}
+
+/* ---------- rig form ---------- */
+function fillSel(sel, items, labelFn, val){
+  sel.innerHTML = '';
+  items.forEach(it=>{
+    const o = document.createElement('option');
+    o.value = it.id; o.textContent = labelFn(it);
+    sel.appendChild(o);
+  });
+  if(val!=null) sel.value = val;
+}
+
+function openRigForm(rig){
+  const g = G.all();
+  if(!g.scopes.length || !g.cameras.length){
+    alert('Add at least one telescope and one camera first.');
+    return;
+  }
+  editing.rig = rig || null;
+  catTouched = !!(rig && rig.category);
+  fillSel($('rigScope'), g.scopes, s=>`${s.name} — ${fmt(s.fl)}mm`, rig ? rig.scopeId : g.scopes[0].id);
+  fillSel($('rigCam'),   g.cameras, c=>`${c.name} — ${fmt(c.px,2)}µm`, rig ? rig.cameraId : g.cameras[0].id);
+  fillSel($('rigRed'),   g.reducers, r=>`${r.name} (${fmt(r.v,2)}×)`, rig ? rig.reducerId : g.reducers[0].id);
+  fillSel($('rigCat'),   G.categories, c=>c.name, rig ? (rig.category||'other') : 'other');
+  $('rigName').value = rig ? (rig.name||'') : '';
+  $('rigSave').textContent = rig ? 'Update rig' : 'Save rig';
+  $('rigForm').classList.add('open');
+  updateRigDerived();
+  $('rigName').focus();
+}
+
+function updateRigDerived(){
+  const r = G.resolve({
+    id:'preview', name:'preview',
+    scopeId:$('rigScope').value, cameraId:$('rigCam').value, reducerId:$('rigRed').value
+  });
+  $('rigDerived').textContent = r
+    ? `${fmt(r.fl)}mm ${fRatio(r)} · ${fmt(r.scale,2)}″/px · ${fmt(r.fovW,2)}° × ${fmt(r.fovH,2)}°`
+    : '';
+  /* suggest a framing class from the focal length until the user picks one */
+  if(r && !catTouched) $('rigCat').value = G.suggestCategory(r.fl);
+}
+
+function saveRig(){
+  const g = G.all();
+  const name = $('rigName').value.trim();
+  const data = {
+    name: name || null,
+    scopeId: $('rigScope').value,
+    cameraId: $('rigCam').value,
+    reducerId: $('rigRed').value,
+    category: $('rigCat').value
+  };
+  if(!data.name){
+    const s = G.findScope(data.scopeId), c = G.findCamera(data.cameraId);
+    data.name = (s?s.name:'Rig') + ' · ' + (c?c.name:'');
+  }
+  if(editing.rig){
+    Object.assign(g.rigs.find(x=>x.id===editing.rig.id), data);
+  } else {
+    const id = G.uid();
+    g.rigs.push(Object.assign({id}, data));
+    if(!g.activeRigId) g.activeRigId = id;
+  }
+  G.save(g);
+  closeForm('rigForm','rig');
+  renderAll();
+}
+
+/* ---------- component forms ---------- */
+function openScopeForm(s){
+  editing.scope = s || null;
+  $('scopeName').value = s ? s.name : '';
+  $('scopeAp').value = s ? s.ap : '';
+  $('scopeFl').value = s ? s.fl : '';
+  $('scopeSave').textContent = s ? 'Update telescope' : 'Save telescope';
+  $('scopeForm').classList.add('open');
+  updateScopeDerived();
+  $('scopeName').focus();
+}
+function updateScopeDerived(){
+  const ap = parseFloat($('scopeAp').value), fl = parseFloat($('scopeFl').value);
+  $('scopeDerived').textContent = (ap>0 && fl>0) ? `f/${fmt(fl/ap,1)}` : '';
+}
+function saveScope(){
+  const name = $('scopeName').value.trim();
+  const ap = parseFloat($('scopeAp').value), fl = parseFloat($('scopeFl').value);
+  if(!name){ alert('Give the telescope a name.'); return; }
+  if(!(ap>0) || !(fl>0)){ alert('Aperture and focal length must both be greater than zero.'); return; }
+  const g = G.all();
+  if(editing.scope) Object.assign(g.scopes.find(x=>x.id===editing.scope.id), {name, ap, fl});
+  else g.scopes.push({id:G.uid(), name, ap, fl});
+  G.save(g); closeForm('scopeForm','scope'); renderAll();
+}
+
+function openCamForm(c){
+  editing.cam = c || null;
+  $('camName').value = c ? c.name : '';
+  $('camPx').value = c ? c.px : '';
+  $('camPw').value = c ? c.pw : '';
+  $('camPh').value = c ? c.ph : '';
+  $('camSave').textContent = c ? 'Update camera' : 'Save camera';
+  $('camForm').classList.add('open');
+  updateCamDerived();
+  $('camName').focus();
+}
+function updateCamDerived(){
+  const px = parseFloat($('camPx').value), pw = parseFloat($('camPw').value), ph = parseFloat($('camPh').value);
+  $('camDerived').textContent = (px>0 && pw>0 && ph>0)
+    ? `${fmt(pw*px/1000,2)} × ${fmt(ph*px/1000,2)} mm · ${fmt(pw*ph/1e6,1)} MP`
+    : '';
+}
+function saveCam(){
+  const name = $('camName').value.trim();
+  const px = parseFloat($('camPx').value), pw = parseFloat($('camPw').value), ph = parseFloat($('camPh').value);
+  if(!name){ alert('Give the camera a name.'); return; }
+  if(!(px>0) || !(pw>0) || !(ph>0)){ alert('Pixel size and both pixel counts must be greater than zero.'); return; }
+  const g = G.all();
+  if(editing.cam) Object.assign(g.cameras.find(x=>x.id===editing.cam.id), {name, px, pw:Math.round(pw), ph:Math.round(ph)});
+  else g.cameras.push({id:G.uid(), name, px, pw:Math.round(pw), ph:Math.round(ph)});
+  G.save(g); closeForm('camForm','cam'); renderAll();
+}
+
+function openRedForm(rd){
+  editing.red = rd || null;
+  $('redName').value = rd ? rd.name : '';
+  $('redV').value = rd ? rd.v : '';
+  $('redSave').textContent = rd ? 'Update' : 'Save';
+  $('redForm').classList.add('open');
+  $('redName').focus();
+}
+function saveRed(){
+  const name = $('redName').value.trim();
+  const v = parseFloat($('redV').value);
+  if(!name){ alert('Give it a name.'); return; }
+  if(!(v>0)){ alert('Multiplier must be greater than zero.'); return; }
+  const g = G.all();
+  if(editing.red) Object.assign(g.reducers.find(x=>x.id===editing.red.id), {name, v});
+  else g.reducers.push({id:G.uid(), name, v});
+  G.save(g); closeForm('redForm','red'); renderAll();
+}
+
+function closeForm(formId, key){
+  $(formId).classList.remove('open');
+  editing[key] = null;
+}
+
+/* ---------- wiring ---------- */
+function renderAll(){ renderActive(); renderRigs(); renderComponents(); }
+
+$('activeSel').addEventListener('change', e=>{
+  if(!e.target.value) return;
+  G.setActive(e.target.value); renderAll();
+});
+
+$('rigAdd').onclick = ()=> openRigForm(null);
+$('rigSave').onclick = saveRig;
+$('rigCancel').onclick = ()=> closeForm('rigForm','rig');
+['rigScope','rigCam','rigRed'].forEach(id=> $(id).addEventListener('change', updateRigDerived));
+$('rigCat').addEventListener('change', ()=>{ catTouched = true; });
+
+$('scopeAdd').onclick = ()=> openScopeForm(null);
+$('scopeSave').onclick = saveScope;
+$('scopeCancel').onclick = ()=> closeForm('scopeForm','scope');
+['scopeAp','scopeFl'].forEach(id=> $(id).addEventListener('input', updateScopeDerived));
+
+$('camAdd').onclick = ()=> openCamForm(null);
+$('camSave').onclick = saveCam;
+$('camCancel').onclick = ()=> closeForm('camForm','cam');
+['camPx','camPw','camPh'].forEach(id=> $(id).addEventListener('input', updateCamDerived));
+
+$('redAdd').onclick = ()=> openRedForm(null);
+$('redSave').onclick = saveRed;
+$('redCancel').onclick = ()=> closeForm('redForm','red');
+
+$('resetBtn').onclick = ()=>{
+  if(!confirm('Reset the gear library to the starting set? Your own additions and edits will be lost.')) return;
+  G.reset(); renderAll();
+};
+
+$('nightBtn').addEventListener('click', ()=> WVO.night.toggle());
+
+renderAll();
+</script>
+</body>
+</html>

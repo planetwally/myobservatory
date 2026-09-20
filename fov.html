@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="wvo-store.js"></script>
 <style>
   :root{
     /* ---- Washington Valley Observatory shared palette ---- */
@@ -315,6 +316,7 @@
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
     <li><a href="sampling.html">Sampling</a></li>
+    <li><a href="gear.html">My Gear</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
     <li><a href="index.html#contact">Contact</a></li>
   </ul>
@@ -369,6 +371,7 @@
       <h2>Rigs</h2>
       <div id="rigList" style="display:flex;flex-direction:column;gap:10px"></div>
       <button id="addRig" class="primary" style="margin-top:10px">+ Add rig</button>
+      <button id="addGearRig" style="width:100%;margin-top:6px">+ Add from My Gear</button>
       <label style="margin-top:12px;display:flex;align-items:center;gap:8px;cursor:pointer">
         <input type="checkbox" id="labelsChk" checked style="width:auto;margin:0"> Show frame labels
       </label>
@@ -706,6 +709,10 @@ const state = {
   rigs:[], nextId:1,
 };
 
+/* the shared observer site wins over the built-in default; an explicit #cfg
+   hand-off still overrides it later in loadHash() */
+(function(){ const st = WVO.site.get(); state.lat = st.lat; state.lon = st.lon; })();
+
 const $ = id => document.getElementById(id);
 const rad = d => d*Math.PI/180;
 const fovOfDeg = (mm,fl) => 2*Math.atan(mm/(2*fl))*180/Math.PI;
@@ -719,7 +726,20 @@ function sensorIdx(short){ return SENSORS.findIndex(s=>s.short===short); }
 
 /* one neutral default rig for first-time visitors */
 function defaultRigs(){
+  /* Prefer the user's active rig. It is injected as custom scope/sensor values
+     rather than table indices so it stays exact no matter what they saved. */
+  const g = WVO.gear.active();
+  if(g) return [gearToRig(g)];
   return [{scope:scopeIdx('RedCat 51'), cam:sensorIdx('IMX571'), red:1.0}];
+}
+
+/* map a resolved gear rig onto this tool's rig shape */
+function gearToRig(g){
+  return {
+    scope:'custom', cfl:+g.fl.toFixed(1), cap:+g.ap.toFixed(1), red:1.0,
+    cam:'custom', cw:+g.wmm.toFixed(2), ch:+g.hmm.toFixed(2), cpx:+g.px.toFixed(2),
+    rot:0, vis:true, gearName:g.name,
+  };
 }
 
 function newRig(init={}){
@@ -758,7 +778,7 @@ function rigData(r){
     fovW: fovOfDeg(sw,fl), fovH: fovOfDeg(sh,fl),
     scale: px ? 206.265*px/fl : null,
     mp,
-    label: `${scopeShort}${r.red!==1 ? ' ×'+r.red : ''} · ${camShort}`,
+    label: r.gearName || `${scopeShort}${r.red!==1 ? ' ×'+r.red : ''} · ${camShort}`,
   };
 }
 
@@ -1059,10 +1079,12 @@ function buildRigCard(r){
   };
 
   q('.scope').addEventListener('change', e=>{
+    r.gearName = null;
     r.scope = e.target.value==='custom' ? 'custom' : +e.target.value;
     refreshCustomBlocks(); applyFit(false, true);
   });
   q('.cam').addEventListener('change', e=>{
+    r.gearName = null;
     r.cam = e.target.value==='custom' ? 'custom' : +e.target.value;
     refreshCustomBlocks(); applyFit(false, true);
   });
@@ -2129,24 +2151,33 @@ function init(){
   $('addRig').addEventListener('click', ()=>{
     const r=newRig(); state.rigs.push(r); buildRigCard(r); applyFit(false, true);
   });
+  $('addGearRig').addEventListener('click', ()=>{
+    const rigs = WVO.gear.resolvedRigs();
+    if(!rigs.length){ location.href='gear.html'; return; }
+    /* cycle through saved rigs so repeated taps stack them up for comparison */
+    const used = state.rigs.filter(r=>r.gearName).length;
+    const g = rigs[used % rigs.length];
+    const r = newRig(gearToRig(g));
+    state.rigs.push(r); buildRigCard(r); applyFit(false, true);
+  });
   $('labelsChk').addEventListener('change', e=>{ state.showLabels=e.target.checked; drawOverlay(); syncHash(); });
   $('gridChk').addEventListener('change', e=>{ state.showGrid=e.target.checked; drawOverlay(); syncHash(); });
   $('latIn').addEventListener('change', e=>{
     const v=parseFloat(e.target.value);
     if(Number.isFinite(v)) state.lat=Math.min(90,Math.max(-90,v));
-    e.target.value=state.lat; updateReadout(); syncHash();
+    e.target.value=state.lat; WVO.site.set(state.lat, state.lon); updateReadout(); syncHash();
   });
   $('lonIn').addEventListener('change', e=>{
     const v=parseFloat(e.target.value);
     if(Number.isFinite(v)) state.lon=Math.min(180,Math.max(-180,v));
-    e.target.value=state.lon; updateReadout(); syncHash();
+    e.target.value=state.lon; WVO.site.set(state.lat, state.lon); updateReadout(); syncHash();
   });
   $('pngBtn').addEventListener('click', exportPNG);
   setInterval(updateVisibility, 60000);          /* keep “now …” fresh */
 
   /* --- misc --- */
   $('retryBtn').addEventListener('click', loadSky);
-  $('nightBtn').addEventListener('click', ()=>document.documentElement.classList.toggle('night'));
+  $('nightBtn').addEventListener('click', ()=>WVO.night.toggle());
   $('shareBtn').addEventListener('click', e=>{
     syncHash();
     const btn=e.currentTarget;

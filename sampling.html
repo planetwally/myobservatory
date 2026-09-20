@@ -21,6 +21,7 @@
 <meta name="theme-color" content="#07080c">
 <meta name="description" content="Match a camera to a telescope. Calculates image scale in arcseconds per pixel and shows how a star actually lands on the sensor.">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="wvo-store.js"></script>
 <style>
   :root {
     --bg-void: #07080c;
@@ -213,6 +214,7 @@
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
     <li><a href="sampling.html" class="current">Sampling</a></li>
+    <li><a href="gear.html">My Gear</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
     <li><a href="index.html#contact">Contact</a></li>
   </ul>
@@ -522,6 +524,17 @@ const CORRECTORS = [
    ============================================================ */
 const $ = id => document.getElementById(id);
 
+const GEAR_OPT = '__gear';
+/* Name the loaded rig in a built-in quick-pick rather than blanking it, so the
+   dropdown still describes what is actually in the fields. */
+function gearOpt(sel, label){
+  let o = sel.querySelector('option[value="'+GEAR_OPT+'"]');
+  if(!o){ o=document.createElement('option'); o.value=GEAR_OPT; sel.insertBefore(o, sel.firstChild); }
+  o.textContent = '\u2699 '+label;
+  sel.value = GEAR_OPT;
+}
+
+
 function fillGrouped(sel, data, labelFn) {
   data.forEach(g => {
     const og = document.createElement('optgroup');
@@ -774,12 +787,14 @@ function render() {
    Wiring
    ============================================================ */
 $('scope').addEventListener('change', e => {
+  if (e.target.value === GEAR_OPT) return;   /* placeholder for the loaded rig */
   activeScope = JSON.parse(e.target.value);
   $('fl').value = activeScope.fl;
   render();
 });
 
 $('cam').addEventListener('change', e => {
+  if (e.target.value === GEAR_OPT) return;   /* placeholder for the loaded rig */
   activeCam = JSON.parse(e.target.value);
   $('px').value = activeCam.px.toFixed(2);
   render();
@@ -800,13 +815,31 @@ window.addEventListener('resize', () => {
   rt = setTimeout(render, 120);
 });
 
+/* A saved rig already folds its reducer into the effective focal length, so
+   applying one resets the corrector to native to avoid double-counting. */
+WVO.gearPicker(
+  document.querySelector('section.panel .field'),
+  rig => {
+    activeScope = { n: rig.name, fl: rig.fl, fr: rig.fratio };
+    activeCam   = { n: rig.camera.name, px: rig.px, w: rig.pw, h: rig.ph };
+    $('fl').value = Math.round(rig.fl);
+    $('px').value = rig.px.toFixed(2);
+    $('corrector').value = '1';
+    gearOpt($('scope'), rig.name);
+    gearOpt($('cam'), rig.camera.name);
+    render();
+  },
+  { label: 'My rig' }
+);
+
+/* everything except the equipment numbers, which the gear library owns */
+WVO.prefs.bind('sampling', ['binning', 'seeing', 'seeMin', 'seeMax']);
+
 render();
 window.addEventListener('load', render);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
 
-document.getElementById('nightBtn').addEventListener('click', () =>
-  document.documentElement.classList.toggle('night')
-);
+document.getElementById('nightBtn').addEventListener('click', () => WVO.night.toggle());
 </script>
 </body>
 </html>

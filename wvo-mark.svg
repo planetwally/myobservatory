@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Washington Valley Observatory">
+  <title>Washington Valley Observatory</title>
+  <path fill="#4a7cad" d="M1 1h3v1h-3zM12 1h3v1h-3zM1 2h1v1h-1zM14 2h1v1h-1zM1 3h1v1h-1zM14 3h1v1h-1zM1 12h1v1h-1zM14 12h1v1h-1zM1 13h1v1h-1zM14 13h1v1h-1zM1 14h3v1h-3zM12 14h3v1h-3z"/>
+  <path fill="#5a564f" d="M7 4h2v1h-2zM5 5h1v1h-1zM10 5h1v1h-1zM4 7h1v1h-1zM11 7h1v1h-1zM4 8h1v1h-1zM11 8h1v1h-1zM5 10h1v1h-1zM10 10h1v1h-1zM7 11h2v1h-2zM4 12h1v1h-1z"/>
+  <path fill="#9a958d" d="M12 4h1v1h-1zM7 5h2v1h-2zM5 7h1v1h-1zM10 7h1v1h-1zM5 8h1v1h-1zM10 8h1v1h-1zM7 10h2v1h-2z"/>
+  <path fill="#c9a84c" d="M7 6h2v1h-2zM6 7h1v1h-1zM9 7h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM7 9h2v1h-2z"/>
+  <path fill="#e8e4df" d="M7 7h2v1h-2zM7 8h2v1h-2z"/>
+</svg>

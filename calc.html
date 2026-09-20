@@ -23,6 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="wvo-store.js"></script>
 <style>
   :root{
     /* ---- Washington Valley Observatory shared palette ---- */
@@ -229,6 +230,7 @@
     <li><a href="sky.html">Sky Planner</a></li>
     <li><a href="calc.html" class="current">Calculators</a></li>
     <li><a href="sampling.html">Sampling</a></li>
+    <li><a href="gear.html">My Gear</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
     <li><a href="index.html#contact">Contact</a></li>
   </ul>
@@ -243,6 +245,10 @@
 
 <main>
   <aside>
+    <div class="card" id="gearCard">
+      <h2>My gear</h2>
+      <div id="gearMount"></div>
+    </div>
     <div class="card">
       <h2>Calculators</h2>
       <nav class="calcnav" id="calcnav">
@@ -531,6 +537,16 @@ const TARGETS = [
 ];
 
 /* ================= SHARED HELPERS ================= */
+
+const GEAR_OPT = '__gear';
+/* Name the loaded rig in a built-in quick-pick rather than blanking it, so the
+   dropdown still describes what is actually in the fields. */
+function gearOpt(sel, label){
+  let o = sel.querySelector('option[value="'+GEAR_OPT+'"]');
+  if(!o){ o=document.createElement('option'); o.value=GEAR_OPT; sel.insertBefore(o, sel.firstChild); }
+  o.textContent = '\u2699 '+label;
+  sel.value = GEAR_OPT;
+}
 
 const $=id=>document.getElementById(id);
 const rad=d=>d*Math.PI/180;
@@ -860,7 +876,7 @@ function init(){
   ['pol-err','pol-dec','pol-e','pol-diag','pol-fl','pol-sub'].forEach(id=>$(id).addEventListener('input', calcPolar));
 
   document.querySelectorAll('.calcnav button').forEach(b=>b.addEventListener('click', ()=>show(b.dataset.c)));
-  $('nightBtn').addEventListener('click', ()=>document.documentElement.classList.toggle('night'));
+  $('nightBtn').addEventListener('click', ()=>WVO.night.toggle());
 
   /* defaults reflecting the house fleet */
   $('sub-scope').value=JSON.stringify({ap:65, fl:416});
@@ -869,6 +885,32 @@ function init(){
   $('plan-scope').value=JSON.stringify({ap:152, fl:1524});
   $('plan-cam').value=0;
   $('pol-cam').value=2;
+
+  /* One saved rig drives the equipment inputs of every calculator here. QE and
+     read noise aren't part of a rig -- they stay on the camera quick-pick,
+     which is why that dropdown is left alone. */
+  WVO.gearPicker($('gearMount'), rig=>{
+    const diag = Math.sqrt(rig.wmm*rig.wmm + rig.hmm*rig.hmm);
+    $('sub-ap').value = Math.round(rig.ap);
+    $('sub-fl').value = Math.round(rig.fl);
+    $('sub-px').value = rig.px;
+    $('cfz-f').value  = rig.fratio ? rig.fratio.toFixed(1) : $('cfz-f').value;
+    $('npf-fl').value = Math.round(rig.fl);
+    $('npf-n').value  = rig.fratio ? rig.fratio.toFixed(1) : $('npf-n').value;
+    $('npf-p').value  = rig.px;
+    $('plan-fl').value= Math.round(rig.flNative);
+    $('plan-f').value = rig.ap>0 ? (rig.flNative/rig.ap).toFixed(1) : $('plan-f').value;
+    $('plan-px').value= rig.px;
+    $('pol-diag').value = diag.toFixed(1);
+    $('pol-fl').value = Math.round(rig.fl);
+    gearOpt($('sub-scope'), rig.name);
+    gearOpt($('cfz-scope'), rig.name);
+    gearOpt($('plan-scope'), rig.name);
+    calcSub(); calcCfz(); calcNpf(); calcPlan(); calcPolar();
+  }, {where:'append'});
+
+  /* non-equipment settings only; the gear library owns the rest */
+  WVO.prefs.bind('calc', ['sub-bortle','sub-filter','sub-pen','sub-obs','sub-qe','sub-rn','npf-crop','npf-dec']);
 
   const h=location.hash.match(/#c=([a-z]+)/);
   if(h && document.getElementById('calc-'+h[1])) show(h[1]);

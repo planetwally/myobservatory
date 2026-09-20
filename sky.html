@@ -24,6 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="wvo-store.js"></script>
 <style>
   :root{
     /* ---- Washington Valley Observatory shared palette ---- */
@@ -292,6 +293,7 @@
     <li><a href="sky.html" class="current">Sky Planner</a></li>
     <li><a href="calc.html">Calculators</a></li>
     <li><a href="sampling.html">Sampling</a></li>
+    <li><a href="gear.html">My Gear</a></li>
     <li><a href="index.html#rigs">Imaging Rigs</a></li>
     <li><a href="index.html#contact">Contact</a></li>
   </ul>
@@ -434,6 +436,14 @@ const state = {
   lat:PRESET_DEFAULT.lat, lon:PRESET_DEFAULT.lon, name:PRESET_DEFAULT.name,
   zoom:7, layer:'auto', opacity:0.7,
 };
+/* one observer site shared with the Sky Atlas and FOV Viewer; a #hash share
+   link still overrides it later in loadHash() */
+(function(){
+  if(WVO.site.isDefault()) return;
+  const st = WVO.site.get();
+  state.lat = st.lat; state.lon = st.lon;
+  if(st.name) state.name = st.name;
+})();
 let map, marker, overlay=null;
 let frames=[], frameIdx=0, playTimer=null;
 let HOURS=[];                       /* merged hourly point data */
@@ -870,6 +880,9 @@ function setLocation(lat, lon, name, opts={}){
   $('latIn').value=state.lat.toFixed(3);
   $('lonIn').value=state.lon.toFixed(3);
   $('siteOut').textContent=state.name+' \u00b7 '+state.lat.toFixed(3)+'\u00b0, '+state.lon.toFixed(3)+'\u00b0';
+  /* every location change in this tool funnels through here, so this is the
+     one place the shared observer site needs updating */
+  WVO.site.set(state.lat, state.lon, state.name);
   renderTonight();
   clearTimeout(pointDebounce);
   pointDebounce=setTimeout(loadPoint, 350);
@@ -963,7 +976,7 @@ function init(){
   $('stepBack').addEventListener('click', ()=>{ stopPlay(); if(frames.length){ frameIdx=(frameIdx-1+frames.length)%frames.length; applyFrame(); } });
   $('stepFwd').addEventListener('click', ()=>{ stopPlay(); if(frames.length){ frameIdx=(frameIdx+1)%frames.length; applyFrame(); } });
   $('playBtn').addEventListener('click', togglePlay);
-  $('nightBtn').addEventListener('click', ()=>document.documentElement.classList.toggle('night'));
+  $('nightBtn').addEventListener('click', ()=>WVO.night.toggle());
   $('shareBtn').addEventListener('click', e=>{
     syncHash();
     const btn=e.currentTarget;
