@@ -18,6 +18,7 @@
 <meta name="description" content="That page is not here. Links back to the gallery and the observatory toolkit.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#07080c">
+<script src="/wvo-store.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400&family=DM+Sans:wght@300;400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -29,14 +30,44 @@
     --text-dim: #8a857c;
     --accent-gold: #c9a84c;
     --accent-blue: #4a7cad;
+    --text-nebula-dim: #9a958d;
     --border-faint: rgba(255,255,255,0.06);
   }
+  html.night body { filter: sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(0.72) contrast(1.06); }
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'DM Sans', sans-serif; background: var(--bg-void); color: var(--text-star);
     min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; text-align: center; padding: 3rem 1.5rem; line-height: 1.7;
+    justify-content: center; text-align: center; padding: 8rem 1.5rem 3rem; line-height: 1.7;
     -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 1px solid var(--accent-gold); outline-offset: 3px; }
+
+  /* ---------- nav (matches the rest of the site) ---------- */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1.2rem 3rem; display: flex; align-items: center; justify-content: space-between;
+    background: rgba(7,8,12,0.7); backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border-bottom: 1px solid var(--border-faint); text-align: left;
+  }
+  .nav-brand {
+    font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.15rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-star); text-decoration: none;
+  }
+  .nav-brand .brand-gold { color: var(--accent-gold); }
+  #nightBtn {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.16em;
+    text-transform: uppercase; padding: 0.5rem 0.85rem; white-space: nowrap; cursor: pointer;
+    color: var(--text-nebula); background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-faint); border-radius: 7px; transition: color .3s, border-color .3s;
+  }
+  #nightBtn:hover { color: var(--text-star); border-color: rgba(201,168,76,0.4); }
+  @media (max-width: 620px) {
+    nav { padding: 1rem 1.25rem; }
+    .brand-long { display: none; }
+    .nav-brand { font-size: 1rem; letter-spacing: 0.1em; }
+    #nightBtn { padding: 0.45rem 0.6rem; font-size: 0.58rem; }
   }
   .eyebrow {
     font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.3em;
@@ -70,6 +101,10 @@
 </style>
 </head>
 <body>
+<nav>
+  <a href="/" class="nav-brand"><span class="brand-long">Washington Valley </span><span class="brand-gold">Observatory</span></a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+</nav>
   <div class="eyebrow">Error 404</div>
   <h1>Nothing resolves at <em>these coordinates</em></h1>
   <p>The page you asked for is not on this site. It may have been renamed, or the link that brought you here may have been typed from memory.</p>
@@ -83,5 +118,10 @@
     <a href="/sampling.html">Sampling</a>
   </div>
   <div class="home"><a href="/">Back to the observatory</a></div>
+<script>
+  document.getElementById('nightBtn').addEventListener('click', function () {
+    if (window.WVO && WVO.night) WVO.night.toggle();
+  });
+</script>
 </body>
 </html>

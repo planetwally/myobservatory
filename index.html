@@ -29,6 +29,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#07080c">
 <script src="wvo-store.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -60,7 +62,7 @@
   .nav-brand span { color: var(--accent-gold); }
   .nav-brand .brand-long { color: var(--text-star); }
   .nav-links { display: flex; gap: 1.4rem; list-style: none; align-items: center; }
-  .nav-links a { font-size: 0.74rem; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; }
+  .nav-links a { font-size: 0.74rem; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; white-space: nowrap; }
   .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent-gold); transition: width 0.3s; }
   .nav-links a:hover { color: var(--text-star); }
   .nav-links a:hover::after { width: 100%; }
@@ -91,14 +93,33 @@
   .about-image { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; }
   .about-image img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.85) contrast(1.1); }
   .about-image::after { content: ''; position: absolute; inset: 0; border: 1px solid var(--border-faint); border-radius: 12px; pointer-events: none; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .gallery-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin: -2rem 0 2.6rem; }
+  .gallery-filters button {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 0.45rem 0.9rem; cursor: pointer;
+    color: var(--text-nebula); background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-faint); border-radius: 999px;
+    transition: color .3s, border-color .3s, background .3s;
+  }
+  .gallery-filters button:hover { color: var(--text-star); border-color: rgba(201,168,76,0.35); }
+  .gallery-filters button[aria-pressed="true"] { color: var(--bg-void); background: var(--accent-gold); border-color: var(--accent-gold); }
+  .gallery-filters .count { opacity: 0.55; margin-left: 0.45em; }
+  .gallery-item.is-filtered { display: none; }
   .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
   .gallery-item { position: relative; border-radius: 10px; overflow: hidden; cursor: pointer; aspect-ratio: 16/9; background: var(--bg-card); border: 1px solid var(--border-faint); transition: transform 0.4s, border-color 0.4s; }
+  /* the tiles are <button>: strip the UA chrome, keep a focus ring of our own */
+  button.gallery-item { display: block; width: 100%; padding: 0; font: inherit; color: inherit; text-align: left; -webkit-appearance: none; appearance: none; }
+  .gallery-item:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; border-color: var(--border-glow); }
+  .gallery-item:focus-visible .gallery-overlay { opacity: 1; transform: translateY(0); }
   .gallery-item.featured { grid-column: span 2; aspect-ratio: 21/9; }
   .gallery-item:hover { transform: scale(1.015); border-color: var(--border-glow); }
   .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
   .gallery-item:hover img { transform: scale(1.05); }
   .gallery-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 1.5rem 1.5rem; background: linear-gradient(to top, rgba(7,8,12,0.95) 0%, rgba(7,8,12,0.4) 60%, transparent 100%); transform: translateY(10px); opacity: 0; transition: opacity 0.4s, transform 0.4s; }
   .gallery-item:hover .gallery-overlay { opacity: 1; transform: translateY(0); }
+  .gallery-overlay, .gallery-name, .gallery-meta { display: block; }
+  .lb-data { display: none; }
   .gallery-name { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 400; margin-bottom: 0.3rem; }
   .gallery-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
   .featured .gallery-name { font-size: 1.6rem; }
@@ -225,9 +246,18 @@
   .fade-in.visible { opacity: 1; transform: translateY(0); }
   @media (max-width: 1024px) { .rigs-grid { grid-template-columns: repeat(2, 1fr); } .equip-summary { grid-template-columns: repeat(2, 1fr); } .gallery-grid { grid-template-columns: repeat(2, 1fr); } .gallery-item.featured { grid-column: span 2; aspect-ratio: 16/9; } }
   @media (max-width: 768px) { nav { padding: 1rem 1.5rem; } .about-grid { grid-template-columns: 1fr; } .rigs-grid { grid-template-columns: 1fr; } .equip-summary { grid-template-columns: 1fr 1fr; } .gallery-grid { grid-template-columns: 1fr; } .gallery-item.featured { grid-column: span 1; aspect-ratio: 16/9; } section { padding: 4rem 1.5rem; } }
+  #nightBtn {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.16em;
+    text-transform: uppercase; padding: 0.5rem 0.85rem; white-space: nowrap; cursor: pointer;
+    color: var(--text-nebula); background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-faint); border-radius: 7px;
+    transition: color .3s, border-color .3s;
+  }
+  #nightBtn:hover { color: var(--text-star); border-color: rgba(201,168,76,0.4); }
+  html.night #nightBtn { color: var(--text-star); border-color: rgba(201,168,76,0.45); }
   .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
   .nav-toggle span { display: block; width: 22px; height: 1.5px; background: var(--text-star); margin: 5px 0; transition: 0.3s; }
-  @media (max-width: 1400px) {
+  @media (max-width: 1540px) {
     .nav-links { display: none; }
     .nav-toggle { display: block; }
     .nav-links.show {
@@ -240,20 +270,64 @@
     .nav-links.show li { padding: 0.55rem 0; }
   }
   @media (max-width: 768px) { .nav-links.show { padding: 0.8rem 1.5rem 1.2rem; } }
-  .lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(7,8,12,0.96); display: none; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; cursor: pointer; backdrop-filter: blur(10px); }
+  .lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(7,8,12,0.96); display: none; align-items: center; justify-content: center; flex-direction: column; padding: 4.2rem 2rem 2rem; cursor: pointer; backdrop-filter: blur(10px); }
   .lightbox.active { display: flex; }
-  .lightbox img { max-width: 90vw; max-height: 80vh; object-fit: contain; border-radius: 8px; border: 1px solid var(--border-faint); }
-  .lightbox-caption { margin-top: 1.5rem; text-align: center; }
+  .lightbox img { max-width: 90vw; max-height: 80vh; object-fit: contain; border-radius: 8px; border: 1px solid var(--border-faint); min-height: 0; flex: 0 1 auto; }
+  /* the backdrop closes on click; everything readable or clickable inside does not */
+  .lightbox-caption { margin-top: 1.5rem; text-align: center; cursor: auto; flex: 0 0 auto; }
   .lightbox-caption h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 300; }
   .lightbox-caption p { font-size: 0.82rem; color: var(--text-nebula); margin-top: 0.4rem; max-width: 600px; font-weight: 300; line-height: 1.7; }
-  .lightbox-close { position: absolute; top: 2rem; right: 2rem; font-size: 1.5rem; color: var(--text-nebula); cursor: pointer; background: none; border: none; transition: color 0.3s; }
-  .lightbox-close:hover { color: var(--text-star); }
+  .lightbox-close {
+    position: absolute; top: 1.4rem; right: 1.6rem; z-index: 2;
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; line-height: 1; color: var(--text-nebula); cursor: pointer;
+    background: rgba(12,14,20,0.72); border: 1px solid var(--border-faint); border-radius: 50%;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: color 0.3s, border-color 0.3s;
+  }
+  .lightbox-close:hover { color: var(--text-star); border-color: var(--border-glow); }
+  .lightbox :focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+
+  /* ---------- lightbox: stepping through a set ---------- */
+  .lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    width: 52px; height: 52px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; line-height: 1; color: var(--text-nebula);
+    background: rgba(12,14,20,0.72); border: 1px solid var(--border-faint);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: color .3s, border-color .3s, background .3s;
+  }
+  .lb-nav:hover { color: var(--text-star); border-color: var(--border-glow); background: rgba(22,26,37,0.85); }
+  .lb-prev { left: 1.6rem; }
+  .lb-next { right: 1.6rem; }
+  .lightbox.solo .lb-nav, .lightbox.solo .lb-counter { display: none; }
+  .lb-counter {
+    position: absolute; top: 1.55rem; left: 50%; transform: translateX(-50%); z-index: 2;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; letter-spacing: 0.16em;
+    color: var(--text-nebula); cursor: auto; padding: 0.35rem 0.85rem; border-radius: 999px;
+    background: rgba(12,14,20,0.72); border: 1px solid var(--border-faint);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  /* full-size subs are megabytes; dim the outgoing frame rather than hold a stale one */
+  .lightbox img.loading { opacity: 0.25; transition: opacity .2s; }
+  @media (max-width: 768px) {
+    .lb-nav { width: 44px; height: 44px; font-size: 1.15rem; }
+    .lb-prev { left: 0.5rem; }
+    .lb-next { right: 0.5rem; }
+    .lightbox { padding: 3.6rem 1rem 1rem; }
+    .lightbox-close { top: 0.8rem; right: 0.8rem; width: 34px; height: 34px; font-size: 1.15rem; }
+    .lb-counter { top: 1rem; font-size: 0.58rem; padding: 0.3rem 0.7rem; }
+    .lightbox-caption h3 { font-size: 1.25rem; }
+    .lightbox-caption p { font-size: 0.76rem; }
+  }
   @media (max-width: 620px) { .brand-long { display: none; } .nav-brand { font-size: 1rem; letter-spacing: 0.1em; } }
 </style>
 </head>
 <body>
 <nav>
   <a href="#" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation" aria-pressed="false">Night vision</button>
   <ul class="nav-links" id="navLinks">
     <li><a href="#about">About</a></li>
     <li><a href="#ngc7000">NGC 7000</a></li>
@@ -365,32 +439,32 @@
     </div>
     <div class="study-sub">Closing In on the Wall</div>
     <div class="study-grid">
-      <div class="gallery-item" onclick="openLightbox(this)">
+      <button type="button" class="gallery-item" aria-label="Open The Cygnus Wall, 250mm full size">
         <picture>
           <source type="image/webp" srcset="images/opt/cygnus-wall-hoo-800.webp 800w, images/opt/cygnus-wall-hoo-1280.webp 1280w, images/opt/cygnus-wall-hoo-1920.webp 1920w, images/opt/cygnus-wall-hoo-2400.webp 2400w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
           <img src="images/opt/cygnus-wall-hoo-1280.jpg" srcset="images/opt/cygnus-wall-hoo-800.jpg 800w, images/opt/cygnus-wall-hoo-1280.jpg 1280w, images/opt/cygnus-wall-hoo-1920.jpg 1920w, images/opt/cygnus-wall-hoo-2400.jpg 2400w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
                width="2400" height="1350" loading="lazy" decoding="async" alt="Cygnus Wall at 250mm">
         </picture>
-        <div class="gallery-overlay">
-          <div class="gallery-name">The Cygnus Wall &middot; 250mm</div>
-          <div class="gallery-meta">WhiteCat 51 &middot; Jul 2026</div>
-          <div class="gallery-tag">Dual Narrowband</div>
-        </div>
-        <div class="lb-data" data-full="images/opt/cygnus-wall-hoo-2400.webp" data-fallback="images/opt/cygnus-wall-hoo-2400.jpg" data-title="The Cygnus Wall at 250mm" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII with the William Optics WhiteCat 51."></div>
-      </div>
-      <div class="gallery-item" onclick="openLightbox(this)">
+        <span class="gallery-overlay">
+          <span class="gallery-name">The Cygnus Wall &middot; 250mm</span>
+          <span class="gallery-meta">WhiteCat 51 &middot; Jul 2026</span>
+          <span class="gallery-tag">Dual Narrowband</span>
+        </span>
+        <span class="lb-data" data-full="images/opt/cygnus-wall-hoo-2400.webp" data-fallback="images/opt/cygnus-wall-hoo-2400.jpg" data-title="The Cygnus Wall at 250mm" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII with the William Optics WhiteCat 51."></span>
+      </button>
+      <button type="button" class="gallery-item" aria-label="Open The Cygnus Wall, 416mm full size">
         <picture>
           <source type="image/webp" srcset="images/opt/cygnus-closeup-800.webp 800w, images/opt/cygnus-closeup-1280.webp 1280w, images/opt/cygnus-closeup-1920.webp 1920w, images/opt/cygnus-closeup-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
           <img src="images/opt/cygnus-closeup-1280.jpg" srcset="images/opt/cygnus-closeup-800.jpg 800w, images/opt/cygnus-closeup-1280.jpg 1280w, images/opt/cygnus-closeup-1920.jpg 1920w, images/opt/cygnus-closeup-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
                width="3000" height="1768" loading="lazy" decoding="async" alt="Cygnus Wall at 416mm">
         </picture>
-        <div class="gallery-overlay">
-          <div class="gallery-name">The Cygnus Wall &middot; 416mm</div>
-          <div class="gallery-meta">Askar 65PHQ &middot; Jul 2026</div>
-          <div class="gallery-tag">Dual Narrowband</div>
-        </div>
-        <div class="lb-data" data-full="images/opt/cygnus-closeup-2560.webp" data-fallback="images/opt/cygnus-closeup-2560.jpg" data-title="The Cygnus Wall at 416mm" data-desc="The ionization front at the heart of the North America Nebula, framed tight at 416mm with the Askar 65PHQ. Ultraviolet light from the region's hot young stars eats into a dense ridge of hydrogen here, leaving the dark dust lanes that trace its edge."></div>
-      </div>
+        <span class="gallery-overlay">
+          <span class="gallery-name">The Cygnus Wall &middot; 416mm</span>
+          <span class="gallery-meta">Askar 65PHQ &middot; Jul 2026</span>
+          <span class="gallery-tag">Dual Narrowband</span>
+        </span>
+        <span class="lb-data" data-full="images/opt/cygnus-closeup-2560.webp" data-fallback="images/opt/cygnus-closeup-2560.jpg" data-title="The Cygnus Wall at 416mm" data-desc="The ionization front at the heart of the North America Nebula, framed tight at 416mm with the Askar 65PHQ. Ultraviolet light from the region's hot young stars eats into a dense ridge of hydrogen here, leaving the dark dust lanes that trace its edge."></span>
+      </button>
     </div>
   </div>
 </div>
@@ -400,384 +474,393 @@
     <h2 class="section-title">A Journey Through the Night</h2>
     <p class="section-desc">Every photon in these images crossed the void of space to land on a sensor in a suburban New Jersey backyard. Click any image to explore.</p>
   </div>
+  <div class="gallery-filters" role="group" aria-label="Filter the gallery by object type">
+    <button type="button" data-filter="all" aria-pressed="true">All<span class="count">29</span></button>
+    <button type="button" data-filter="nebulae" aria-pressed="false">Nebulae<span class="count">20</span></button>
+    <button type="button" data-filter="galaxies" aria-pressed="false">Galaxies<span class="count">3</span></button>
+    <button type="button" data-filter="clusters" aria-pressed="false">Clusters<span class="count">3</span></button>
+    <button type="button" data-filter="solar" aria-pressed="false">Solar System<span class="count">2</span></button>
+    <button type="button" data-filter="stars" aria-pressed="false">Stars<span class="count">1</span></button>
+  </div>
+  <p class="sr-only" id="galleryStatus" role="status" aria-live="polite"></p>
   <div class="gallery-grid">
-    <div class="gallery-item featured" onclick="openLightbox(this)">
+    <button type="button" data-cat="nebulae" class="gallery-item featured" aria-label="Open IC 410: Tadpoles Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/tadpoles-800.webp 800w, images/opt/tadpoles-1280.webp 1280w, images/opt/tadpoles-1920.webp 1920w, images/opt/tadpoles-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) calc(100vw - 64px), 1400px">
         <img src="images/opt/tadpoles-1280.jpg" srcset="images/opt/tadpoles-800.jpg 800w, images/opt/tadpoles-1280.jpg 1280w, images/opt/tadpoles-1920.jpg 1920w, images/opt/tadpoles-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) calc(100vw - 64px), 1400px"
              width="3840" height="2160" loading="lazy" decoding="async" alt="IC 410: Tadpoles Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 410: Tadpoles Nebula</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/tadpoles-2560.webp" data-fallback="images/opt/tadpoles-2560.jpg" data-title="IC 410: Tadpoles Nebula" data-desc="An emission nebula in Auriga featuring distinctive tadpole-shaped structures of gas and dust sculpted by stellar winds from the embedded cluster NGC 1893."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 410: Tadpoles Nebula</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/tadpoles-2560.webp" data-fallback="images/opt/tadpoles-2560.jpg" data-title="IC 410: Tadpoles Nebula" data-desc="An emission nebula in Auriga featuring distinctive tadpole-shaped structures of gas and dust sculpted by stellar winds from the embedded cluster NGC 1893."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open IC 1396A: Elephant's Trunk full size">
       <picture>
         <source type="image/webp" srcset="images/opt/trunk-800.webp 800w, images/opt/trunk-1280.webp 1280w, images/opt/trunk-1920.webp 1920w, images/opt/trunk-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/trunk-1280.jpg" srcset="images/opt/trunk-800.jpg 800w, images/opt/trunk-1280.jpg 1280w, images/opt/trunk-1920.jpg 1920w, images/opt/trunk-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3745" height="2049" loading="lazy" decoding="async" alt="IC 1396A: The Elephant's Trunk Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 1396A: Elephant's Trunk</div>
-        <div class="gallery-meta">Local &middot; Sep 2026</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/trunk-2560.webp" data-fallback="images/opt/trunk-2560.jpg" data-title="IC 1396A: The Elephant's Trunk Nebula" data-desc="A dense column of gas and dust roughly 2,400 light-years away in Cepheus, buried in the much larger IC 1396 emission complex. The trunk is what survives: radiation from the hot binary HD 206267 has eaten away the thinner material around it, leaving a compressed ridge that glows along its rim and trails a long tail pointing away from the star. Young stars are still forming inside the head of the column, shielded by the same dust that is slowly being stripped off it. Ten hours of dual-narrowband integration at 275mm f/4.5 with the Sharpstar 61EDPH II, gathered from a Bortle 7 front yard &mdash; the 3nm filters are what make a target this faint reachable under that much skyglow."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 1396A: Elephant's Trunk</span>
+        <span class="gallery-meta">Local &middot; Sep 2026</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/trunk-2560.webp" data-fallback="images/opt/trunk-2560.jpg" data-title="IC 1396A: The Elephant's Trunk Nebula" data-desc="A dense column of gas and dust roughly 2,400 light-years away in Cepheus, buried in the much larger IC 1396 emission complex. The trunk is what survives: radiation from the hot binary HD 206267 has eaten away the thinner material around it, leaving a compressed ridge that glows along its rim and trails a long tail pointing away from the star. Young stars are still forming inside the head of the column, shielded by the same dust that is slowly being stripped off it. Ten hours of dual-narrowband integration at 275mm f/4.5 with the Sharpstar 61EDPH II, gathered from a Bortle 7 front yard &mdash; the 3nm filters are what make a target this faint reachable under that much skyglow."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 6888: Crescent Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/crescent-800.webp 800w, images/opt/crescent-1280.webp 1280w, images/opt/crescent-1920.webp 1920w, images/opt/crescent-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/crescent-1280.jpg" srcset="images/opt/crescent-800.jpg 800w, images/opt/crescent-1280.jpg 1280w, images/opt/crescent-1920.jpg 1920w, images/opt/crescent-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2560" height="1440" loading="lazy" decoding="async" alt="NGC 6888: The Crescent Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 6888: Crescent Nebula</div>
-        <div class="gallery-meta">Local &middot; Aug 2026</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/crescent-2560.webp" data-fallback="images/opt/crescent-2560.jpg" data-title="NGC 6888: Crescent Nebula" data-desc="A shell of gas thrown off by WR 136, a Wolf-Rayet star roughly 5,000 light-years away in Cygnus. The star shed its outer layers as a red giant, and the much faster wind of its current phase is now plowing into that older material. The collision front is what lights the crescent. Wrapping around it is the fainter blue-green glow of doubly ionized oxygen, while the wider field picks up the hydrogen threading through this stretch of the Cygnus star cloud. Captured at 342mm f/4.5 with the Sharpstar 76EDPH."></div>
-    </div>
-            <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 6888: Crescent Nebula</span>
+        <span class="gallery-meta">Local &middot; Aug 2026</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/crescent-2560.webp" data-fallback="images/opt/crescent-2560.jpg" data-title="NGC 6888: Crescent Nebula" data-desc="A shell of gas thrown off by WR 136, a Wolf-Rayet star roughly 5,000 light-years away in Cygnus. The star shed its outer layers as a red giant, and the much faster wind of its current phase is now plowing into that older material. The collision front is what lights the crescent. Wrapping around it is the fainter blue-green glow of doubly ionized oxygen, while the wider field picks up the hydrogen threading through this stretch of the Cygnus star cloud. Captured at 342mm f/4.5 with the Sharpstar 76EDPH."></span>
+    </button>
+            <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 7000: The Cygnus Wall full size">
       <picture>
         <source type="image/webp" srcset="images/opt/cygnus-wall-hoo-800.webp 800w, images/opt/cygnus-wall-hoo-1280.webp 1280w, images/opt/cygnus-wall-hoo-1920.webp 1920w, images/opt/cygnus-wall-hoo-2400.webp 2400w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/cygnus-wall-hoo-1280.jpg" srcset="images/opt/cygnus-wall-hoo-800.jpg 800w, images/opt/cygnus-wall-hoo-1280.jpg 1280w, images/opt/cygnus-wall-hoo-1920.jpg 1920w, images/opt/cygnus-wall-hoo-2400.jpg 2400w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2400" height="1350" loading="lazy" decoding="async" alt="NGC 7000: The Cygnus Wall">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 7000: The Cygnus Wall</div>
-        <div class="gallery-meta">Local &middot; Jul 2026</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/cygnus-wall-hoo-2400.webp" data-fallback="images/opt/cygnus-wall-hoo-2400.jpg" data-title="NGC 7000: The Cygnus Wall" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula in Cygnus, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII with the WhiteCat 51 at 250mm."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 7000: The Cygnus Wall</span>
+        <span class="gallery-meta">Local &middot; Jul 2026</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/cygnus-wall-hoo-2400.webp" data-fallback="images/opt/cygnus-wall-hoo-2400.jpg" data-title="NGC 7000: The Cygnus Wall" data-desc="A ridge of ionized hydrogen along the &quot;Mexico coast&quot; of the North America Nebula in Cygnus, sculpted by radiation from the hot young stars of the region. Captured in dual-narrowband H-alpha and OIII with the WhiteCat 51 at 250mm."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 7000: Cygnus Wall Close-up full size">
       <picture>
         <source type="image/webp" srcset="images/opt/cygnus-closeup-800.webp 800w, images/opt/cygnus-closeup-1280.webp 1280w, images/opt/cygnus-closeup-1920.webp 1920w, images/opt/cygnus-closeup-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/cygnus-closeup-1280.jpg" srcset="images/opt/cygnus-closeup-800.jpg 800w, images/opt/cygnus-closeup-1280.jpg 1280w, images/opt/cygnus-closeup-1920.jpg 1920w, images/opt/cygnus-closeup-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3000" height="1768" loading="lazy" decoding="async" alt="NGC 7000: Cygnus Wall Close-up">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 7000: Cygnus Wall Close-up</div>
-        <div class="gallery-meta">Local &middot; Jul 2026</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/cygnus-closeup-2560.webp" data-fallback="images/opt/cygnus-closeup-2560.jpg" data-title="NGC 7000: Cygnus Wall Close-up" data-desc="The ionization front at the heart of the North America Nebula, framed tight at 416mm with the Askar 65PHQ. Ultraviolet light from the region's hot young stars eats into a dense ridge of hydrogen here, leaving the dark dust lanes that trace its edge."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 7000: Cygnus Wall Close-up</span>
+        <span class="gallery-meta">Local &middot; Jul 2026</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/cygnus-closeup-2560.webp" data-fallback="images/opt/cygnus-closeup-2560.jpg" data-title="NGC 7000: Cygnus Wall Close-up" data-desc="The ionization front at the heart of the North America Nebula, framed tight at 416mm with the Askar 65PHQ. Ultraviolet light from the region's hot young stars eats into a dense ridge of hydrogen here, leaving the dark dust lanes that trace its edge."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open IC 1318: The Sadr Region full size">
       <picture>
         <source type="image/webp" srcset="images/opt/sadr-ha-800.webp 800w, images/opt/sadr-ha-1280.webp 1280w, images/opt/sadr-ha-1920.webp 1920w, images/opt/sadr-ha-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/sadr-ha-1280.jpg" srcset="images/opt/sadr-ha-800.jpg 800w, images/opt/sadr-ha-1280.jpg 1280w, images/opt/sadr-ha-1920.jpg 1920w, images/opt/sadr-ha-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2560" height="1440" loading="lazy" decoding="async" alt="IC 1318: The Sadr Region in H-alpha">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 1318: The Sadr Region</div>
-        <div class="gallery-meta">Local &middot; Aug 2026</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/sadr-ha-2560.webp" data-fallback="images/opt/sadr-ha-2560.jpg" data-title="IC 1318: The Sadr Region" data-desc="The vast field of ionized hydrogen surrounding Sadr (&gamma; Cygni), bisected by the dark dust lanes that give the region its butterfly shape. Rendered from the H-alpha channel alone &mdash; stripping the other wavelengths away leaves nothing but the structure of the hydrogen itself, from the bright ridges down to the faint filaments threading the dust. Captured at 275mm f/4.5 with the Sharpstar 61EDPH II, the narrowband rig built for exactly this."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 1318: The Sadr Region</span>
+        <span class="gallery-meta">Local &middot; Aug 2026</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/sadr-ha-2560.webp" data-fallback="images/opt/sadr-ha-2560.jpg" data-title="IC 1318: The Sadr Region" data-desc="The vast field of ionized hydrogen surrounding Sadr (&gamma; Cygni), bisected by the dark dust lanes that give the region its butterfly shape. Rendered from the H-alpha channel alone &mdash; stripping the other wavelengths away leaves nothing but the structure of the hydrogen itself, from the bright ridges down to the faint filaments threading the dust. Captured at 275mm f/4.5 with the Sharpstar 61EDPH II, the narrowband rig built for exactly this."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open IC 1805 / IC 1848 full size">
       <picture>
         <source type="image/webp" srcset="images/opt/heart-soul-800.webp 800w, images/opt/heart-soul-1280.webp 1280w, images/opt/heart-soul-1920.webp 1920w, images/opt/heart-soul-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/heart-soul-1280.jpg" srcset="images/opt/heart-soul-800.jpg 800w, images/opt/heart-soul-1280.jpg 1280w, images/opt/heart-soul-1920.jpg 1920w, images/opt/heart-soul-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3659" height="2066" loading="lazy" decoding="async" alt="IC 1805 / IC 1848">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 1805 / IC 1848</div>
-        <div class="gallery-meta">Local &middot; Nov 2025</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/heart-soul-2560.webp" data-fallback="images/opt/heart-soul-2560.jpg" data-title="Heart &amp; Soul Nebulae" data-desc="A pair of immense star-forming regions ~7,500 light-years away in Cassiopeia, glowing with ionized hydrogen."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 1805 / IC 1848</span>
+        <span class="gallery-meta">Local &middot; Nov 2025</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/heart-soul-2560.webp" data-fallback="images/opt/heart-soul-2560.jpg" data-title="Heart &amp; Soul Nebulae" data-desc="A pair of immense star-forming regions ~7,500 light-years away in Cassiopeia, glowing with ionized hydrogen."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 2237: Rosette Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/rosette-closeup-800.webp 800w, images/opt/rosette-closeup-1280.webp 1280w, images/opt/rosette-closeup-1920.webp 1920w, images/opt/rosette-closeup-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/rosette-closeup-1280.jpg" srcset="images/opt/rosette-closeup-800.jpg 800w, images/opt/rosette-closeup-1280.jpg 1280w, images/opt/rosette-closeup-1920.jpg 1920w, images/opt/rosette-closeup-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3641" height="2132" loading="lazy" decoding="async" alt="NGC 2237: Rosette Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 2237: Rosette Nebula</div>
-        <div class="gallery-meta">Local &middot; Dec 2025</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/rosette-closeup-2560.webp" data-fallback="images/opt/rosette-closeup-2560.jpg" data-title="NGC 2237: Rosette Nebula" data-desc="A massive circular emission nebula ~5,000 light-years away in Monoceros. Stellar winds have carved a dark cavity at its center."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 2237: Rosette Nebula</span>
+        <span class="gallery-meta">Local &middot; Dec 2025</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/rosette-closeup-2560.webp" data-fallback="images/opt/rosette-closeup-2560.jpg" data-title="NGC 2237: Rosette Nebula" data-desc="A massive circular emission nebula ~5,000 light-years away in Monoceros. Stellar winds have carved a dark cavity at its center."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open Orion &amp; Horsehead Region full size">
       <picture>
         <source type="image/webp" srcset="images/opt/orionandhorsehead-800.webp 800w, images/opt/orionandhorsehead-1280.webp 1280w, images/opt/orionandhorsehead-1376.webp 1376w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/orionandhorsehead-1280.jpg" srcset="images/opt/orionandhorsehead-800.jpg 800w, images/opt/orionandhorsehead-1280.jpg 1280w, images/opt/orionandhorsehead-1376.jpg 1376w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="1376" height="659" loading="lazy" decoding="async" alt="Orion &amp; Horsehead Region">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">Orion &amp; Horsehead Region</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/orionandhorsehead-1376.webp" data-fallback="images/opt/orionandhorsehead-1376.jpg" data-title="Orion &amp; Horsehead Region" data-desc="A widefield view capturing the Horsehead Nebula, Flame Nebula, and surrounding molecular cloud complex in Orion."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">Orion &amp; Horsehead Region</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/orionandhorsehead-1376.webp" data-fallback="images/opt/orionandhorsehead-1376.jpg" data-title="Orion &amp; Horsehead Region" data-desc="A widefield view capturing the Horsehead Nebula, Flame Nebula, and surrounding molecular cloud complex in Orion."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open B33: Horsehead Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/horsehead-closeup-800.webp 800w, images/opt/horsehead-closeup-1280.webp 1280w, images/opt/horsehead-closeup-1920.webp 1920w, images/opt/horsehead-closeup-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/horsehead-closeup-1280.jpg" srcset="images/opt/horsehead-closeup-800.jpg 800w, images/opt/horsehead-closeup-1280.jpg 1280w, images/opt/horsehead-closeup-1920.jpg 1920w, images/opt/horsehead-closeup-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3374" height="2160" loading="lazy" decoding="async" alt="B33: Horsehead Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">B33: Horsehead Nebula</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Dark Nebula</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/horsehead-closeup-2560.webp" data-fallback="images/opt/horsehead-closeup-2560.jpg" data-title="B33: Horsehead Nebula" data-desc="An iconic dark nebula silhouetted against IC 434, about 1,375 light-years away in Orion."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">B33: Horsehead Nebula</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Dark Nebula</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/horsehead-closeup-2560.webp" data-fallback="images/opt/horsehead-closeup-2560.jpg" data-title="B33: Horsehead Nebula" data-desc="An iconic dark nebula silhouetted against IC 434, about 1,375 light-years away in Orion."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 7000: North America full size">
       <picture>
         <source type="image/webp" srcset="images/opt/na-nebula-800.webp 800w, images/opt/na-nebula-1280.webp 1280w, images/opt/na-nebula-1920.webp 1920w, images/opt/na-nebula-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/na-nebula-1280.jpg" srcset="images/opt/na-nebula-800.jpg 800w, images/opt/na-nebula-1280.jpg 1280w, images/opt/na-nebula-1920.jpg 1920w, images/opt/na-nebula-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3505" height="2035" loading="lazy" decoding="async" alt="NGC 7000: North America">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 7000: North America</div>
-        <div class="gallery-meta">Local &middot; Oct 2025</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/na-nebula-2560.webp" data-fallback="images/opt/na-nebula-2560.jpg" data-title="NGC 7000: North American Nebula" data-desc="A vast emission nebula in Cygnus, with the dramatic Cygnus Wall ridge sculpted by intense star formation."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 7000: North America</span>
+        <span class="gallery-meta">Local &middot; Oct 2025</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/na-nebula-2560.webp" data-fallback="images/opt/na-nebula-2560.jpg" data-title="NGC 7000: North American Nebula" data-desc="A vast emission nebula in Cygnus, with the dramatic Cygnus Wall ridge sculpted by intense star formation."></span>
+    </button>
+    <button type="button" data-cat="galaxies" class="gallery-item" aria-label="Open Markarian's Chain full size">
       <picture>
         <source type="image/webp" srcset="images/opt/markarian1-800.webp 800w, images/opt/markarian1-1280.webp 1280w, images/opt/markarian1-1920.webp 1920w, images/opt/markarian1-2558.webp 2558w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/markarian1-1280.jpg" srcset="images/opt/markarian1-800.jpg 800w, images/opt/markarian1-1280.jpg 1280w, images/opt/markarian1-1920.jpg 1920w, images/opt/markarian1-2558.jpg 2558w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2558" height="1973" loading="lazy" decoding="async" alt="Markarian's Chain">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">Markarian's Chain</div>
-        <div class="gallery-meta">Local &middot; Jun 2025</div>
-        <div class="gallery-tag">Galaxies</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/markarian1-2558.webp" data-fallback="images/opt/markarian1-2558.jpg" data-title="Markarian's Chain" data-desc="A distinctive arc of gravitationally bound galaxies within the Virgo Cluster."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">Markarian's Chain</span>
+        <span class="gallery-meta">Local &middot; Jun 2025</span>
+        <span class="gallery-tag">Galaxies</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/markarian1-2558.webp" data-fallback="images/opt/markarian1-2558.jpg" data-title="Markarian's Chain" data-desc="A distinctive arc of gravitationally bound galaxies within the Virgo Cluster."></span>
+    </button>
+    <button type="button" data-cat="galaxies" class="gallery-item" aria-label="Open Leo Triplet full size">
       <picture>
         <source type="image/webp" srcset="images/opt/leo-triplet-800.webp 800w, images/opt/leo-triplet-1280.webp 1280w, images/opt/leo-triplet-1920.webp 1920w, images/opt/leo-triplet-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/leo-triplet-1280.jpg" srcset="images/opt/leo-triplet-800.jpg 800w, images/opt/leo-triplet-1280.jpg 1280w, images/opt/leo-triplet-1920.jpg 1920w, images/opt/leo-triplet-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3113" height="1949" loading="lazy" decoding="async" alt="Leo Triplet">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">Leo Triplet</div>
-        <div class="gallery-meta">Local &middot; May 2025</div>
-        <div class="gallery-tag">Galaxies</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/leo-triplet-2560.webp" data-fallback="images/opt/leo-triplet-2560.jpg" data-title="M65, M66, NGC 3628: Leo Triplet" data-desc="Three gravitationally interacting spiral galaxies ~35 million light-years away in Leo."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">Leo Triplet</span>
+        <span class="gallery-meta">Local &middot; May 2025</span>
+        <span class="gallery-tag">Galaxies</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/leo-triplet-2560.webp" data-fallback="images/opt/leo-triplet-2560.jpg" data-title="M65, M66, NGC 3628: Leo Triplet" data-desc="Three gravitationally interacting spiral galaxies ~35 million light-years away in Leo."></span>
+    </button>
+    <button type="button" data-cat="galaxies" class="gallery-item" aria-label="Open M81 &amp; M82: Bode's Galaxies full size">
       <picture>
         <source type="image/webp" srcset="images/opt/m81-m82-800.webp 800w, images/opt/m81-m82-1280.webp 1280w, images/opt/m81-m82-1920.webp 1920w, images/opt/m81-m82-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/m81-m82-1280.jpg" srcset="images/opt/m81-m82-800.jpg 800w, images/opt/m81-m82-1280.jpg 1280w, images/opt/m81-m82-1920.jpg 1920w, images/opt/m81-m82-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3757" height="2113" loading="lazy" decoding="async" alt="M81 &amp; M82: Bode's Galaxies">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">M81 &amp; M82: Bode's Galaxies</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Galaxies</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/m81-m82-2560.webp" data-fallback="images/opt/m81-m82-2560.jpg" data-title="M81 &amp; M82: Bode's Galaxies" data-desc="A striking pair of interacting galaxies ~12 million light-years away in Ursa Major: the grand spiral M81 and the starburst cigar galaxy M82."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">M81 &amp; M82: Bode's Galaxies</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Galaxies</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/m81-m82-2560.webp" data-fallback="images/opt/m81-m82-2560.jpg" data-title="M81 &amp; M82: Bode's Galaxies" data-desc="A striking pair of interacting galaxies ~12 million light-years away in Ursa Major: the grand spiral M81 and the starburst cigar galaxy M82."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open IC 1848: Soul Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/soul-800.webp 800w, images/opt/soul-1280.webp 1280w, images/opt/soul-1920.webp 1920w, images/opt/soul-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/soul-1280.jpg" srcset="images/opt/soul-800.jpg 800w, images/opt/soul-1280.jpg 1280w, images/opt/soul-1920.jpg 1920w, images/opt/soul-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2695" height="1789" loading="lazy" decoding="async" alt="IC 1848: Soul Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 1848: Soul Nebula</div>
-        <div class="gallery-meta">Local &middot; Nov 2025</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/soul-2560.webp" data-fallback="images/opt/soul-2560.jpg" data-title="IC 1848: The Soul Nebula" data-desc="A vast emission nebula in Cassiopeia, sculpted by stellar winds into its iconic kidney-bean shape."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 1848: Soul Nebula</span>
+        <span class="gallery-meta">Local &middot; Nov 2025</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/soul-2560.webp" data-fallback="images/opt/soul-2560.jpg" data-title="IC 1848: The Soul Nebula" data-desc="A vast emission nebula in Cassiopeia, sculpted by stellar winds into its iconic kidney-bean shape."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 1499: California Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/california-800.webp 800w, images/opt/california-1280.webp 1280w, images/opt/california-1920.webp 1920w, images/opt/california-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/california-1280.jpg" srcset="images/opt/california-800.jpg 800w, images/opt/california-1280.jpg 1280w, images/opt/california-1920.jpg 1920w, images/opt/california-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3736" height="2131" loading="lazy" decoding="async" alt="NGC 1499: California Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 1499: California Nebula</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/california-2560.webp" data-fallback="images/opt/california-2560.jpg" data-title="NGC 1499: California Nebula" data-desc="A large emission nebula in Perseus, named for its resemblance to the US state. Illuminated by Xi Persei."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 1499: California Nebula</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/california-2560.webp" data-fallback="images/opt/california-2560.jpg" data-title="NGC 1499: California Nebula" data-desc="A large emission nebula in Perseus, named for its resemblance to the US state. Illuminated by Xi Persei."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open IC 405: Flaming Star Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/flaming-star-wide-800.webp 800w, images/opt/flaming-star-wide-1280.webp 1280w, images/opt/flaming-star-wide-1920.webp 1920w, images/opt/flaming-star-wide-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/flaming-star-wide-1280.jpg" srcset="images/opt/flaming-star-wide-800.jpg 800w, images/opt/flaming-star-wide-1280.jpg 1280w, images/opt/flaming-star-wide-1920.jpg 1920w, images/opt/flaming-star-wide-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3767" height="2119" loading="lazy" decoding="async" alt="IC 405: Flaming Star Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 405: Flaming Star Nebula</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission / Reflection</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/flaming-star-wide-2560.webp" data-fallback="images/opt/flaming-star-wide-2560.jpg" data-title="IC 405: Flaming Star Nebula" data-desc="An emission and reflection nebula in Auriga surrounding the runaway star AE Aurigae, about 1,500 light-years away."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 405: Flaming Star Nebula</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission / Reflection</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/flaming-star-wide-2560.webp" data-fallback="images/opt/flaming-star-wide-2560.jpg" data-title="IC 405: Flaming Star Nebula" data-desc="An emission and reflection nebula in Auriga surrounding the runaway star AE Aurigae, about 1,500 light-years away."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open IC 405: Flaming Star (Detail) full size">
       <picture>
         <source type="image/webp" srcset="images/opt/flaming-star-closeup-800.webp 800w, images/opt/flaming-star-closeup-1280.webp 1280w, images/opt/flaming-star-closeup-1920.webp 1920w, images/opt/flaming-star-closeup-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/flaming-star-closeup-1280.jpg" srcset="images/opt/flaming-star-closeup-800.jpg 800w, images/opt/flaming-star-closeup-1280.jpg 1280w, images/opt/flaming-star-closeup-1920.jpg 1920w, images/opt/flaming-star-closeup-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3840" height="2160" loading="lazy" decoding="async" alt="IC 405: Flaming Star (Detail)">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">IC 405: Flaming Star (Detail)</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission / Reflection</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/flaming-star-closeup-2560.webp" data-fallback="images/opt/flaming-star-closeup-2560.jpg" data-title="IC 405: Flaming Star Nebula (Detail)" data-desc="A closer view of the intricate gas and dust structures surrounding AE Aurigae in Auriga."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">IC 405: Flaming Star (Detail)</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission / Reflection</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/flaming-star-closeup-2560.webp" data-fallback="images/opt/flaming-star-closeup-2560.jpg" data-title="IC 405: Flaming Star Nebula (Detail)" data-desc="A closer view of the intricate gas and dust structures surrounding AE Aurigae in Auriga."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 2174: Monkey Head full size">
       <picture>
         <source type="image/webp" srcset="images/opt/monkeyhead-800.webp 800w, images/opt/monkeyhead-1280.webp 1280w, images/opt/monkeyhead-1920.webp 1920w, images/opt/monkeyhead-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/monkeyhead-1280.jpg" srcset="images/opt/monkeyhead-800.jpg 800w, images/opt/monkeyhead-1280.jpg 1280w, images/opt/monkeyhead-1920.jpg 1920w, images/opt/monkeyhead-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3468" height="1975" loading="lazy" decoding="async" alt="NGC 2174: Monkey Head">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 2174: Monkey Head</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/monkeyhead-2560.webp" data-fallback="images/opt/monkeyhead-2560.jpg" data-title="NGC 2174: Monkey Head Nebula" data-desc="An H II emission region in Orion, about 6,400 light-years away, with dramatic pillars of dust carved by UV radiation."></div>
-    </div>
-    <div class="gallery-item featured" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 2174: Monkey Head</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/monkeyhead-2560.webp" data-fallback="images/opt/monkeyhead-2560.jpg" data-title="NGC 2174: Monkey Head Nebula" data-desc="An H II emission region in Orion, about 6,400 light-years away, with dramatic pillars of dust carved by UV radiation."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item featured" aria-label="Open Flaming Star &amp; Tadpoles Region full size">
       <picture>
         <source type="image/webp" srcset="images/opt/flaming-star-and-tadpoles-ultrawide-800.webp 800w, images/opt/flaming-star-and-tadpoles-ultrawide-1280.webp 1280w, images/opt/flaming-star-and-tadpoles-ultrawide-1920.webp 1920w, images/opt/flaming-star-and-tadpoles-ultrawide-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) calc(100vw - 64px), 1400px">
         <img src="images/opt/flaming-star-and-tadpoles-ultrawide-1280.jpg" srcset="images/opt/flaming-star-and-tadpoles-ultrawide-800.jpg 800w, images/opt/flaming-star-and-tadpoles-ultrawide-1280.jpg 1280w, images/opt/flaming-star-and-tadpoles-ultrawide-1920.jpg 1920w, images/opt/flaming-star-and-tadpoles-ultrawide-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) calc(100vw - 64px), 1400px"
              width="3840" height="2160" loading="lazy" decoding="async" alt="Flaming Star &amp; Tadpoles Region">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">Flaming Star &amp; Tadpoles Region</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Widefield Mosaic</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/flaming-star-and-tadpoles-ultrawide-2560.webp" data-fallback="images/opt/flaming-star-and-tadpoles-ultrawide-2560.jpg" data-title="Flaming Star &amp; Tadpoles Region" data-desc="An ultrawide view capturing IC 405 and IC 410 together in the rich Auriga star-forming complex."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">Flaming Star &amp; Tadpoles Region</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Widefield Mosaic</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/flaming-star-and-tadpoles-ultrawide-2560.webp" data-fallback="images/opt/flaming-star-and-tadpoles-ultrawide-2560.jpg" data-title="Flaming Star &amp; Tadpoles Region" data-desc="An ultrawide view capturing IC 405 and IC 410 together in the rich Auriga star-forming complex."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open M42: Orion Nebula full size">
       <picture>
         <source type="image/webp" srcset="images/opt/orion-nebula-closeup-800.webp 800w, images/opt/orion-nebula-closeup-1016.webp 1016w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/orion-nebula-closeup-1016.jpg" srcset="images/opt/orion-nebula-closeup-800.jpg 800w, images/opt/orion-nebula-closeup-1016.jpg 1016w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="1016" height="804" loading="lazy" decoding="async" alt="M42: Orion Nebula">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">M42: Orion Nebula</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/orion-nebula-closeup-1016.webp" data-fallback="images/opt/orion-nebula-closeup-1016.jpg" data-title="M42: The Orion Nebula" data-desc="The brightest diffuse nebula in the sky, a prominent star-forming region about 1,344 light-years away in Orion."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">M42: Orion Nebula</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/orion-nebula-closeup-1016.webp" data-fallback="images/opt/orion-nebula-closeup-1016.jpg" data-title="M42: The Orion Nebula" data-desc="The brightest diffuse nebula in the sky, a prominent star-forming region about 1,344 light-years away in Orion."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 2237: Rosette (WhiteCat) full size">
       <picture>
         <source type="image/webp" srcset="images/opt/rosette-redcat-800.webp 800w, images/opt/rosette-redcat-1280.webp 1280w, images/opt/rosette-redcat-1920.webp 1920w, images/opt/rosette-redcat-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/rosette-redcat-1280.jpg" srcset="images/opt/rosette-redcat-800.jpg 800w, images/opt/rosette-redcat-1280.jpg 1280w, images/opt/rosette-redcat-1920.jpg 1920w, images/opt/rosette-redcat-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3757" height="2113" loading="lazy" decoding="async" alt="NGC 2237: Rosette (WhiteCat)">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 2237: Rosette (WhiteCat)</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Emission</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/rosette-redcat-2560.webp" data-fallback="images/opt/rosette-redcat-2560.jpg" data-title="NGC 2237: Rosette Nebula (WhiteCat 51)" data-desc="A wider-field take on the Rosette captured with the William Optics WhiteCat 51 at 250mm."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 2237: Rosette (WhiteCat)</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Emission</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/rosette-redcat-2560.webp" data-fallback="images/opt/rosette-redcat-2560.jpg" data-title="NGC 2237: Rosette Nebula (WhiteCat 51)" data-desc="A wider-field take on the Rosette captured with the William Optics WhiteCat 51 at 250mm."></span>
+    </button>
+    <button type="button" data-cat="clusters" class="gallery-item" aria-label="Open M5: Globular Cluster full size">
       <picture>
         <source type="image/webp" srcset="images/opt/m5-800.webp 800w, images/opt/m5-1280.webp 1280w, images/opt/m5-1920.webp 1920w, images/opt/m5-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/m5-1280.jpg" srcset="images/opt/m5-800.jpg 800w, images/opt/m5-1280.jpg 1280w, images/opt/m5-1920.jpg 1920w, images/opt/m5-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2711" height="1744" loading="lazy" decoding="async" alt="M5: Globular Cluster">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">M5: Globular Cluster</div>
-        <div class="gallery-meta">Local &middot; May 2025</div>
-        <div class="gallery-tag">Globular</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/m5-2560.webp" data-fallback="images/opt/m5-2560.jpg" data-title="M5: Globular Cluster" data-desc="A densely packed globular cluster ~24,500 light-years away, estimated at 13 billion years old."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">M5: Globular Cluster</span>
+        <span class="gallery-meta">Local &middot; May 2025</span>
+        <span class="gallery-tag">Globular</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/m5-2560.webp" data-fallback="images/opt/m5-2560.jpg" data-title="M5: Globular Cluster" data-desc="A densely packed globular cluster ~24,500 light-years away, estimated at 13 billion years old."></span>
+    </button>
+    <button type="button" data-cat="nebulae" class="gallery-item" aria-label="Open NGC 6781: Snowglobe full size">
       <picture>
         <source type="image/webp" srcset="images/opt/snowglobe-800.webp 800w, images/opt/snowglobe-1280.webp 1280w, images/opt/snowglobe-1920.webp 1920w, images/opt/snowglobe-2543.webp 2543w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/snowglobe-1280.jpg" srcset="images/opt/snowglobe-800.jpg 800w, images/opt/snowglobe-1280.jpg 1280w, images/opt/snowglobe-1920.jpg 1920w, images/opt/snowglobe-2543.jpg 2543w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2543" height="1615" loading="lazy" decoding="async" alt="NGC 6781: Snowglobe">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">NGC 6781: Snowglobe</div>
-        <div class="gallery-meta">Local &middot; Sep 2025</div>
-        <div class="gallery-tag">Planetary</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/snowglobe-2543.webp" data-fallback="images/opt/snowglobe-2543.jpg" data-title="NGC 6781: The Snowglobe Nebula" data-desc="A planetary nebula in Aquila formed from the outer layers of a dying sun-like star."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">NGC 6781: Snowglobe</span>
+        <span class="gallery-meta">Local &middot; Sep 2025</span>
+        <span class="gallery-tag">Planetary</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/snowglobe-2543.webp" data-fallback="images/opt/snowglobe-2543.jpg" data-title="NGC 6781: The Snowglobe Nebula" data-desc="A planetary nebula in Aquila formed from the outer layers of a dying sun-like star."></span>
+    </button>
+    <button type="button" data-cat="clusters" class="gallery-item" aria-label="Open M11: Wild Duck Cluster full size">
       <picture>
         <source type="image/webp" srcset="images/opt/wildduck-800.webp 800w, images/opt/wildduck-1280.webp 1280w, images/opt/wildduck-1920.webp 1920w, images/opt/wildduck-2262.webp 2262w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/wildduck-1280.jpg" srcset="images/opt/wildduck-800.jpg 800w, images/opt/wildduck-1280.jpg 1280w, images/opt/wildduck-1920.jpg 1920w, images/opt/wildduck-2262.jpg 2262w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="2262" height="1458" loading="lazy" decoding="async" alt="M11: Wild Duck Cluster">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">M11: Wild Duck Cluster</div>
-        <div class="gallery-meta">Local &middot; Aug 2025</div>
-        <div class="gallery-tag">Open Cluster</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/wildduck-2262.webp" data-fallback="images/opt/wildduck-2262.jpg" data-title="M11: Wild Duck Cluster" data-desc="A dense open star cluster in Scutum with a distinctive V-shape resembling ducks in flight."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">M11: Wild Duck Cluster</span>
+        <span class="gallery-meta">Local &middot; Aug 2025</span>
+        <span class="gallery-tag">Open Cluster</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/wildduck-2262.webp" data-fallback="images/opt/wildduck-2262.jpg" data-title="M11: Wild Duck Cluster" data-desc="A dense open star cluster in Scutum with a distinctive V-shape resembling ducks in flight."></span>
+    </button>
+    <button type="button" data-cat="solar" class="gallery-item" aria-label="Open The Moon full size">
       <picture>
         <source type="image/webp" srcset="images/opt/moon1-800.webp 800w, images/opt/moon1-1280.webp 1280w, images/opt/moon1-1919.webp 1919w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/moon1-1280.jpg" srcset="images/opt/moon1-800.jpg 800w, images/opt/moon1-1280.jpg 1280w, images/opt/moon1-1919.jpg 1919w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="1919" height="1179" loading="lazy" decoding="async" alt="The Moon">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">The Moon</div>
-        <div class="gallery-meta">Local &middot; Jun 2025</div>
-        <div class="gallery-tag">Lunar</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/moon1-1919.webp" data-fallback="images/opt/moon1-1919.jpg" data-title="The Moon" data-desc="Earth's sole natural satellite in exquisite crater-level detail."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">The Moon</span>
+        <span class="gallery-meta">Local &middot; Jun 2025</span>
+        <span class="gallery-tag">Lunar</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/moon1-1919.webp" data-fallback="images/opt/moon1-1919.jpg" data-title="The Moon" data-desc="Earth's sole natural satellite in exquisite crater-level detail."></span>
+    </button>
+    <button type="button" data-cat="clusters" class="gallery-item" aria-label="Open M45: Pleiades (Alt) full size">
       <picture>
         <source type="image/webp" srcset="images/opt/m45-2-800.webp 800w, images/opt/m45-2-1280.webp 1280w, images/opt/m45-2-1920.webp 1920w, images/opt/m45-2-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/m45-2-1280.jpg" srcset="images/opt/m45-2-800.jpg 800w, images/opt/m45-2-1280.jpg 1280w, images/opt/m45-2-1920.jpg 1920w, images/opt/m45-2-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3090" height="2054" loading="lazy" decoding="async" alt="M45: Pleiades (Alt)">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">M45: Pleiades (Alt)</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Open Cluster</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/m45-2-2560.webp" data-fallback="images/opt/m45-2-2560.jpg" data-title="M45: The Pleiades (Alternate View)" data-desc="A second take on the Seven Sisters showcasing the reflection nebulosity through the cluster."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">M45: Pleiades (Alt)</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Open Cluster</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/m45-2-2560.webp" data-fallback="images/opt/m45-2-2560.jpg" data-title="M45: The Pleiades (Alternate View)" data-desc="A second take on the Seven Sisters showcasing the reflection nebulosity through the cluster."></span>
+    </button>
+    <button type="button" data-cat="solar" class="gallery-item" aria-label="Open The Sun full size">
       <picture>
         <source type="image/webp" srcset="images/opt/sun-800.webp 800w, images/opt/sun-992.webp 992w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/sun-992.jpg" srcset="images/opt/sun-800.jpg 800w, images/opt/sun-992.jpg 992w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="992" height="688" loading="lazy" decoding="async" alt="The Sun">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">The Sun</div>
-        <div class="gallery-meta">Local Imaging</div>
-        <div class="gallery-tag">Solar</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/sun-992.webp" data-fallback="images/opt/sun-992.jpg" data-title="The Sun" data-desc="Our nearest star captured with a solar filter revealing sunspots, granulation, and surface detail."></div>
-    </div>
-    <div class="gallery-item" onclick="openLightbox(this)">
+      <span class="gallery-overlay">
+        <span class="gallery-name">The Sun</span>
+        <span class="gallery-meta">Local Imaging</span>
+        <span class="gallery-tag">Solar</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/sun-992.webp" data-fallback="images/opt/sun-992.jpg" data-title="The Sun" data-desc="Our nearest star captured with a solar filter revealing sunspots, granulation, and surface detail."></span>
+    </button>
+    <button type="button" data-cat="stars" class="gallery-item" aria-label="Open Arcturus full size">
       <picture>
         <source type="image/webp" srcset="images/opt/arcturus-800.webp 800w, images/opt/arcturus-1280.webp 1280w, images/opt/arcturus-1920.webp 1920w, images/opt/arcturus-2560.webp 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px">
         <img src="images/opt/arcturus-1280.jpg" srcset="images/opt/arcturus-800.jpg 800w, images/opt/arcturus-1280.jpg 1280w, images/opt/arcturus-1920.jpg 1920w, images/opt/arcturus-2560.jpg 2560w" sizes="(max-width: 768px) calc(100vw - 48px), (max-width: 1400px) 50vw, 700px"
              width="3821" height="2160" loading="lazy" decoding="async" alt="Arcturus">
       </picture>
-      <div class="gallery-overlay">
-        <div class="gallery-name">Arcturus</div>
-        <div class="gallery-meta">Local &middot; Jul 2025</div>
-        <div class="gallery-tag">Star</div>
-      </div>
-      <div class="lb-data" data-full="images/opt/arcturus-2560.webp" data-fallback="images/opt/arcturus-2560.jpg" data-title="Arcturus" data-desc="A prominent red giant 37 light-years away, the brightest star in the Northern Celestial Hemisphere."></div>
-    </div>
+      <span class="gallery-overlay">
+        <span class="gallery-name">Arcturus</span>
+        <span class="gallery-meta">Local &middot; Jul 2025</span>
+        <span class="gallery-tag">Star</span>
+      </span>
+      <span class="lb-data" data-full="images/opt/arcturus-2560.webp" data-fallback="images/opt/arcturus-2560.jpg" data-title="Arcturus" data-desc="A prominent red giant 37 light-years away, the brightest star in the Northern Celestial Hemisphere."></span>
+    </button>
   </div>
 </section>
 <div class="rigs-section" id="rigs">
@@ -828,9 +911,12 @@
   </div>
   <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; Morristown, NJ</div>
 </footer>
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <button class="lightbox-close">&times;</button>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-title" hidden>
+  <button class="lightbox-close" id="lb-close" aria-label="Close">&times;</button>
+  <div class="lb-counter" id="lb-counter"></div>
+  <button class="lb-nav lb-prev" id="lb-prev" aria-label="Previous photograph">&#8249;</button>
   <img id="lb-img" src="" alt="">
+  <button class="lb-nav lb-next" id="lb-next" aria-label="Next photograph">&#8250;</button>
   <div class="lightbox-caption"><h3 id="lb-title"></h3><p id="lb-desc"></p></div>
 </div>
 <script>
@@ -850,23 +936,176 @@
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-  function openImage(src, title, desc, fallback) {
-    const el = document.getElementById('lb-img');
+  /* ---------------- night vision ----------------
+     wvo-store.js has already put .night on <html> before first paint; this is
+     just the switch, so red-light mode is no longer a one-way door from the
+     tools into the home page. */
+  const nightBtn = document.getElementById('nightBtn');
+  function syncNight() {
+    const on = !!(window.WVO && WVO.night && WVO.night.isOn());
+    nightBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  nightBtn.addEventListener('click', () => {
+    if (window.WVO && WVO.night) WVO.night.toggle();
+    syncNight();
+  });
+  syncNight();
+
+  /* ---------------- gallery filters ----------------
+     Every tile already carried an object-type tag; this makes it do some work.
+     The chosen filter rides in ?tag= so a filtered view can be linked. */
+  const galleryGrid = document.querySelector('.gallery-grid');
+  const galleryTiles = Array.from(galleryGrid.querySelectorAll('.gallery-item'));
+  const filterChips = Array.from(document.querySelectorAll('.gallery-filters button'));
+  const galleryStatus = document.getElementById('galleryStatus');
+
+  function applyFilter(cat, push) {
+    if (!filterChips.some(c => c.dataset.filter === cat)) cat = 'all';
+    galleryTiles.forEach(t =>
+      t.classList.toggle('is-filtered', cat !== 'all' && t.dataset.cat !== cat));
+    filterChips.forEach(c =>
+      c.setAttribute('aria-pressed', c.dataset.filter === cat ? 'true' : 'false'));
+    const shown = galleryTiles.filter(t => !t.classList.contains('is-filtered')).length;
+    galleryStatus.textContent = shown + (shown === 1 ? ' photograph' : ' photographs') + ' shown';
+    if (!push) return;
+    try {
+      const u = new URL(location.href);
+      if (cat === 'all') u.searchParams.delete('tag'); else u.searchParams.set('tag', cat);
+      u.hash = 'gallery';
+      history.replaceState(null, '', u);
+    } catch (e) { /* file:// and locked-down embeds; the filter still works */ }
+  }
+
+  filterChips.forEach(c => c.addEventListener('click', () => applyFilter(c.dataset.filter, true)));
+  try { applyFilter(new URL(location.href).searchParams.get('tag') || 'all', false); }
+  catch (e) { applyFilter('all', false); }
+
+  /* ---------------- lightbox ---------------- */
+  const lb        = document.getElementById('lightbox');
+  const lbImg     = document.getElementById('lb-img');
+  const lbTitle   = document.getElementById('lb-title');
+  const lbDesc    = document.getElementById('lb-desc');
+  const lbCounter = document.getElementById('lb-counter');
+  const lbClose   = document.getElementById('lb-close');
+  const lbPrev    = document.getElementById('lb-prev');
+  const lbNext    = document.getElementById('lb-next');
+
+  let lbGroup = [];     /* the tiles the arrows walk through */
+  let lbIndex = -1;
+  let lbTrigger = null; /* what opened the dialog, for when there is no set */
+
+  function lbShow(src, title, desc, fallback) {
     /* The grid tile is a few hundred pixels wide; the lightbox wants the top of
        the ladder. WebP with a JPEG fallback for anything that cannot decode it. */
-    el.onerror = fallback ? () => { el.onerror = null; el.src = fallback; } : null;
-    el.src = src;
-    document.getElementById('lb-title').innerHTML = title || '';
-    document.getElementById('lb-desc').innerHTML = desc || '';
-    document.getElementById('lightbox').classList.add('active');
-    document.body.style.overflow = 'hidden';
+    lbImg.onload = null; lbImg.onerror = null;
+    lbImg.classList.add('loading');
+    lbImg.onload = () => lbImg.classList.remove('loading');
+    lbImg.onerror = fallback ? () => { lbImg.onerror = null; lbImg.src = fallback; } : null;
+    lbImg.src = src;
+    lbTitle.innerHTML = title || '';
+    lbDesc.innerHTML = desc || '';
+    /* the caption is the only description this image has; let it be the alt too */
+    lbImg.alt = lbTitle.textContent || '';
   }
-  function openLightbox(item) {
-    const img = item.querySelector('img');
-    const data = item.querySelector('.lb-data');
+
+  function lbGoTo(i) {
+    if (!lbGroup.length) return;
+    lbIndex = (i % lbGroup.length + lbGroup.length) % lbGroup.length;
+    const tile = lbGroup[lbIndex];
+    const data = tile.querySelector('.lb-data');
+    const img  = tile.querySelector('img');
     const d = data ? data.dataset : {};
-    openImage(d.full || img.currentSrc || img.src, d.title || '', d.desc || '', d.fallback);
+    lbShow(d.full || (img && (img.currentSrc || img.src)) || '', d.title || '', d.desc || '', d.fallback);
+    lbCounter.textContent = (lbIndex + 1) + ' / ' + lbGroup.length;
   }
+
+  function lbOpenDialog(solo) {
+    lb.hidden = false;
+    lb.classList.add('active');
+    lb.classList.toggle('solo', !!solo);
+    document.body.style.overflow = 'hidden';
+    lbClose.focus();
+  }
+
+  function closeLightbox() {
+    if (!lb.classList.contains('active')) return;
+    lb.classList.remove('active');
+    lb.hidden = true;
+    document.body.style.overflow = '';
+    lbImg.onload = null; lbImg.onerror = null;
+    lbImg.removeAttribute('src');   /* stop a multi-megabyte sub still in flight */
+    /* hand focus back to the tile they were actually looking at, so closing
+       after stepping to #15 leaves them at #15 in the grid rather than at #1 */
+    const back = (lbIndex >= 0 && lbGroup[lbIndex]) || lbTrigger;
+    lbGroup = []; lbIndex = -1; lbTrigger = null;
+    if (back && back.isConnected && back.focus) back.focus();
+  }
+
+  /* the two "View full size" buttons in the NGC 7000 study open a single frame */
+  function openImage(src, title, desc, fallback) {
+    lbGroup = []; lbIndex = -1;
+    lbOpenDialog(true);
+    lbShow(src, title, desc, fallback);
+  }
+
+  function openLightbox(item) {
+    /* arrows stay inside the set the tile belongs to, and skip anything the
+       active filter has hidden */
+    const box = item.closest('.gallery-grid, .study-grid');
+    lbGroup = box
+      ? Array.from(box.querySelectorAll('.gallery-item')).filter(el => !el.classList.contains('is-filtered'))
+      : [item];
+    const at = lbGroup.indexOf(item);
+    lbOpenDialog(lbGroup.length < 2);
+    lbGoTo(at < 0 ? 0 : at);
+  }
+
+  /* capture phase, so the trigger is recorded before an inline onclick
+     (the two "View full size" buttons) calls openImage */
+  document.addEventListener('click', e => {
+    const btn = e.target.closest && e.target.closest('button');
+    if (btn) lbTrigger = btn;
+  }, true);
+
+  document.addEventListener('click', e => {
+    const tile = e.target.closest && e.target.closest('.gallery-item');
+    if (tile) openLightbox(tile);
+  });
+
+  lbClose.addEventListener('click', closeLightbox);
+  lbPrev.addEventListener('click', () => lbGoTo(lbIndex - 1));
+  lbNext.addEventListener('click', () => lbGoTo(lbIndex + 1));
+  /* backdrop and image close; caption and controls do not, so the text stays
+     selectable and a mis-aimed click does not throw the set away */
+  lb.addEventListener('click', e => { if (e.target === lb || e.target === lbImg) closeLightbox(); });
+
+  document.addEventListener('keydown', e => {
+    if (!lb.classList.contains('active')) return;
+    if (e.key === 'Escape') { closeLightbox(); return; }
+    if (lbGroup.length < 2) return;
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); lbGoTo(lbIndex - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); lbGoTo(lbIndex + 1); }
+  });
+
+  /* keep Tab inside the dialog while it is up */
+  lb.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const f = Array.from(lb.querySelectorAll('button')).filter(b => b.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  let lbTouchX = null;
+  lb.addEventListener('touchstart', e => { lbTouchX = e.changedTouches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend', e => {
+    if (lbTouchX === null) return;
+    const dx = e.changedTouches[0].clientX - lbTouchX;
+    lbTouchX = null;
+    if (Math.abs(dx) > 50 && lbGroup.length > 1) lbGoTo(lbIndex + (dx < 0 ? 1 : -1));
+  });
+
   document.querySelectorAll('.compare').forEach(cmp => {
     const range = cmp.querySelector('.cmp-range');
     if (!range) return;
@@ -874,11 +1113,7 @@
     range.addEventListener('input', apply);
     apply();
   });
-  function closeLightbox() {
-    document.getElementById('lightbox').classList.remove('active');
-    document.body.style.overflow = '';
-  }
-  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
   document.querySelectorAll('.nav-links a').forEach(a =>
     a.addEventListener('click', () => document.querySelector('.nav-links').classList.remove('show')));
 </script>
