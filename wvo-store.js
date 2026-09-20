@@ -1,4 +1,8 @@
 /*
+ * Washington Valley Observatory  ·  myobservatory.org
+ * Copyright (c) 2025-2026 Washington Valley Observatory. All rights reserved.
+ * Not licensed for reuse or redistribution. See LICENSE.
+ *
  * Shared state for the Observatory Tools on myobservatory.org.
  *
  * The five tools grew up as independent pages, so each one carries its own

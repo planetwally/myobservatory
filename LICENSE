@@ -1,0 +1,115 @@
+Copyright (c) 2025-2026 Washington Valley Observatory (myobservatory.org)
+All rights reserved.
+
+================================================================================
+1. THE WORK
+================================================================================
+
+This repository contains the source of myobservatory.org: the Sky Atlas, FOV
+Viewer, Sky Conditions Planner, Astro Calculators, Sampling Calculator, My Gear
+and the gallery site around them, together with the astrophotographs they
+display.
+
+All of it -- the source code, the page designs, the written text, and every
+photograph in images/ -- is the exclusive property of Washington Valley
+Observatory and is protected by copyright.
+
+================================================================================
+2. WHAT IS NOT PERMITTED
+================================================================================
+
+No licence is granted, expressly or by implication, to any person obtaining a
+copy of this material. In particular, you may NOT:
+
+  (a) copy, reproduce or republish this source, in whole or in part;
+  (b) modify, adapt, translate or create derivative works from it;
+  (c) distribute, sublicense, sell, rent or lease it;
+  (d) host it, or any substantial part of it, on any other domain or service;
+  (e) reuse the photographs in images/ for any purpose, commercial or
+      otherwise, including as training data for machine-learning systems;
+  (f) remove or alter any copyright notice it carries.
+
+This applies whether the material was obtained from this repository, from the
+published website, or from a browser cache -- the fact that a web browser must
+download this code in order to run it does not place it in the public domain
+and grants no licence to reuse it.
+
+================================================================================
+3. WHAT IS PERMITTED
+================================================================================
+
+You may use the published website at myobservatory.org for its intended
+purpose: planning and carrying out your own astronomical observations. Output
+you generate with these tools -- framing exports, share links, calculator
+results -- is yours to use freely, including commercially.
+
+Viewing the source in a browser's developer tools, for your own private study,
+is neither prevented nor objected to. Reproducing it is what is reserved.
+
+================================================================================
+4. THIRD-PARTY MATERIAL
+================================================================================
+
+Sections 1-2 cover original work only. This project incorporates third-party
+material that remains under its own terms, and nothing in this licence
+restricts, overrides or reduces the rights you have in that material under
+those terms.
+
+STAR AND DEEP-SKY CATALOGUES (embedded in atlas.html)
+
+  HYG Database v4 -- Copyright (c) David Nash / Astronomy Nexus
+    Licensed CC BY-SA 4.0.  https://astronexus.com/projects/hyg
+
+  OpenNGC -- Copyright (c) Mattia Verga
+    Licensed CC BY-SA 4.0.  https://github.com/mattiaverga/OpenNGC
+
+  Constellation figures -- from d3-celestial, Copyright (c) 2015-19 Olaf Frohn
+    Licensed BSD-3-Clause.  https://github.com/ofrohn/d3-celestial
+
+  The catalogue payload in atlas.html is a repacked subset of these datasets
+  and remains available to you under the licences above, including the
+  ShareAlike terms of CC BY-SA 4.0. The reservation in section 2 is asserted
+  over the original code, design and text surrounding that payload, not over
+  the catalogue data itself.
+
+SOFTWARE
+
+  Leaflet -- Copyright (c) 2010-2024 Volodymyr Agafonkin et al.
+    Licensed BSD-2-Clause. Loaded from a CDN; not redistributed here.
+
+  Cormorant Garamond, DM Sans, JetBrains Mono
+    SIL Open Font License 1.1. Served by Google Fonts; not redistributed here.
+
+LIVE SERVICES
+
+  These are queried at runtime and their data is not redistributed here. Their
+  own terms and attribution requirements apply to what they return:
+
+  CDS Strasbourg (Sesame name resolution, hips2fits survey imagery), and the
+  sky surveys reachable through it -- DSS2, SDSS9, 2MASS, unWISE, Mellinger,
+  Finkbeiner H-alpha; Open-Meteo (forecast, air quality, geocoding);
+  RainViewer (radar and satellite); Environment and Climate Change Canada
+  GeoMet (HRDPS/GDPS cloud); CARTO basemap tiles; OpenStreetMap contributors.
+
+================================================================================
+5. NO WARRANTY
+================================================================================
+
+THIS MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THIS MATERIAL OR ITS USE.
+
+The astronomical calculations here are planning aids, not instruments. Check
+anything that matters against an authoritative ephemeris before you rely on it.
+
+================================================================================
+6. PERMISSIONS AND ENQUIRIES
+================================================================================
+
+Licences for use beyond the above -- including print use of the photographs,
+educational reuse and commercial licensing -- are available on request.
+
+  inquiries@myobservatory.org
+  https://www.myobservatory.org

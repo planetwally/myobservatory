@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Washington Valley Observatory  ·  myobservatory.org
+# Copyright (c) 2025-2026 Washington Valley Observatory. All rights reserved.
+# Not licensed for reuse or redistribution. See LICENSE.
+#
 # Build responsive derivatives for the gallery.
 #
 # Originals live in images/ and are never referenced by the site directly --

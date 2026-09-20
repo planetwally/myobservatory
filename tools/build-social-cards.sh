@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Washington Valley Observatory  ·  myobservatory.org
+# Copyright (c) 2025-2026 Washington Valley Observatory. All rights reserved.
+# Not licensed for reuse or redistribution. See LICENSE.
+#
 # Build the 1200x630 Open Graph cards.
 #
 # These are what a myobservatory.org link renders as when it is pasted into
