@@ -62,7 +62,7 @@
 
   /* ---------------- observer site ---------------- */
 
-  var DEFAULT_SITE = { lat: 40.797, lon: -74.482, name: 'Observatory' };
+  var DEFAULT_SITE = { lat: 40.8, lon: -74.5, name: 'Observatory' };
 
   var site = {
     get: function () {
