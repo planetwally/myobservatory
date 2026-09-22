@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<!--
+  Washington Valley Observatory  ·  myobservatory.org
+  Copyright (c) 2025-2026 Washington Valley Observatory. All rights reserved.
+
+  This source, its design and the photographs it displays are not licensed for
+  reuse, redistribution or derivative works. Your browser downloads this code
+  in order to run it; that grants no licence to copy it. See LICENSE.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polar Align · Washington Valley Observatory</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="Where Polaris or Sigma Octantis sits on your polar scope reticle right now, for your site: hour angle, clock position and next transit, worked out in the browser.">
+<link rel="canonical" href="https://www.myobservatory.org/polar.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Washington Valley Observatory">
+<meta property="og:title" content="Polar Align">
+<meta property="og:description" content="Where Polaris or Sigma Octantis sits on your polar scope reticle right now, for your site: hour angle, clock position and next transit, worked out in the browser.">
+<meta property="og:url" content="https://www.myobservatory.org/polar.html">
+<meta property="og:image" content="https://www.myobservatory.org/images/social/og-tools.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Polar Align — Washington Valley Observatory">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="wvo-store.js"></script>
+<script src="wvo-astro.js"></script>
+<style>
+  :root{
+    --bg-void:#07080c;
+    --bg-panel:#0c0e14;
+    --bg-card:#10131b;
+    --text-star:#e8e4df;
+    --text-nebula:#9a958d;
+    --text-dim:#5a564f;
+    --accent-blue:#4a7cad;
+    --accent-gold:#c9a84c;
+    --accent-ember:#b35a3a;
+    --accent-teal:#3a8a7a;
+    --border-faint:rgba(255,255,255,0.04);
+    --grain:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    --bg:var(--bg-void);
+    --panel:var(--bg-panel);
+    --panel-2:var(--bg-card);
+    --line:#1b1f29;
+    --text:var(--text-star);
+    --muted:var(--text-nebula);
+    --amber:var(--accent-gold);
+    --amber-dim:#a8883a;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;overflow-x:hidden;overflow-x:clip}
+  body{background:var(--bg);color:var(--text);font:15px/1.5 "DM Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;z-index:1;background:var(--grain)}
+
+  /* ---------- shared observatory chrome ---------- */
+  nav{
+    position:sticky;top:0;z-index:60;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:1.05rem 1.9rem;
+    background:rgba(7,8,12,.82);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid var(--border-faint);
+  }
+  .nav-brand{
+    font-family:"Cormorant Garamond",serif;font-weight:300;font-size:1.15rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--text-star);
+    text-decoration:none;min-width:0;
+  }
+  .nav-brand span{color:var(--accent-gold)}
+  .nav-brand .brand-long{color:var(--text-star)}
+  .nav-links{display:flex;gap:1.4rem;list-style:none;align-items:center}
+  .nav-links a{
+    font-size:.74rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text-nebula);text-decoration:none;transition:color .3s;position:relative;
+  }
+  .nav-links a::after{content:"";position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--accent-gold);transition:width .3s}
+  .nav-links a:hover,.nav-links a.current{color:var(--text-star)}
+  .nav-links a.current::after,.nav-links a:hover::after{width:100%}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:.4rem}
+  .nav-toggle:hover{background:none;border:none}
+  .nav-toggle span{display:block;width:22px;height:1.5px;background:var(--text-star);margin:5px 0}
+  #nightBtn{
+    font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;padding:.5rem .85rem;white-space:nowrap;
+  }
+  .tool-title{max-width:1100px;margin:0 auto;padding:2.2rem 1.9rem .2rem;position:relative;z-index:2}
+  .tool-title .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:.64rem;font-weight:300;
+    letter-spacing:.3em;text-transform:uppercase;color:var(--accent-gold);margin-bottom:.55rem;
+  }
+  .tool-title h1{
+    font-family:"Cormorant Garamond",serif;font-weight:300;
+    font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.15;letter-spacing:-.01em;
+  }
+  .tool-title h1 em{font-style:italic;color:var(--accent-blue)}
+  .tool-title p{font-size:.9rem;font-weight:300;color:var(--text-nebula);max-width:640px;margin-top:.6rem;line-height:1.75}
+  footer{
+    border-top:1px solid var(--border-faint);padding:3rem 1.9rem 2.2rem;text-align:center;
+    background:var(--bg-panel);margin-top:2.5rem;position:relative;z-index:2;
+  }
+  .footer-brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;font-weight:300;letter-spacing:.1em;text-transform:uppercase}
+  .footer-links{display:flex;justify-content:center;gap:1.7rem;margin-top:1.3rem;flex-wrap:wrap}
+  .footer-links a{font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-nebula);text-decoration:none;transition:color .3s}
+  .footer-links a:hover{color:var(--accent-gold)}
+  .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
+  @media (max-width:620px){
+    .brand-long{display:none}
+    .nav-brand{font-size:1rem;letter-spacing:.1em}
+    #nightBtn{padding:.45rem .6rem;font-size:.58rem}
+    .tool-title{padding:1.3rem 1rem .2rem}
+    nav{padding:.85rem 1rem}
+    .nav-links.show{padding:.8rem 1rem 1.2rem}
+  }
+  @media (max-width:1300px){
+    nav{padding:.9rem 1.4rem}
+    .nav-toggle{display:block}
+    .nav-links{
+      display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+      align-items:flex-start;gap:0;background:rgba(7,8,12,.97);
+      padding:.8rem 1.4rem 1.2rem;border-bottom:1px solid var(--border-faint);
+    }
+    .nav-links.show{display:flex}
+    .nav-links li{padding:.55rem 0}
+    .tool-title{padding:1.6rem 1.4rem .2rem}
+  }
+
+  button{font:inherit;color:var(--text);cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 13px;transition:border-color .15s,background .15s}
+  button:hover{border-color:var(--amber-dim)}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+  input[type=datetime-local]{
+    width:100%;min-width:0;background:var(--panel-2);color:var(--text);color-scheme:dark;
+    border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:14px "JetBrains Mono",monospace;
+  }
+
+  main{
+    max-width:1100px;margin:0 auto;padding:18px 26px 10px;position:relative;z-index:2;
+    display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start;
+  }
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+  .card h2{font:500 11px/1 "JetBrains Mono",monospace;color:var(--text-dim);letter-spacing:.16em;text-transform:uppercase;margin-bottom:11px}
+
+  .reticle{display:block;width:100%;max-width:520px;margin:0 auto;aspect-ratio:1}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;border:none;border-radius:0;padding:8px 10px;font:12px "JetBrains Mono",monospace;background:var(--panel-2);color:var(--muted)}
+  .seg button.on{background:rgba(201,168,76,.16);color:var(--amber)}
+  .viewnote{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+
+  .big{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .big b{font:500 3.1rem/1 "JetBrains Mono",monospace;color:var(--amber);letter-spacing:-.02em}
+  .big span{font-size:14px;color:var(--muted)}
+  .rows{margin-top:12px;display:flex;flex-direction:column}
+  .rows div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--border-faint);font-size:13.5px}
+  .rows div:last-child{border-bottom:none}
+  .rows .k{color:var(--muted)}
+  .rows .v{font-family:"JetBrains Mono",monospace;text-align:right}
+  .timebar{display:flex;gap:8px;align-items:center}
+  .timebar input{flex:1}
+  .timebar button{flex-shrink:0;padding:7px 10px;font:12px "JetBrains Mono",monospace}
+  #liveBtn.on{border-color:var(--amber);color:var(--amber)}
+  .siteline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px}
+  .siteline .where{flex:1;min-width:0}
+  .siteline .where span{font:12px "JetBrains Mono",monospace;color:var(--muted);margin-left:6px}
+  .siteedit{display:none;margin-top:12px;gap:10px;flex-direction:column}
+  .siteedit.show{display:flex}
+  .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .srow{display:flex;gap:8px;flex-wrap:wrap}
+  .srow button{flex:1}
+  label{display:block;font-size:12.5px;color:var(--muted)}
+  label > input{margin-top:4px}
+  input[type=number]{
+    width:100%;min-width:0;background:var(--panel-2);color:var(--text);
+    border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:14px "JetBrains Mono",monospace;
+  }
+  .need{font-size:13.5px;color:var(--muted);line-height:1.6}
+  .need b{color:var(--amber);font-weight:500}
+  #siteCard.unset{border-color:rgba(201,168,76,.45)}
+  #siteStatus{font:12px "JetBrains Mono",monospace;color:var(--muted);margin-top:6px;min-height:1em}
+  ol.steps{padding-left:1.2rem;font-size:13.5px;color:var(--muted);line-height:1.65}
+  ol.steps li{margin-bottom:6px}
+  ol.steps b{color:var(--text);font-weight:500}
+  .warn{font-size:13px;color:var(--amber);margin-top:8px}
+
+  html.night body{filter:sepia(1) saturate(4.5) hue-rotate(-38deg) brightness(.72) contrast(1.06)}
+
+  @media (max-width:860px){
+    main{grid-template-columns:minmax(0,1fr);padding:14px 16px 8px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="atlas.html">Sky Atlas</a></li>
+    <li><a href="fov.html">FOV Viewer</a></li>
+    <li><a href="sky.html">Sky Planner</a></li>
+    <li><a href="night.html">Night Planner</a></li>
+    <li><a href="polar.html" class="current">Polar Align</a></li>
+    <li><a href="calc.html">Calculators</a></li>
+    <li><a href="sampling.html">Sampling</a></li>
+    <li><a href="gear.html">My Gear</a></li>
+    <li><a href="index.html#rigs">Imaging Rigs</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.getElementById('navLinks').classList.toggle('show')"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="tool-title">
+  <div class="eyebrow">Observatory Tools</div>
+  <h1>Polar <em>Align</em></h1>
+  <p id="lede">Where Polaris sits on your polar scope's reticle right now. Worked out in your browser, no forecast needed.</p>
+</div>
+
+<main>
+  <div class="col">
+    <div class="card">
+      <svg class="reticle" id="ret" viewBox="-100 -100 200 200" role="img" aria-label="Polar scope reticle"></svg>
+      <div class="seg" role="group" aria-label="View" style="margin-top:10px">
+        <button data-v="scope">Polar scope</button><button data-v="eye">Naked eye / camera</button>
+      </div>
+      <p class="viewnote" id="viewNote"></p>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card" id="siteCard">
+      <h2>Your site</h2>
+      <p class="need" id="siteNeed" hidden>Where the pole star sits on the reticle depends on <b>where you are</b>, so there's no default site here. Use your location, or type your latitude and longitude.</p>
+      <div class="siteline" id="siteLine">
+        <div class="where">Site: <b id="siteName">—</b><span id="siteLL"></span></div>
+        <button id="siteEditBtn">Change</button>
+      </div>
+      <div class="siteedit" id="siteEdit">
+        <div class="two">
+          <label>Latitude (°N) <input type="number" id="latIn" step="0.001" min="-90" max="90" placeholder="e.g. 40.8"></label>
+          <label>Longitude (°E) <input type="number" id="lonIn" step="0.001" min="-180" max="180" placeholder="e.g. -74.5"></label>
+        </div>
+        <div class="srow">
+          <button id="geoBtn">Use my location</button>
+          <button id="llBtn">Use these coordinates</button>
+        </div>
+      </div>
+      <div id="siteStatus"></div>
+      <div class="warn" id="latWarn" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2 id="starTitle">Polaris</h2>
+      <div class="big"><b id="clock">—</b><span id="clockSub">o'clock on the reticle</span></div>
+      <div class="rows">
+        <div><span class="k">Hour angle</span><span class="v" id="ha">—</span></div>
+        <div><span class="k">Distance from pole</span><span class="v" id="pd">—</span></div>
+        <div><span class="k">Next upper transit</span><span class="v" id="tr">—</span></div>
+        <div><span class="k">Mount altitude</span><span class="v" id="altset">—</span></div>
+        <div><span class="k">Local sidereal time</span><span class="v" id="lstv">—</span></div>
+        <div><span class="k">Apparent RA / Dec</span><span class="v" id="radec">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Time</h2>
+      <div class="timebar">
+        <button id="liveBtn" class="on" title="Follow the clock">LIVE</button>
+        <button id="minusBtn" aria-label="15 minutes earlier">−15m</button>
+        <input type="datetime-local" id="when" step="60">
+        <button id="plusBtn" aria-label="15 minutes later">+15m</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How to use it</h2>
+      <ol class="steps" id="steps"></ol>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-brand">Washington Valley Observatory</div>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="index.html#gallery">Gallery</a>
+    <a href="atlas.html">Sky Atlas</a>
+    <a href="fov.html">FOV Viewer</a>
+    <a href="sky.html">Sky Planner</a>
+    <a href="night.html">Night Planner</a>
+    <a href="polar.html">Polar Align</a>
+    <a href="sampling.html">Sampling Calc</a>
+    <a href="mailto:inquiries@myobservatory.org">Email</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 Washington Valley Observatory &middot; North New Jersey</div>
+</footer>
+
+<script>
+'use strict';
+
+const A = WVO.astro;
+const $ = id => document.getElementById(id);
+
+/* ================= CONFIG ================= */
+
+/* Hipparcos J2000 places and proper motions (mas/yr, µα·cosδ / µδ) */
+const STARS = {
+  north: { name:'Polaris', short:'Polaris', ra:37.954561, dec:89.264109, pmRA:44.48, pmDec:-11.85 },
+  south: { name:'Sigma Octantis', short:'σ Oct', ra:317.195250, dec:-88.956500 },   /* proper motion: under 1″ since J2000 */
+};
+const R = 58;                       /* reticle circle radius in SVG units */
+const SIDEREAL = 1.00273790935;     /* sidereal / solar rate */
+
+/* ================= STATE ================= */
+
+const saved = WVO.prefs.get('polar', {}) || {};
+const state = {
+  /* no fallback site: the reticle is only right for where you actually stand,
+     so until one is chosen (here or in another tool) nothing is drawn */
+  site: WVO.site.isDefault() ? null : WVO.site.get(),
+  view: saved.view === 'eye' ? 'eye' : 'scope',
+  live: true,
+  when: new Date(),
+};
+
+/* ================= GEOMETRY ================= */
+
+/*
+ * Position angle of the star around the pole, degrees clockwise from the
+ * top of the view, as a clock face reads.
+ *
+ * Naked eye, facing the pole: at upper transit (HA 0) the star sits straight
+ * above the pole. The sky turns anticlockwise about the north pole and
+ * clockwise about the south, so the angle runs -HA in the north and +HA in
+ * the south. A polar scope is a small refractor with no erecting prism, so
+ * its image is the same picture turned 180°.
+ */
+function positionAngle(haDeg, south, view){
+  let pa = south ? haDeg : -haDeg;
+  if(view === 'scope') pa += 180;
+  return A.norm360(pa);
+}
+
+function compute(){
+  const south = state.site.lat < 0;
+  const star = south ? STARS.south : STARS.north;
+  const d = state.when;
+  const ap = A.apparent(star.ra, star.dec, d, star.pmRA, star.pmDec);
+  const hz = A.horizontal(ap.ra, ap.dec, d, state.site.lat, state.site.lon);
+  const ha = A.norm360(hz.ha);                                    /* 0..360 */
+  const pa = positionAngle(ha, south, state.view);
+  /* hour angle grows at the sidereal rate: next time it reaches 0 */
+  const toTransit = (360 - ha)/15/SIDEREAL * 3600000;
+  return { south, star, ap, hz, ha, pa, pd:(90 - Math.abs(ap.dec))*60,
+           lst:A.lst(d, state.site.lon), transit:new Date(d.getTime() + toTransit) };
+}
+
+/* ================= FORMAT ================= */
+
+const pad = n => String(n).padStart(2, '0');
+function hms(deg, withSec){
+  const s = Math.round(A.norm360(deg)/15*3600) % 86400;
+  return pad(Math.floor(s/3600)) + 'h ' + pad(Math.floor(s/60)%60) + 'm' + (withSec ? ' ' + pad(s%60) + 's' : '');
+}
+function dms(deg){
+  const sign = deg < 0 ? '−' : '+';
+  const s = Math.round(Math.abs(deg)*3600);
+  return sign + Math.floor(s/3600) + '° ' + pad(Math.floor(s/60)%60) + '′ ' + pad(s%60) + '″';
+}
+function clockOf(pa){
+  const mins = Math.round(pa/30*60) % 720;               /* 30° per clock hour */
+  const h = Math.floor(mins/60);
+  return (h || 12) + ':' + pad(mins%60);
+}
+const fmtT = d => d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+function toLocalInput(d){
+  const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return z.toISOString().slice(0,16);
+}
+
+/* ================= DRAW ================= */
+
+/* static parts of the reticle, drawn once */
+function drawStatic(){
+  let s = '';
+  s += '<defs><radialGradient id="glow"><stop offset="0" stop-color="#c9a84c" stop-opacity=".55"/><stop offset="1" stop-color="#c9a84c" stop-opacity="0"/></radialGradient></defs>';
+  s += '<circle r="97" fill="#05070c" stroke="#1b1f29" stroke-width="1.2"/>';
+  s += '<line x1="-97" y1="0" x2="97" y2="0" stroke="#27405e" stroke-width=".5"/>';
+  s += '<line x1="0" y1="-97" x2="0" y2="97" stroke="#27405e" stroke-width=".5"/>';
+  s += '<circle r="'+R+'" fill="none" stroke="#4a7cad" stroke-width=".9"/>';
+  s += '<circle r="'+(R*0.5)+'" fill="none" stroke="#27405e" stroke-width=".4" stroke-dasharray="1.5 2.5"/>';
+  for(let i = 0; i < 60; i++){
+    const a = i*6*Math.PI/180, major = i % 5 === 0;
+    const r0 = R - (major ? 6 : 2.5), r1 = R + (major ? 6 : 2.5);
+    s += '<line x1="'+(r0*Math.sin(a)).toFixed(2)+'" y1="'+(-r0*Math.cos(a)).toFixed(2)+'" x2="'+(r1*Math.sin(a)).toFixed(2)+'" y2="'+(-r1*Math.cos(a)).toFixed(2)+
+         '" stroke="'+(major ? '#6f9ac4' : '#34506f')+'" stroke-width="'+(major ? .9 : .5)+'"/>';
+  }
+  for(let h = 0; h < 12; h++){
+    const a = h*30*Math.PI/180, r = R + 15;
+    s += '<text x="'+(r*Math.sin(a)).toFixed(2)+'" y="'+(-r*Math.cos(a)+3.2).toFixed(2)+'" fill="#9a958d" font-size="8.5" font-family="JetBrains Mono,monospace" text-anchor="middle">'+(h || 12)+'</text>';
+  }
+  s += '<g stroke="#e8e4df" stroke-width=".8"><line x1="-4" y1="0" x2="4" y2="0"/><line x1="0" y1="-4" x2="0" y2="4"/></g>';
+  s += '<text x="0" y="10" fill="#5a564f" font-size="5" font-family="JetBrains Mono,monospace" text-anchor="middle">POLE</text>';
+  s += '<g id="dyn"></g>';
+  $('ret').innerHTML = s;
+}
+
+function drawStar(c){
+  const a = c.pa*Math.PI/180;
+  const x = R*Math.sin(a), y = -R*Math.cos(a);
+  /* keep the label on the outward, readable side of the star */
+  const lx = x*1.0 + (x >= 0 ? -6 : 6), ly = y + (y > 0 ? -7 : 11);
+  $('dyn').innerHTML =
+    '<line x1="0" y1="0" x2="'+x.toFixed(2)+'" y2="'+y.toFixed(2)+'" stroke="#c9a84c" stroke-width=".5" stroke-dasharray="2 2" opacity=".6"/>' +
+    '<circle cx="'+x.toFixed(2)+'" cy="'+y.toFixed(2)+'" r="9" fill="url(#glow)"/>' +
+    '<circle cx="'+x.toFixed(2)+'" cy="'+y.toFixed(2)+'" r="2.8" fill="#f3e3b0"/>' +
+    '<text x="'+lx.toFixed(2)+'" y="'+ly.toFixed(2)+'" fill="#c9a84c" font-size="6.5" font-family="JetBrains Mono,monospace" text-anchor="'+(x >= 0 ? 'end' : 'start')+'">'+c.star.short+'</text>';
+}
+
+function render(){
+  if(state.live) state.when = new Date();
+  if(document.activeElement !== $('when')) $('when').value = toLocalInput(state.when);
+  $('liveBtn').classList.toggle('on', state.live);
+  if(!state.site) return renderNoSite();
+  const c = compute();
+  drawStar(c);
+
+  $('starTitle').textContent = c.star.name;
+  $('clock').textContent = clockOf(c.pa);
+  $('clockSub').textContent = state.view === 'scope' ? 'o’clock in the polar scope' : 'o’clock, looking at the pole';
+  $('ha').textContent = hms(c.ha, true);
+  $('pd').textContent = c.pd.toFixed(1) + '′';
+  $('tr').textContent = fmtT(c.transit);
+  $('altset').textContent = Math.abs(state.site.lat).toFixed(2) + '° (your latitude)';
+  $('lstv').textContent = hms(c.lst, true);
+  $('radec').textContent = hms(c.ap.ra, true) + '  ' + dms(c.ap.dec);
+
+  const pole = c.south ? 'south celestial pole' : 'north celestial pole';
+  $('lede').textContent = 'Where ' + c.star.name + ' sits on your polar scope’s reticle, live, for your site. Pure maths, worked out in your browser.';
+  $('viewNote').textContent = state.view === 'scope'
+    ? 'Image turned 180°, as a polar scope shows it. 12 is at the top of the reticle.'
+    : 'As the sky looks facing the ' + pole + ', and as most plate-solving cameras show it.';
+}
+
+function renderNoSite(){
+  $('dyn').innerHTML =
+    '<text x="0" y="-24" fill="#c9a84c" font-size="7" font-family="JetBrains Mono,monospace" text-anchor="middle">SET YOUR LOCATION</text>';
+  ['clock','ha','pd','tr','altset','lstv','radec'].forEach(id => $(id).textContent = '—');
+  $('starTitle').textContent = 'Pole star';
+  $('clockSub').textContent = 'set your location first';
+  $('lede').textContent = 'Where the pole star sits on your polar scope’s reticle, live, for your site. Pure maths, worked out in your browser.';
+  $('viewNote').textContent = '';
+}
+
+function renderStatic(){
+  const unset = !state.site;
+  document.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === state.view));
+  $('siteCard').classList.toggle('unset', unset);
+  $('siteNeed').hidden = !unset;
+  $('siteLine').hidden = unset;
+  if(unset){
+    $('siteEdit').classList.add('show');
+    $('latWarn').hidden = true;
+    $('steps').innerHTML = '<li>Set your site above: <b>Use my location</b>, or type your latitude and longitude.</li>';
+    return;
+  }
+  const south = state.site.lat < 0, star = south ? STARS.south : STARS.north;
+  $('siteName').textContent = state.site.name || 'Observer site';
+  $('siteLL').textContent = state.site.lat.toFixed(3) + ', ' + state.site.lon.toFixed(3);
+  $('latIn').value = state.site.lat.toFixed(3);
+  $('lonIn').value = state.site.lon.toFixed(3);
+  const w = $('latWarn');
+  w.hidden = Math.abs(state.site.lat) >= 8;
+  w.textContent = 'At this latitude the pole sits only ' + Math.abs(state.site.lat).toFixed(1) + '° above the horizon: haze and refraction make a polar-scope alignment rough. Drift alignment will do better.';
+  $('steps').innerHTML = [
+    'Level the mount, set its <b>altitude to ' + Math.abs(state.site.lat).toFixed(1) + '°</b>, and point the RA axis roughly ' + (south ? 'south' : 'north') + '.',
+    'Turn the RA axis until the reticle’s <b>12 is at the top</b> of the polar scope (most mounts have a home mark for this).',
+    'Using only the altitude and azimuth bolts, put ' + star.name + ' on the circle at <b>the clock position shown</b>, on the outer ring if your reticle has several.',
+    south ? 'σ Oct is magnitude 5.4: find it from the trapezoid of fainter stars around it, or use a camera.' : 'Work steadily: the star goes round the dial once every 23 h 56 m, about one clock-minute every 2 minutes, so the reading here updates live.',
+    'Reticles with a date/time ring or a 0–24 h scale: use the <b>hour angle</b> instead of the clock reading.',
+  ].map(s => '<li>' + s + '</li>').join('');
+}
+
+/* ================= WIRING ================= */
+
+document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => {
+  state.view = b.dataset.v;
+  WVO.prefs.set('polar', { view:state.view });
+  renderStatic(); render();
+});
+$('nightBtn').addEventListener('click', () => WVO.night.toggle());
+$('liveBtn').onclick = () => { state.live = true; render(); };
+function shift(min){ state.live = false; state.when = new Date(state.when.getTime() + min*60000); render(); }
+$('minusBtn').onclick = () => shift(-15);
+$('plusBtn').onclick = () => shift(15);
+$('when').addEventListener('change', () => {
+  const t = new Date($('when').value);
+  if(isNaN(t)) return;
+  state.live = false; state.when = t; render();
+});
+function setSite(lat, lon, name){
+  if(!WVO.site.set(lat, lon, name)){ $('siteStatus').textContent = 'Latitude must be −90 to 90 and longitude −180 to 180.'; return; }
+  state.site = WVO.site.get();
+  $('siteStatus').textContent = '';
+  $('siteEdit').classList.remove('show');
+  renderStatic(); render();
+}
+$('siteEditBtn').onclick = () => $('siteEdit').classList.toggle('show');
+$('llBtn').onclick = () => {
+  if($('latIn').value.trim() === '' || $('lonIn').value.trim() === ''){ $('siteStatus').textContent = 'Enter both latitude and longitude.'; return; }
+  setSite(+$('latIn').value, +$('lonIn').value, 'Custom site');
+};
+$('geoBtn').onclick = () => {
+  if(!navigator.geolocation){ $('siteStatus').textContent = 'Location isn’t available in this browser. Type your coordinates instead.'; return; }
+  $('siteStatus').textContent = 'Finding you…';
+  navigator.geolocation.getCurrentPosition(
+    p => setSite(p.coords.latitude, p.coords.longitude, 'My location'),
+    () => { $('siteStatus').textContent = 'Couldn’t get a location fix. Check the browser’s location permission, or type your coordinates.'; },
+    { enableHighAccuracy:false, timeout:15000, maximumAge:600000 });
+};
+
+drawStatic();
+renderStatic();
+render();
+setInterval(() => { if(state.live && !document.hidden) render(); }, 1000);
+</script>
+</body>
+</html>
