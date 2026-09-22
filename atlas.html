@@ -667,6 +667,10 @@
       <span class="ic">⊞</span>
       <span class="tx"><b>FOV Viewer</b><span>Side-by-side rig comparison on one plate</span></span>
     </a>
+    <a class="i-night" href="night.html">
+      <span class="ic">◐</span>
+      <span class="tx"><b>Night Planner</b><span>Tonight hour by hour: best window, moon, dew</span></span>
+    </a>
     <a class="i-sky" href="sky.html">
       <span class="ic">☁</span>
       <span class="tx"><b>Sky Planner</b><span>Cloud, seeing, darkness and moonrise</span></span>
@@ -2428,6 +2432,9 @@ function syncFraming(){
 
 function pinFrames(obj){
   state.frameAnchor = { ra:obj.ra, dec:obj.dec, name:obj.name };
+  /* the Night Planner offers the last pinned target as tonight's; the Sun and
+     Moon move too far in a night to plan from one position */
+  if(obj.kind !== 'moon' && obj.kind !== 'sun') WVO.prefs.set('target', { name:obj.name, ra:obj.ra, dec:obj.dec });
   /* pinning with nothing to draw would be a silent no-op, so seed from the
      gear library's active rig the first time */
   if(!state.frames.length && RIGS.length){
