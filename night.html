@@ -11,21 +11,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Night Planner · Washington Valley Observatory</title>
+<title>Night Planner · My Observatory</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="description" content="One night, hour by hour: darkness, cloud, seeing, transparency, moonlight, dew and wind, with your target&#39;s altitude, the best imaging window and when to switch on the dew heater.">
 <link rel="canonical" href="https://www.myobservatory.org/night.html">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Washington Valley Observatory">
+<meta property="og:site_name" content="My Observatory">
 <meta property="og:title" content="Night Planner">
 <meta property="og:description" content="One night, hour by hour: darkness, cloud, seeing, transparency, moonlight, dew and wind, with your target&#39;s altitude, the best imaging window and when to switch on the dew heater.">
 <meta property="og:url" content="https://www.myobservatory.org/night.html">
 <meta property="og:image" content="https://www.myobservatory.org/images/social/og-tools.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Night Planner — Washington Valley Observatory">
+<meta property="og:image:alt" content="Night Planner — My Observatory">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#07080c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -87,7 +87,6 @@
     text-decoration:none;min-width:0;
   }
   .nav-brand span{color:var(--accent-gold)}
-  .nav-brand .brand-long{color:var(--text-star)}
   .nav-links{display:flex;gap:1.4rem;list-style:none;align-items:center}
   .nav-links a{
     font-size:.74rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;
@@ -124,7 +123,6 @@
   .footer-links a:hover{color:var(--accent-gold)}
   .footer-copy{font-family:"JetBrains Mono",monospace;font-size:.63rem;color:var(--text-dim);margin-top:1.6rem;letter-spacing:.05em}
   @media (max-width:620px){
-    .brand-long{display:none}
     .nav-brand{font-size:1rem;letter-spacing:.1em}
     #nightBtn{padding:.45rem .6rem;font-size:.58rem}
     .tool-title{padding:1.3rem 1rem .2rem}
@@ -280,12 +278,21 @@
     .grid .hh{font-size:10px}
     .grid .cell > i{left:2px;right:2px}
   }
+
+  /* ---- brand lockup: My Observatory, the observatory's full name beneath ---- */
+  nav .nav-brand{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.24rem;line-height:1}
+  nav .nav-brand .brand-name{color:var(--text-star);white-space:nowrap}
+  nav .nav-brand .brand-name span{color:var(--accent-gold)}
+  nav .nav-brand .brand-sub{font-family:"DM Sans",system-ui,sans-serif;font-size:.54rem;font-weight:400;letter-spacing:.22em;color:var(--text-nebula);white-space:nowrap}
+  .footer-brand{text-transform:uppercase}
+  .footer-brand span{color:var(--accent-gold)}
+  @media (max-width:620px){ nav .nav-brand .brand-sub{font-size:.5rem;letter-spacing:.14em} }
 </style>
 </head>
 <body>
 
 <nav>
-  <a href="index.html" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <a href="index.html" class="nav-brand"><span class="brand-name">My <span>Observatory</span></span><span class="brand-sub">Washington Valley Observatory</span></a>
   <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
   <ul class="nav-links" id="navLinks">
     <li><a href="index.html#about">About</a></li>
@@ -387,7 +394,7 @@
 </main>
 
 <footer>
-  <div class="footer-brand">Washington Valley Observatory</div>
+  <div class="footer-brand">My <span>Observatory</span></div>
   <div class="footer-links">
     <a href="index.html">Home</a>
     <a href="index.html#gallery">Gallery</a>

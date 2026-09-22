@@ -40,8 +40,8 @@ card() {
 mkdir -p images/social
 
 card images/cygnus-wall-hoo.jpg images/social/og-home.jpg \
-  "Washington Valley Observatory" \
-  "ASTROPHOTOGRAPHY  ·  BORTLE 7  ·  NORTH NEW JERSEY"
+  "My Observatory" \
+  "WASHINGTON VALLEY OBSERVATORY  ·  NORTH NEW JERSEY"
 
 card images/trunk.jpg images/social/og-tools.jpg \
   "The Observatory Toolkit" \

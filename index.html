@@ -11,21 +11,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Washington Valley Observatory</title>
+<title>My Observatory · Washington Valley Observatory</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="description" content="Astrophotography, open-source imaging tools and a deep-sky gallery from a Bortle 7 backyard in North New Jersey.">
 <link rel="canonical" href="https://www.myobservatory.org/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Washington Valley Observatory">
-<meta property="og:title" content="Washington Valley Observatory">
+<meta property="og:site_name" content="My Observatory">
+<meta property="og:title" content="My Observatory">
 <meta property="og:description" content="Astrophotography, open-source imaging tools and a deep-sky gallery from a Bortle 7 backyard in North New Jersey.">
 <meta property="og:url" content="https://www.myobservatory.org/">
 <meta property="og:image" content="https://www.myobservatory.org/images/social/og-home.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The Cygnus Wall in H-alpha and OIII — Washington Valley Observatory">
+<meta property="og:image:alt" content="The Cygnus Wall in H-alpha and OIII — My Observatory">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#07080c">
 <script src="wvo-store.js"></script>
@@ -60,7 +60,6 @@
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 1.2rem 3rem; display: flex; align-items: center; justify-content: space-between; background: rgba(7,8,12,0.7); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border-bottom: 1px solid var(--border-faint); }
   .nav-brand { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.15rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-star); text-decoration: none; }
   .nav-brand span { color: var(--accent-gold); }
-  .nav-brand .brand-long { color: var(--text-star); }
   .nav-links { display: flex; gap: 1.4rem; list-style: none; align-items: center; }
   .nav-links a { font-size: 0.74rem; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-nebula); text-decoration: none; transition: color 0.3s; position: relative; white-space: nowrap; }
   .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: var(--accent-gold); transition: width 0.3s; }
@@ -321,12 +320,21 @@
     .lightbox-caption h3 { font-size: 1.25rem; }
     .lightbox-caption p { font-size: 0.76rem; }
   }
-  @media (max-width: 620px) { .brand-long { display: none; } .nav-brand { font-size: 1rem; letter-spacing: 0.1em; } }
+  @media (max-width: 620px) { .nav-brand { font-size: 1rem; letter-spacing: 0.1em; } }
+
+  /* ---- brand lockup: My Observatory, the observatory's full name beneath ---- */
+  nav .nav-brand{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.24rem;line-height:1}
+  nav .nav-brand .brand-name{color:var(--text-star);white-space:nowrap}
+  nav .nav-brand .brand-name span{color:var(--accent-gold)}
+  nav .nav-brand .brand-sub{font-family:"DM Sans",system-ui,sans-serif;font-size:.54rem;font-weight:400;letter-spacing:.22em;color:var(--text-nebula);white-space:nowrap}
+  .footer-brand{text-transform:uppercase}
+  .footer-brand span{color:var(--accent-gold)}
+  @media (max-width:620px){ nav .nav-brand .brand-sub{font-size:.5rem;letter-spacing:.14em} }
 </style>
 </head>
 <body>
 <nav>
-  <a href="#" class="nav-brand"><span class="brand-long">Washington Valley </span><span>Observatory</span></a>
+  <a href="#" class="nav-brand"><span class="brand-name">My <span>Observatory</span></span><span class="brand-sub">Washington Valley Observatory</span></a>
   <button id="nightBtn" title="Red-light mode to preserve dark adaptation" aria-pressed="false">Night vision</button>
   <ul class="nav-links" id="navLinks">
     <li><a href="#about">About</a></li>
@@ -360,7 +368,7 @@
   </div>
   <div class="about-grid">
     <div class="about-text">
-      <p>Washington Valley Observatory is an amateur astronomy collective on a mission to explore the cosmos through astrophotography and education. We specialize in capturing breathtaking images of deep-space objects using affordable, off-the-shelf telescopes and free, open-source software.</p>
+      <p>My Observatory is the home of Washington Valley Observatory, an amateur astronomy collective on a mission to explore the cosmos through astrophotography and education. We specialize in capturing breathtaking images of deep-space objects using affordable, off-the-shelf telescopes and free, open-source software.</p>
       <p>From helping a beginner find their first celestial object to teaming up with schools for STEM education, we are a place where anyone can connect with the stars. All of our imaging is done from light-polluted suburban skies in northern New Jersey, proving that remarkable results are possible anywhere.</p>
       <div class="about-stats">
         <div class="stat-card"><div class="stat-number">25+</div><div class="stat-label">Deep Sky Objects</div></div>
@@ -898,7 +906,7 @@
   </div>
 </div>
 <footer id="contact">
-  <div class="footer-brand">Washington Valley Observatory</div>
+  <div class="footer-brand">My <span>Observatory</span></div>
   <p class="footer-tagline">A nonprofit amateur astronomy collective exploring the cosmos through astrophotography and education from suburban New Jersey.</p>
   <div class="footer-links">
     <a href="mailto:inquiries@myobservatory.org">Email</a>

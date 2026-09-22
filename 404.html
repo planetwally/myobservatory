@@ -11,7 +11,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Not Found · Washington Valley Observatory</title>
+<title>Not Found · My Observatory</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -65,7 +65,6 @@
   #nightBtn:hover { color: var(--text-star); border-color: rgba(201,168,76,0.4); }
   @media (max-width: 620px) {
     nav { padding: 1rem 1.25rem; }
-    .brand-long { display: none; }
     .nav-brand { font-size: 1rem; letter-spacing: 0.1em; }
     #nightBtn { padding: 0.45rem 0.6rem; font-size: 0.58rem; }
   }
@@ -98,11 +97,19 @@
     border-radius: 6px; transition: background .3s, transform .3s;
   }
   .home a:hover, .home a:focus-visible { background: #dab84f; transform: translateY(-2px); }
+
+  /* ---- brand lockup: My Observatory, the observatory's full name beneath ---- */
+  nav .nav-brand{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.24rem;line-height:1}
+  nav .nav-brand .brand-name{color:var(--text-star);white-space:nowrap}
+  nav .nav-brand .brand-name span{color:var(--accent-gold)}
+  nav .nav-brand .brand-sub{font-family:"DM Sans",system-ui,sans-serif;font-size:.54rem;font-weight:400;letter-spacing:.22em;color:var(--text-nebula);white-space:nowrap}
+  .footer-brand span{color:var(--accent-gold)}
+  @media (max-width:620px){ nav .nav-brand .brand-sub{font-size:.5rem;letter-spacing:.14em} }
 </style>
 </head>
 <body>
 <nav>
-  <a href="/" class="nav-brand"><span class="brand-long">Washington Valley </span><span class="brand-gold">Observatory</span></a>
+  <a href="/" class="nav-brand"><span class="brand-name">My <span>Observatory</span></span><span class="brand-sub">Washington Valley Observatory</span></a>
   <button id="nightBtn" title="Red-light mode to preserve dark adaptation">Night vision</button>
 </nav>
   <div class="eyebrow">Error 404</div>
